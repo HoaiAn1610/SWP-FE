@@ -1,25 +1,25 @@
+// src/pages/auth/RegisterPage.jsx
 import { useState } from "react";
-import { MdEmail, MdLock, MdPerson } from "react-icons/md";
+import { MdPerson, MdEmail, MdLock, MdPhone, MdCake } from "react-icons/md";
 import api from "../../../config/axios";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 
-const Register = () => {
+const RegisterPage = () => {
   const [formData, setFormData] = useState({
-    fullName: "",
-    username: "",
+    name: "",
+    dob: "",
+    phone: "",
     email: "",
     password: "",
+    ageGroup: "",
   });
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
@@ -28,18 +28,23 @@ const Register = () => {
 
     try {
       console.log("Register payload:", formData);
-      //formData dữ liệu người dùng nhập
-      //Đẩy cái dữ liệu. này xuống cho BE xử lý
+      // gửi lên /api/UserManagement/register
+      const response = await api.post(
+        "UserManagement/register",
+        formData
+      );
+      console.log("Register response:", response.data);
 
-      const response = await api.post("register", formData);
-      console.log(response);
-      // => thành công
-      // => show message
-      toast.success("Successfully create new account!");
+      toast.success("Tạo tài khoản thành công!");
       navigate("/login");
     } catch (err) {
       console.error("Registration error:", err);
-      toast.error(err.response.data);
+      const message =
+        err.response?.data?.message ||
+        err.response?.data ||
+        err.message ||
+        "Lỗi không xác định";
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }
@@ -47,23 +52,7 @@ const Register = () => {
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row">
-      {/* Right Image Side */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
-        <img
-          src="https://images.unsplash.com/photo-1497294815431-9365093b7331"
-          alt="Authentication background"
-          className="absolute inset-0 h-full w-full object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black opacity-50"></div>
-        <div className="relative z-10 flex items-center justify-center w-full p-12 text-white">
-          <div className="text-center">
-            <h3 className="text-4xl font-bold mb-4">Secure Authentication</h3>
-            <p className="text-xl">
-              Your data is protected with industry-standard encryption
-            </p>
-          </div>
-        </div>
-      </div>
+      {/* Left: form */}
       <div className="flex-1 flex items-center justify-center p-6 lg:p-12">
         <div className="w-full max-w-md space-y-8">
           <div className="text-center">
@@ -76,41 +65,60 @@ const Register = () => {
           </div>
 
           <form onSubmit={handleSubmit} className="mt-8 space-y-6">
-            {/* Full Name */}
+            {/* Name */}
             <div>
-              <label htmlFor="fullName" className="sr-only">
+              <label htmlFor="name" className="sr-only">
                 Full Name
               </label>
               <div className="relative">
                 <MdPerson className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                 <input
-                  id="fullName"
-                  name="fullName"
+                  id="name"
+                  name="name"
                   type="text"
                   required
-                  className="pl-10 w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="pl-10 w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   placeholder="Full Name"
-                  value={formData.fullName}
+                  value={formData.name}
                   onChange={handleInputChange}
                 />
               </div>
             </div>
 
-            {/* Username */}
+            {/* Date of Birth */}
             <div>
-              <label htmlFor="username" className="sr-only">
-                Username
+              <label htmlFor="dob" className="sr-only">
+                Date of Birth
               </label>
               <div className="relative">
-                <MdPerson className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <MdCake className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                 <input
-                  id="username"
-                  name="username"
-                  type="text"
+                  id="dob"
+                  name="dob"
+                  type="date"
                   required
-                  className="pl-10 w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Username"
-                  value={formData.username}
+                  className="pl-10 w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  value={formData.dob}
+                  onChange={handleInputChange}
+                />
+              </div>
+            </div>
+
+            {/* Phone */}
+            <div>
+              <label htmlFor="phone" className="sr-only">
+                Phone
+              </label>
+              <div className="relative">
+                <MdPhone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <input
+                  id="phone"
+                  name="phone"
+                  type="tel"
+                  required
+                  className="pl-10 w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="Phone number"
+                  value={formData.phone}
                   onChange={handleInputChange}
                 />
               </div>
@@ -128,7 +136,7 @@ const Register = () => {
                   name="email"
                   type="email"
                   required
-                  className="pl-10 w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="pl-10 w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   placeholder="Email address"
                   value={formData.email}
                   onChange={handleInputChange}
@@ -148,7 +156,7 @@ const Register = () => {
                   name="password"
                   type="password"
                   required
-                  className="pl-10 w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="pl-10 w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   placeholder="Password"
                   value={formData.password}
                   onChange={handleInputChange}
@@ -156,11 +164,31 @@ const Register = () => {
               </div>
             </div>
 
-            {/* Submit Button */}
+            {/* Age Group */}
+            <div>
+              <label htmlFor="ageGroup" className="sr-only">
+                Age Group
+              </label>
+              <div className="relative">
+                <MdPerson className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <input
+                  id="ageGroup"
+                  name="ageGroup"
+                  type="text"
+                  required
+                  className="pl-10 w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="Age Group (e.g. 18-25)"
+                  value={formData.ageGroup}
+                  onChange={handleInputChange}
+                />
+              </div>
+            </div>
+
+            {/* Submit */}
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50"
+              className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg disabled:opacity-50"
             >
               {isLoading ? "Creating Account..." : "Sign Up"}
             </button>
@@ -176,8 +204,26 @@ const Register = () => {
           </div>
         </div>
       </div>
+
+      {/* Right: illustration */}
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
+        <img
+          src="https://images.unsplash.com/photo-1497294815431-9365093b7331"
+          alt="Authentication background"
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black opacity-50" />
+        <div className="relative z-10 flex items-center justify-center w-full p-12 text-white">
+          <div className="text-center">
+            <h3 className="text-4xl font-bold mb-4">Secure Authentication</h3>
+            <p className="text-xl">
+              Your data is protected with industry-standard encryption
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
 
-export default Register;
+export default RegisterPage;
