@@ -1,15 +1,21 @@
+// src/App.jsx
 import React from "react";
+import { GoogleOAuthProvider } from "@react-oauth/google";
+import { RouterProvider, createBrowserRouter } from "react-router-dom";
+
 import Dashboard from "./component/dashboard";
 import UploadComponent from "./component/upload";
 import Login from "./pages/auth/login";
 import Register from "./pages/auth/register";
-import { RouterProvider, createBrowserRouter } from "react-router-dom";
 import ManageProduct from "./pages/admin/manage-product";
 import ReportPage from "./pages/admin/report";
 import EcommerceHome from "./pages/common/home";
 import ProtectedRoute from "./component/protected-route";
 
 function App() {
+  // Lấy Google Client ID từ .env
+  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+
   const router = createBrowserRouter([
     {
       path: "/",
@@ -24,7 +30,7 @@ function App() {
       element: <Register />,
     },
     {
-      path: "dashboard",
+      path: "/dashboard",
       element: (
         <ProtectedRoute role={"ADMIN"}>
           <Dashboard />
@@ -43,7 +49,11 @@ function App() {
     },
   ]);
 
-  return <RouterProvider router={router} />;
+  return (
+    <GoogleOAuthProvider clientId={clientId}>
+      <RouterProvider router={router} />
+    </GoogleOAuthProvider>
+  );
 }
 
 export default App;
