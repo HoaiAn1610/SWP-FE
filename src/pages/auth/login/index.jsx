@@ -29,12 +29,11 @@ const LoginPage = () => {
         password: formData.password,
       });
       // const { id, email, role } = response.data;
-      const { id, email, role, name } = response.data;
+      const { id, email, role } = response.data;
 
       localStorage.setItem("id", id);
       localStorage.setItem("email", email);
       localStorage.setItem("role", role);
-      localStorage.setItem("name", name);
 
       //  Gọi aboutMe để lấy name
       try {
@@ -50,7 +49,10 @@ const LoginPage = () => {
 
       toast.success("Đăng nhập thành công!");
 
-      if (role === "ADMIN") navigate("/dashboard");
+      if (role.toLowerCase() === "admin") navigate("/adminDashboard");
+      else if (role.toLowerCase() === "staff") navigate("/staffDashboard");
+      else if (role.toLowerCase() === "consultant")
+        navigate("/consultantDashboard");
       else navigate("/");
     } catch (err) {
       console.error("Login error:", err);
