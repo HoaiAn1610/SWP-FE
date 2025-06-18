@@ -28,11 +28,25 @@ const LoginPage = () => {
         email: formData.email,
         password: formData.password,
       });
-      const { id, email, role } = response.data;
+      // const { id, email, role } = response.data;
+      const { id, email, role, name } = response.data;
 
       localStorage.setItem("id", id);
       localStorage.setItem("email", email);
       localStorage.setItem("role", role);
+      localStorage.setItem("name", name);
+
+      //  Gọi aboutMe để lấy name
+      try {
+        const { data: profile } = await api.get("UserManagement/aboutMe");
+        // Giả sử profile có trường `name`
+        const realName = profile.name?.trim() ? profile.name : "Member";
+        localStorage.setItem("name", realName);
+        console.log("Profile fetched successfully:", profile.name);
+      } catch (errProfile) {
+        console.error("Fetch profile lỗi:", errProfile);
+        // bạn có thể toast.warn ở đây nếu muốn
+      }
 
       toast.success("Đăng nhập thành công!");
 

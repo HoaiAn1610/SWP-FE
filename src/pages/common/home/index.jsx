@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { FiSearch, FiUser, FiShoppingCart } from "react-icons/fi";
 import { FaFacebook, FaTwitter, FaInstagram, FaLinkedin } from "react-icons/fa";
+import api from "../../../config/axios";
 
 const EcommerceHome = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -8,6 +9,7 @@ const EcommerceHome = () => {
 
   // --- NEW: State for login status and dropdown visibility ---
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [username, setUsername] = useState(""); // lưu tên
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -25,6 +27,44 @@ const EcommerceHome = () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [dropdownRef]);
+
+  // Khi component mount: kiểm tra localStorage
+  useEffect(() => {
+    const id = localStorage.getItem("id");
+    if (id) {
+      setIsLoggedIn(true);
+      const storedName = localStorage.getItem("name");
+      if (storedName) {
+        setUsername(storedName);
+      } else {
+        // đọc name, nếu null/empty thì dùng "Member"
+        const storedName = localStorage.getItem("name");
+        setUsername(storedName?.trim() ? storedName : "Member");
+        // nếu chưa lưu ở storage, fallback fetch
+        if (!storedName) {
+          api
+            .get("Auth/aboutMe")
+            .then((res) => {
+              setUsername(res.data.name);
+              localStorage.setItem("name", res.data.name);
+              const nameFromApi = res.data.name?.trim()
+                ? res.data.name
+                : "Member";
+              setUsername(nameFromApi);
+              localStorage.setItem("name", nameFromApi);
+            })
+            .catch((err) => console.error("Fetch profile lỗi:", err));
+        }
+      }
+    }
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.clear();
+    setIsLoggedIn(false);
+    setIsDropdownOpen(false);
+    window.location.href = "/login";
+  };
 
   const categories = [
     {
@@ -104,7 +144,7 @@ const EcommerceHome = () => {
                 className="h-10 w-auto object-contain"
               />
               <nav className="hidden md:flex space-x-6">
-                <a href="#" className="text-gray-600 hover:text-blue-600">
+                <a href="/" className="text-gray-600 hover:text-blue-600">
                   Home
                 </a>
                 <a href="#" className="text-gray-600 hover:text-blue-600">
@@ -130,19 +170,23 @@ const EcommerceHome = () => {
               </div>
 
               {/* --- NEW: Conditional Login/User Avatar section --- */}
+              {/* Nếu đã login */}
               {isLoggedIn ? (
                 <div className="relative" ref={dropdownRef}>
-                  {/* Avatar Button */}
                   <button
-                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                    className="p-2 rounded-full hover:bg-gray-100 transition"
+                    onClick={() => setIsDropdownOpen((o) => !o)}
+                    className="flex items-center space-x-2 p-2 rounded-full hover:bg-gray-100 transition"
                   >
                     <FiUser size={20} />
+                    <span className="hidden md:inline text-gray-700 font-medium">
+                      {username}
+                    </span>
                   </button>
-
-                  {/* Dropdown Menu */}
                   {isDropdownOpen && (
                     <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
+                      <div className="px-4 py-2 text-gray-800 font-semibold">
+                        Hello, {username}
+                      </div>
                       <a
                         href="#"
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -157,8 +201,8 @@ const EcommerceHome = () => {
                       </a>
                       <div className="border-t border-gray-100 my-1"></div>
                       <button
-                        onClick={() => {}}
-                        className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        onClick={handleLogout}
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                       >
                         Logout
                       </button>
@@ -166,9 +210,8 @@ const EcommerceHome = () => {
                   )}
                 </div>
               ) : (
-                // Login Button
                 <button className="bg-blue-600 text-white px-5 py-2 rounded-full hover:bg-blue-700 text-sm font-semibold transition">
-                  Login
+                  <a href="/login">Login</a>
                 </button>
               )}
 
