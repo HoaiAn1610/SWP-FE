@@ -5,6 +5,7 @@ import { RouterProvider, createBrowserRouter } from "react-router-dom";
 
 import Dashboard from "./component/dashboard";
 import UploadComponent from "./component/upload";
+import Courses from "./pages/course";
 import Login from "./pages/auth/login";
 import Register from "./pages/auth/register";
 import ManageProduct from "./pages/admin/manage-product";
@@ -30,9 +31,13 @@ function App() {
       element: <Register />,
     },
     {
-      path: "/dashboard",
+      path: "/course",
+      element: <Courses />,
+    },
+    {
+      path: "/adminDashboard",
       element: (
-        <ProtectedRoute role={"ADMIN"}>
+        <ProtectedRoute role={"Admin"}>
           <Dashboard />
         </ProtectedRoute>
       ),
