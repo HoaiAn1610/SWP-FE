@@ -9,7 +9,35 @@ import Courses from "./pages/auth/course";
 import Login from "./pages/auth/login";
 import Register from "./pages/auth/register";
 import EcommerceHome from "./pages/common/home";
-import ProtectedRoute from "./components/protected-route";
+
+// import ProtectedRoute from "./components/protected-route";
+import LessonPage from "@/pages/auth/course/LessonPage";
+
+import ManagerLayout from "@/pages/manager/ManagerLayout";
+import OverviewPage from "@/pages/manager/overview";
+import AnalyticsPage from "@/pages/manager/analytics";
+import TaskQueuePage from "@/pages/manager/task-queue";
+import TeamSchedulePage from "@/pages/manager/team-schedule";
+
+import StaffLayout from "@/pages/staff/StaffLayout";
+import DraftContentPage from "@/pages/staff/draft-content";
+import PublishedContentPage from "@/pages/staff/published-content";
+import ViewBlogPostsPage from "@/pages/staff/view-blog-posts";
+
+import ConsultantLayout from "@/pages/consultant/ConsultantLayout";
+import AppointmentsPage from "@/pages/consultant/appointments";
+import CreateContentPage from "@/pages/consultant/create-content";
+import BlogQApage from "@/pages/consultant/blog-qa";
+
+import ErrorPage from "@/components/error";
+import AdminLayout from "@/pages/admin/AdminLayout";
+import UserManagementPage from "@/pages/admin/user-management";
+import PlatformSettingsPage from "@/pages/admin/platform-settings";
+import SystemLogsPage from "@/pages/admin/system-logs";
+import ProtectedRoute from "@/components/protected-route";
+import { Navigate } from "react-router-dom";
+
+
 
 function App() {
   // Lấy Google Client ID từ .env
@@ -33,7 +61,26 @@ function App() {
       element: <Courses />,
     },
     {
-      path: "/adminDashboard",
+      path: "/course/:courseId/lesson",
+      element: <LessonPage />,
+    },
+    {
+      path: "/admin",
+      element: (
+        <ProtectedRoute role="Admin">
+          <AdminLayout />
+        </ProtectedRoute>
+      ),
+      errorElement: <ErrorPage />,
+      children: [
+        { index: true, element: <Navigate to="user-management" replace /> },
+        { path: "user-management", element: <UserManagementPage /> },
+        { path: "platform-settings", element: <PlatformSettingsPage /> },
+        { path: "system-logs", element: <SystemLogsPage /> },
+      ],
+    },
+    {
+      path: "/consultant",
       element: (
         <ProtectedRoute role="Consultant">
           <ConsultantLayout />
