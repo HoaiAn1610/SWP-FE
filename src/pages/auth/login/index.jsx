@@ -50,10 +50,10 @@ const LoginPage = () => {
 
       toast.success("Đăng nhập thành công!");
 
-      if (role.toLowerCase() === "admin") navigate("/adminDashboard");
-      else if (role.toLowerCase() === "staff") navigate("/staffDashboard");
-      else if (role.toLowerCase() === "consultant")
-        navigate("/consultantDashboard");
+      if (role.toLowerCase() === "admin") navigate("/admin");
+      else if (role.toLowerCase() === "staff") navigate("/staff");
+      else if (role.toLowerCase() === "manager") navigate("/manager");
+      else if (role.toLowerCase() === "consultant") navigate("/consultant");
       else navigate("/");
     } catch (err) {
       console.error("Login error:", err);

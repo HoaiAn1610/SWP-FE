@@ -8,11 +8,9 @@ import UploadComponent from "./components/upload";
 import Courses from "./pages/auth/course";
 import Login from "./pages/auth/login";
 import Register from "./pages/auth/register";
-import ManageProduct from "./pages/admin/manage-product";
-import ReportPage from "./pages/admin/report";
 import EcommerceHome from "./pages/common/home";
 import ProtectedRoute from "./components/protected-route";
-import LessonPage from "./pages/auth/course/LessonPage";
+
 function App() {
   // Lấy Google Client ID từ .env
   const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
@@ -35,25 +33,46 @@ function App() {
       element: <Courses />,
     },
     {
-  path: "/course/:courseId/lesson",
-  element: <LessonPage />,
-},
-    {
       path: "/adminDashboard",
       element: (
-        <ProtectedRoute role={"Admin"}>
-          <Dashboard />
+        <ProtectedRoute role="Consultant">
+          <ConsultantLayout />
         </ProtectedRoute>
       ),
       children: [
-        {
-          path: "manage-product",
-          element: <ManageProduct />,
-        },
-        {
-          path: "",
-          element: <ReportPage />,
-        },
+        { index: true, element: <Navigate to="appointments" replace /> },
+        { path: "appointments", element: <AppointmentsPage /> },
+        { path: "create-content", element: <CreateContentPage /> },
+        { path: "blog-qa", element: <BlogQApage /> },
+      ],
+    },
+    {
+      path: "/manager",
+      element: (
+        <ProtectedRoute role="Manager">
+          <ManagerLayout />
+        </ProtectedRoute>
+      ),
+      children: [
+        { index: true, element: <Navigate to="overview" replace /> },
+        { path: "overview", element: <OverviewPage /> },
+        { path: "analytics", element: <AnalyticsPage /> },
+        { path: "task-queue", element: <TaskQueuePage /> },
+        { path: "team-schedule", element: <TeamSchedulePage /> },
+      ],
+    },
+    {
+      path: "/staff",
+      element: (
+        <ProtectedRoute role="Staff">
+          <StaffLayout />
+        </ProtectedRoute>
+      ),
+      children: [
+        { index: true, element: <Navigate to="draft-content" replace /> },
+        { path: "draft-content", element: <DraftContentPage /> },
+        { path: "published-content", element: <PublishedContentPage /> },
+        { path: "view-blog-posts", element: <ViewBlogPostsPage /> },
       ],
     },
   ]);
