@@ -9,6 +9,7 @@ import Courses from "./pages/auth/course";
 import Login from "./pages/auth/login";
 import Register from "./pages/auth/register";
 import EcommerceHome from "./pages/common/home";
+
 // import ProtectedRoute from "./components/protected-route";
 // import LessonPage from "@/pages/auth/course/course";
 
@@ -35,6 +36,8 @@ import PlatformSettingsPage from "@/pages/admin/platform-settings";
 import SystemLogsPage from "@/pages/admin/system-logs";
 import ProtectedRoute from "@/components/protected-route";
 import { Navigate } from "react-router-dom";
+
+
 
 function App() {
   // Lấy Google Client ID từ .env
