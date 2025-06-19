@@ -12,7 +12,7 @@ import ManageProduct from "./pages/admin/manage-product";
 import ReportPage from "./pages/admin/report";
 import EcommerceHome from "./pages/common/home";
 import ProtectedRoute from "./components/protected-route";
-
+import LessonPage from "./pages/auth/course/LessonPage";
 function App() {
   // Lấy Google Client ID từ .env
   const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
@@ -34,6 +34,10 @@ function App() {
       path: "/course",
       element: <Courses />,
     },
+    {
+  path: "/course/:courseId/lesson",
+  element: <LessonPage />,
+},
     {
       path: "/adminDashboard",
       element: (
