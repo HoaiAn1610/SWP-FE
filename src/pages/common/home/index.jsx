@@ -28,26 +28,26 @@ const EcommerceHome = () => {
       <Header />
       <section className="py-16 bg-gray-50">
         <div className="container mx-auto px-6">
-          <h2 className="text-3xl font-bold text-center mb-6">
-            Featured Courses
-          </h2>
+
+          <h2 className="text-3xl font-bold text-center mb-6">Featured Courses</h2>
           <CourseList courses={featured} />
 
           {courses.length > 3 && (
             <div className="flex justify-center mt-8">
-              <Link
-                to="/course"
-                className="
-      inline-block
-      bg-indigo-600 text-white
-      px-8 py-3
-      rounded-full
-      hover:bg-indigo-700
-      transition
-    "
-              >
-                View All Courses
-              </Link>
+
+<Link
+  to="/course"
+  className="
+    inline-block
+    bg-indigo-600 text-white
+    px-8 py-3
+    rounded-full
+    hover:bg-indigo-700
+    transition
+  "
+>
+  View All Courses
+</Link>
             </div>
           )}
         </div>

@@ -1,7 +1,8 @@
 // src/components/courses/CourseCard.jsx
 import React from "react";
-
+import { useNavigate } from "react-router-dom";
 const CourseCard = ({ course }) => {
+  const navigate = useNavigate();
   return (
     <div className="bg-white rounded-2xl shadow-lg overflow-hidden flex flex-col h-full">
       {/* Banner màu theo course.color */}
@@ -32,12 +33,12 @@ const CourseCard = ({ course }) => {
         {/* Footer: duration và link */}
         <div className="mt-4 flex items-center justify-between text-sm text-gray-500">
           <span>{course.duration} phút</span>
-          <a
-            href="#"
-            className="text-indigo-600 hover:text-indigo-800 font-semibold"
-          >
-            Start Course →
-          </a>
+    <button
+      onClick={() => navigate(`/course/${course.id}/lesson`)}
+      className="btn btn-sm btn-primary"
+    >
+      Start Course →
+    </button>
         </div>
       </div>
 
