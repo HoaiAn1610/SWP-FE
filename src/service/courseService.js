@@ -1,15 +1,18 @@
 import api from "../config/axios";
 
-/**
- * Gọi API lấy tất cả khóa học từ backend.
- * @returns {Promise<Array>} Mảng các đối tượng khóa học.
- */
 export const getAllCourses = async () => {
-  try {
-    const response = await api.get("/Course/get-all-courses");
-    return response.data; // mảng khóa học
-  } catch (error) {
-    console.error("Error fetching all courses:", error);
-    throw error;
-  }
+  const { data } = await api.get("Course/get-all-courses");
+  return data;
 };
+
+export const getCoursesByLevel = async (level) => {
+  const { data } = await api.get(`Course/get-course-by-level/${level}`);
+  return data;
+};
+
+export const getCoursesByCategory = async (category) => {
+  const { data } = await api.get(`Course/get-courses-by-category/${category}`);
+  return data;
+};
+
+export default { getAllCourses, getCoursesByLevel, getCoursesByCategory };

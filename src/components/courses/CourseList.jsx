@@ -1,16 +1,13 @@
 // src/components/courses/CourseList.jsx
 import React from 'react';
-import { Row, Col } from 'react-bootstrap';
 import CourseCard from './CourseCard';
 
 const CourseList = ({ courses }) => (
-  <Row className="g-4"> {/* g-4 = 1.5rem gutter */}
-    {courses.map((c) => (
-      <Col key={c.id} xs={12} sm={6} md={4}>
-        <CourseCard course={c} />
-      </Col>
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    {courses.map(c => (
+      <CourseCard key={c.id} course={c} />
     ))}
-  </Row>
+  </div>
 );
 
 export default CourseList;
