@@ -5,7 +5,7 @@ import { RouterProvider, createBrowserRouter } from "react-router-dom";
 
 import Dashboard from "./components/dashboard";
 import UploadComponent from "./components/upload";
-import Courses from "./pages/course";
+import Courses from "./pages/auth/course";
 import Login from "./pages/auth/login";
 import Register from "./pages/auth/register";
 import ManageProduct from "./pages/admin/manage-product";
