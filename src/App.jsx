@@ -11,7 +11,7 @@ import Register from "./pages/auth/register";
 import EcommerceHome from "./pages/common/home";
 
 // import ProtectedRoute from "./components/protected-route";
-// import LessonPage from "@/pages/auth/course/course";
+import LessonPage from "@/pages/auth/course/LessonPage";
 
 import ManagerLayout from "@/pages/manager/ManagerLayout";
 import OverviewPage from "@/pages/manager/overview";
@@ -60,10 +60,10 @@ function App() {
       path: "/course",
       element: <Courses />,
     },
-    // {
-    //   path: "/course/:courseId/lesson",
-    //   element: <LessonPage />,
-    // },
+    {
+      path: "/course/:courseId/lesson",
+      element: <LessonPage />,
+    },
     {
       path: "/admin",
       element: (
