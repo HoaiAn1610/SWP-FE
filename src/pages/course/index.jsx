@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Container, Row, Col, Spinner } from "react-bootstrap";
 import api from "../../config/axios";
-import FilterPanel from "../component/courses/FilterPanel";
-import CourseList from "../component/courses/CourseList";
-import CustomPagination from "../component/courses/Pagination";
+import FilterPanel from "@/components/courses/FilterPanel";
+import CourseList from "@/components/courses/CourseList";
+import CustomPagination from "@/components/courses/Pagination";
 
 const Courses = () => {
   const [courses, setCourses] = useState([]);
