@@ -3,15 +3,15 @@ import React from "react";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { RouterProvider, createBrowserRouter } from "react-router-dom";
 
-import Dashboard from "./component/dashboard";
-import UploadComponent from "./component/upload";
+import Dashboard from "./components/dashboard";
+import UploadComponent from "./components/upload";
 import Courses from "./pages/course";
 import Login from "./pages/auth/login";
 import Register from "./pages/auth/register";
 import ManageProduct from "./pages/admin/manage-product";
 import ReportPage from "./pages/admin/report";
 import EcommerceHome from "./pages/common/home";
-import ProtectedRoute from "./component/protected-route";
+import ProtectedRoute from "./components/protected-route";
 
 function App() {
   // Lấy Google Client ID từ .env
