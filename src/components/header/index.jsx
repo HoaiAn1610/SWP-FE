@@ -104,13 +104,7 @@ const Header = () => {
             </Link>
           )}
 
-          <div className="relative">
-            <FiShoppingCart
-              size={20}
-              className="text-gray-700 hover:text-blue-600 transition cursor-pointer"
-            />
-            {/* cart badge có thể thêm ở đây */}
-          </div>
+        
         </div>
       </div>
     </header>

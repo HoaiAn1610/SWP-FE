@@ -1,33 +1,48 @@
+// src/components/courses/CourseCard.jsx
 import React from "react";
-import { Card, Badge } from "react-bootstrap";
 
 const CourseCard = ({ course }) => {
   return (
-    <Card className="h-100 shadow-sm">
-      <Card.Img
-        variant="top"
-        src={course.image}
-        alt={course.title}
-        style={{ objectFit: "cover", height: "180px" }}
-      />
-      <Card.Body className="d-flex flex-column">
-        <Badge bg="info" className="mb-2 align-self-start">
+    <div className="bg-white rounded-2xl shadow-lg overflow-hidden flex flex-col h-full">
+      {/* Banner màu theo course.color */}
+            <div className="h-60 overflow-hidden">
+        <img
+          src={course.image}            // URL ảnh từ API, ví dụ "/img/ma_tuy.jpg"
+          alt={course.title}
+          className="w-full h-full object-cover"
+        />
+      </div>
+
+      <div className="p-6 flex-1 flex flex-col">
+        {/* Level badge */}
+        <span className="inline-block bg-white bg-opacity-50 text-xs font-semibold text-gray-800 rounded-full py-1 mb-3">
           {course.level}
-        </Badge>
-        <Card.Title>{course.title}</Card.Title>
-        <Card.Text className="flex-grow-1">
+        </span>
+
+        {/* Title */}
+        <h3 className="text-lg font-bold mb-2 text-gray-900">
+          {course.title}
+        </h3>
+
+        {/* Description */}
+        <p className="text-sm text-gray-600 flex-1">
           {course.description.slice(0, 100)}...
-        </Card.Text>
-        <div className="mt-2">
-          <small className="text-muted">{course.duration} giờ</small>
+        </p>
+
+        {/* Footer: duration và link */}
+        <div className="mt-4 flex items-center justify-between text-sm text-gray-500">
+          <span>{course.duration} phút</span>
+          <a
+            href="#"
+            className="text-indigo-600 hover:text-indigo-800 font-semibold"
+          >
+            Start Course →
+          </a>
         </div>
-      </Card.Body>
-      <Card.Footer>
-        <small>
-          ⭐ {course.rating} ({course.reviews} reviews)
-        </small>
-      </Card.Footer>
-    </Card>
+      </div>
+
+     
+    </div>
   );
 };
 
