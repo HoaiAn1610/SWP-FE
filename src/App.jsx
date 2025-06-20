@@ -37,8 +37,6 @@ import SystemLogsPage from "@/pages/admin/system-logs";
 import ProtectedRoute from "@/components/protected-route";
 import { Navigate } from "react-router-dom";
 
-
-
 function App() {
   // Lấy Google Client ID từ .env
   const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
