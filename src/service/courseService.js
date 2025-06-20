@@ -1,18 +1,30 @@
+// src/service/courseService.js
 import api from "../config/axios";
 
 export const getAllCourses = async () => {
   const { data } = await api.get("/Course/get-all-courses");
-  return data;
+  // Chỉ giữ lại những khóa có status === "Approved"
+  return Array.isArray(data)
+    ? data.filter((course) => course.status === "Approved")
+    : [];
 };
 
 export const getCoursesByLevel = async (level) => {
   const { data } = await api.get(`/Course/get-course-by-level/${level}`);
-  return data;
+  return Array.isArray(data)
+    ? data.filter((course) => course.status === "Approved")
+    : [];
 };
 
 export const getCoursesByCategory = async (category) => {
   const { data } = await api.get(`/Course/get-courses-by-category/${category}`);
-  return data;
+  return Array.isArray(data)
+    ? data.filter((course) => course.status === "Approved")
+    : [];
 };
 
-export default { getAllCourses, getCoursesByLevel, getCoursesByCategory };
+export default {
+  getAllCourses,
+  getCoursesByLevel,
+  getCoursesByCategory,
+};
