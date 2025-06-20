@@ -12,6 +12,7 @@ import EcommerceHome from "./pages/common/home";
 
 // import ProtectedRoute from "./components/protected-route";
 import LessonPage from "@/pages/auth/course/LessonPage";
+import QuizPage from "@/pages/auth/course/QuizPage";
 
 import ManagerLayout from "@/pages/manager/ManagerLayout";
 import OverviewPage from "@/pages/manager/overview";
@@ -61,6 +62,9 @@ function App() {
     {
       path: "/course/:courseId/lesson",
       element: <LessonPage />,
+    },
+    { path: "/course/:courseId/quiz" ,
+      element: <QuizPage />,
     },
     {
       path: "/admin",
