@@ -1,54 +1,59 @@
-// src/pages/consultant/ConsultantLayout.jsx
 import React from "react";
 import { Layout, Menu, Avatar, Dropdown, Space } from "antd";
 import {
   CalendarOutlined,
   EditOutlined,
-  MessageOutlined,
+  CommentOutlined,
 } from "@ant-design/icons";
-import { Outlet, useNavigate, useLocation, Navigate } from "react-router-dom";
+import { Outlet, useNavigate, useLocation } from "react-router-dom";
 
-const { Sider, Content, Header } = Layout;
+const { Sider, Header, Content } = Layout;
 
 const menuItems = [
-  { key: "appointments", icon: <CalendarOutlined />, label: "Appointments" },
-  { key: "create-content", icon: <EditOutlined />, label: "Create Content" },
+  {
+    key: "appointments",
+    icon: <CalendarOutlined />,
+    label: "Appointments",
+    to: "appointments",
+  },
+  {
+    key: "create-content",
+    icon: <EditOutlined />,
+    label: "Create Content",
+    to: "create-content",
+  },
   {
     key: "blog-qa",
-    icon: <MessageOutlined />,
-    edit: "Blog Q&A",
+    icon: <CommentOutlined />,
     label: "Blog Q&A",
+    to: "blog-qa",
   },
 ];
 
-const ConsultantLayout = () => {
+export default function ConsultantLayout() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
-
-  // Lấy phần key sau "/consultant/"
-  const selectedKey = pathname.split("/")[2] || "appointments";
-
-  const onMenuClick = ({ key }) => {
-    navigate(`/consultant/${key}`);
-  };
+  // Lấy segment cuối sau "/consultant/"
+  const current = pathname.split("/")[2] || "appointments";
 
   return (
     <Layout style={{ minHeight: "100vh" }}>
       <Sider collapsedWidth={0}>
         <div
-          className="logo"
-          style={{
-            height: 32,
-            margin: 16,
-            background: "rgba(255,255,255,0.3)",
-          }}
-        />
+          style={{ height: 64, margin: "16px", color: "#fff", fontSize: 18 }}
+        >
+          PreventionHub Pro
+        </div>
         <Menu
           theme="dark"
           mode="inline"
-          selectedKeys={[selectedKey]}
-          items={menuItems}
-          onClick={onMenuClick}
+          selectedKeys={[current]}
+          onClick={({ key }) => navigate(`/consultant/${key}`)}
+          items={menuItems.map((i) => ({
+            key: i.key,
+            icon: i.icon,
+            label: i.label,
+          }))}
         />
         <div
           style={{
@@ -58,9 +63,7 @@ const ConsultantLayout = () => {
             textAlign: "center",
           }}
         >
-          <Avatar size="large" style={{ backgroundColor: "#7265e6" }}>
-            SM
-          </Avatar>
+          <Avatar style={{ backgroundColor: "#7265e6" }}>SM</Avatar>
           <div style={{ color: "#fff", marginTop: 8 }}>Dr. Sarah Mitchell</div>
           <div style={{ color: "#aaa", fontSize: 12 }}>Licensed Therapist</div>
         </div>
@@ -68,21 +71,13 @@ const ConsultantLayout = () => {
 
       <Layout>
         <Header style={{ background: "#fff", padding: "0 24px" }}>
-          {/* TODO: thêm dropdown notification nếu cần */}
+          {/* Bạn có thể thêm notification dropdown ở đây */}
         </Header>
-        <Content
-          style={{
-            margin: "24px",
-            padding: 24,
-            background: "#fff",
-            borderRadius: 8,
-          }}
-        >
+
+        <Content style={{ margin: "24px" }}>
           <Outlet />
         </Content>
       </Layout>
     </Layout>
   );
-};
-
-export default ConsultantLayout;
+}
