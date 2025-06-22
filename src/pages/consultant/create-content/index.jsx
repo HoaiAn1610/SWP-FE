@@ -97,11 +97,11 @@ export default function ConsultantCreateContentPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <ConsultantHeader />
+
 
       <div className="flex">
         {/* Sidebar */}
-        <aside className="w-64 bg-white shadow p-6 space-y-4">
+        {/* <aside className="w-64 bg-white shadow p-6 space-y-4">
           <Link
             to="/consultant/appointments"
             className="block px-3 py-2 rounded hover:bg-gray-100"
@@ -120,7 +120,7 @@ export default function ConsultantCreateContentPage() {
           >
             Blog Q&A
           </Link>
-        </aside>
+        </aside> */}
 
         {/* Main content */}
         <main className="flex-1 p-8 space-y-8">

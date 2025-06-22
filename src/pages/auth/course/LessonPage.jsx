@@ -1,4 +1,3 @@
-// src/pages/auth/course/LessonPage.jsx
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Header from "@/components/header";
@@ -30,7 +29,6 @@ const LessonPage = () => {
         );
         setMaterials(data);
 
-        // 3) (optional) enroll user
         // await api.post(`/CourseEnrollment/courses/${courseId}/enroll`, {});
       } catch (err) {
         console.error(err);
@@ -47,7 +45,6 @@ const LessonPage = () => {
 
   // 4) Tìm video đầu tiên trong materials
   const videoItem = materials.find((m) => m.type === "Video");
-  // Nếu url không có "/" đầu, thêm vào để trỏ đúng public folder
   const videoSrc =
     videoItem && videoItem.url
       ? videoItem.url.startsWith("/") ? videoItem.url : `/${videoItem.url}`

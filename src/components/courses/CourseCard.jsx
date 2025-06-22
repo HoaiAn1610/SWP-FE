@@ -1,4 +1,3 @@
-// src/components/courses/CourseCard.jsx
 import React from "react";
 import { useNavigate } from "react-router-dom";
 const CourseCard = ({ course }) => {
@@ -8,7 +7,7 @@ const CourseCard = ({ course }) => {
       {/* Banner màu theo course.color */}
             <div className="h-60 overflow-hidden">
         <img
-          src={course.image}            // URL ảnh từ API, ví dụ "/img/ma_tuy.jpg"
+          src={course.image}
           alt={course.title}
           className="w-full h-full object-cover"
         />
