@@ -2,35 +2,50 @@
 import { useState } from "react";
 import { FaGoogle, FaEye, FaEyeSlash } from "react-icons/fa";
 import { MdEmail, MdLock } from "react-icons/md";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { toast } from "react-toastify";
 import api from "../../../config/axios";
 import { GoogleLogin } from "@react-oauth/google";
-// (Optional) replace with your real logo path:
 import logo from "../../../assets/logo.png";
 
-
 const LoginPage = () => {
+  const navigate = useNavigate();
+  const { search } = useLocation();
+  const params = new URLSearchParams(search);
+  const redirect = params.get("redirect"); // sẽ là "/course/3/lesson" hoặc null
+
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const navigate = useNavigate();
+
+  // Hàm chung để điều hướng sau khi login thành công
+  const goAfterLogin = (role) => {
+    if (redirect) {
+      navigate(redirect, { replace: true });
+    } else {
+      const r = role.toLowerCase();
+      if (r === "admin") navigate("/admin", { replace: true });
+      else if (r === "staff") navigate("/staff", { replace: true });
+      else if (r === "manager") navigate("/manager", { replace: true });
+      else if (r === "consultant") navigate("/consultant", { replace: true });
+      else navigate("/", { replace: true });
+    }
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((p) => ({ ...p, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const response = await api.post("Auth/login", {
+      const { data } = await api.post("Auth/login", {
         email: formData.email,
         password: formData.password,
       });
-      // const { id, email, role } = response.data;
-      const { id, email, role, name } = response.data;
+      const { id, email, role, name } = data;
 
       localStorage.setItem("id", id);
       localStorage.setItem("email", email);
@@ -38,20 +53,15 @@ const LoginPage = () => {
       localStorage.setItem("name", name);
 
       toast.success("Đăng nhập thành công!");
-
-      if (role.toLowerCase() === "admin") navigate("/admin");
-      else if (role.toLowerCase() === "staff") navigate("/staff");
-      else if (role.toLowerCase() === "manager") navigate("/manager");
-      else if (role.toLowerCase() === "consultant") navigate("/consultant");
-      else navigate("/");
+      goAfterLogin(role);
     } catch (err) {
-      console.error("Login error:", err);
-      const message =
+      console.error(err);
+      const msg =
         err.response?.data?.message ||
         err.response?.data ||
         err.message ||
         "Lỗi không xác định";
-      toast.error(message);
+      toast.error(msg);
     } finally {
       setIsLoading(false);
     }
@@ -74,16 +84,16 @@ const LoginPage = () => {
           </p>
         </div>
 
-        {/* Tabs */}
+        {/* Tabs: giữ luôn redirect khi chuyển tab */}
         <div className="bg-gray-100 rounded-lg flex overflow-hidden">
           <Link
-            to="/login"
+            to={`/login${redirect ? `?redirect=${encodeURIComponent(redirect)}` : ""}`}
             className="flex-1 text-center py-2 bg-white text-blue-600 font-medium"
           >
             Login
           </Link>
           <Link
-            to="/register"
+            to={`/register${redirect ? `?redirect=${encodeURIComponent(redirect)}` : ""}`}
             className="flex-1 text-center py-2 text-gray-500 hover:bg-white hover:text-blue-600 font-medium"
           >
             Register
@@ -92,7 +102,6 @@ const LoginPage = () => {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Email */}
           <div className="relative">
             <MdEmail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
             <input
@@ -107,7 +116,6 @@ const LoginPage = () => {
             />
           </div>
 
-          {/* Password */}
           <div className="relative">
             <MdLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
             <input
@@ -129,7 +137,6 @@ const LoginPage = () => {
             </button>
           </div>
 
-          {/* Remember & Forgot */}
           <div className="flex items-center justify-between text-sm">
             <label className="flex items-center">
               <input
@@ -138,15 +145,11 @@ const LoginPage = () => {
               />
               <span className="ml-2 text-gray-600">Remember me</span>
             </label>
-            <Link
-              to="/forgot-password"
-              className="text-blue-600 hover:underline"
-            >
+            <Link to="/forgot-password" className="text-blue-600 hover:underline">
               Forgot password?
             </Link>
           </div>
 
-          {/* Sign In */}
           <button
             type="submit"
             disabled={isLoading}
@@ -156,39 +159,34 @@ const LoginPage = () => {
           </button>
         </form>
 
-        {/* Divider */}
         <div className="relative my-6">
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-gray-300"></div>
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-white text-gray-500">
-              Or continue with
-            </span>
+            <span className="px-2 bg-white text-gray-500">Or continue with</span>
           </div>
         </div>
 
-        {/* Social Login */}
+        {/* Google Login */}
         <div className="text-center my-3">
           <GoogleLogin
             onSuccess={async (credentialResponse) => {
               setIsLoading(true);
               try {
-                const idToken = credentialResponse.credential; // ← đây là JWT ID Token
-                console.log("ID Token:", idToken);
-
+                const idToken = credentialResponse.credential;
                 const { data } = await api.post("Auth/google-login", {
                   googleToken: idToken,
                 });
-                const { id, name, email, role } = data;
+                const { id, email, role, name } = data;
+
                 localStorage.setItem("id", id);
                 localStorage.setItem("email", email);
                 localStorage.setItem("role", role);
                 localStorage.setItem("name", name);
-                console.log("Login data:", data);
 
                 toast.success("Đăng nhập với Google thành công!");
-                navigate(role === "ADMIN" ? "/dashboard" : "/");
+                goAfterLogin(role);
               } catch (err) {
                 console.error(err);
                 toast.error("Không thể đăng nhập với Google.");
@@ -199,24 +197,22 @@ const LoginPage = () => {
             onError={() => {
               toast.error("Google Sign-In thất bại.");
             }}
-            useOneTap={false} // tắt One-Tap nếu không cần
+            useOneTap={false}
           />
         </div>
 
-        {/* Bottom Links & Footnote */}
         <div className="text-center mt-6 space-y-2">
           <p className="text-gray-600 text-sm">
             Don’t have an account?{" "}
             <Link
-              to="/register"
+              to={`/register${redirect ? `?redirect=${encodeURIComponent(redirect)}` : ""}`}
               className="text-blue-600 font-medium hover:underline"
             >
               Sign up
             </Link>
           </p>
           <p className="text-xs text-gray-400">
-            By continuing, you agree to our commitment to youth safety and
-            prevention education
+            By continuing, you agree to our commitment to youth safety and prevention education
           </p>
         </div>
       </div>

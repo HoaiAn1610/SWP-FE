@@ -1,11 +1,10 @@
+// src/components/courses/CourseCard.jsx
 import React from "react";
-import { useNavigate } from "react-router-dom";
-const CourseCard = ({ course }) => {
-  const navigate = useNavigate();
+
+export default function CourseCard({ course, status, onSelect }) {
   return (
     <div className="bg-white rounded-2xl shadow-lg overflow-hidden flex flex-col h-full">
-      {/* Banner màu theo course.color */}
-            <div className="h-60 overflow-hidden">
+      <div className="h-48 overflow-hidden">
         <img
           src={course.image}
           alt={course.title}
@@ -14,36 +13,39 @@ const CourseCard = ({ course }) => {
       </div>
 
       <div className="p-6 flex-1 flex flex-col">
-        {/* Level badge */}
-        <span className="inline-block bg-white bg-opacity-50 text-xs font-semibold text-gray-800 rounded-full py-1 mb-3">
-          {course.level}
-        </span>
+        <div className="flex items-center space-x-2 mb-3">
+          {course.level && (
+            <span className="inline-block bg-indigo-100 text-indigo-800 rounded-full px-2 py-1 text-xs font-medium">
+              Level: {course.level}
+            </span>
+          )}
+          {status && (
+            <span className="inline-block bg-green-100 text-green-800 rounded-full px-2 py-1 text-xs font-medium">
+              {status}
+            </span>
+          )}
+        </div>
 
-        {/* Title */}
-        <h3 className="text-lg font-bold mb-2 text-gray-900">
+        <h3 className="text-lg font-bold text-gray-800 mb-2">
           {course.title}
         </h3>
 
-        {/* Description */}
         <p className="text-sm text-gray-600 flex-1">
-          {course.description.slice(0, 100)}...
+          {course.description.length > 100
+            ? `${course.description.slice(0, 100)}...`
+            : course.description}
         </p>
 
-        {/* Footer: duration và link */}
         <div className="mt-4 flex items-center justify-between text-sm text-gray-500">
           <span>{course.duration} phút</span>
-    <button
-      onClick={() => navigate(`/course/${course.id}/lesson`)}
-      className="btn btn-sm btn-primary"
-    >
-      Start Course →
-    </button>
+          <button
+            onClick={() => onSelect(course)}
+            className="px-3 py-1 rounded-md text-white bg-indigo-600 hover:bg-indigo-700 transition"
+          >
+            Learn More →
+          </button>
         </div>
       </div>
-
-     
     </div>
   );
-};
-
-export default CourseCard;
+}
