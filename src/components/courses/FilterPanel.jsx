@@ -1,4 +1,3 @@
-// src/components/courses/FilterPanel.jsx
 import React from "react";
 import "./FilterPanel.css";
 
@@ -14,7 +13,7 @@ const categories = [
 ];
 
 const FilterPanel = ({ filters, onFilterChange, onClearFilters }) => (
-  <div className="filter-panel">  {/* ← gán class ở đây */}
+  <div className="filter-panel">  
     <h5>Filter Courses</h5>
 
     <div className="section-title">Level</div>

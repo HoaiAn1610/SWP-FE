@@ -28,10 +28,10 @@ const Header = () => {
 export default function BlogQAPage() {
   return (
     <div className="min-h-screen bg-gray-50">
-      <ConsultantHeader />
+
 
       <div className="flex">
-        <aside className="w-64 bg-white shadow p-4 space-y-2">
+        {/* <aside className="w-64 bg-white shadow p-4 space-y-2">
           <Link
             to="/consultant/appointments"
             className="block px-3 py-2 rounded hover:bg-gray-100"
@@ -50,7 +50,7 @@ export default function BlogQAPage() {
           >
             Blog Q&A
           </Link>
-        </aside>
+        </aside> */}
 
         <main className="flex-1 p-6">
           <h1 className="text-2xl font-semibold mb-4">Blog Q&A</h1>

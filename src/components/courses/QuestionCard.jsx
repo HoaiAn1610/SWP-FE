@@ -1,4 +1,3 @@
-// src/components/courses/QuestionCard.jsx
 import React from "react";
 
 const QuestionCard = ({ question, onAnswer, selectedAnswer }) => {
@@ -16,7 +15,7 @@ const QuestionCard = ({ question, onAnswer, selectedAnswer }) => {
               name={`question-${question.id}`}
               value={opt.id}
               checked={selectedAnswer === opt.id}
-              onChange={() => onAnswer(opt.id)}  // truyền id của option
+              onChange={() => onAnswer(opt.id)}  
               className="mr-2"
             />
             <label htmlFor={`q${question.id}-opt${opt.id}`} className="text-gray-700">

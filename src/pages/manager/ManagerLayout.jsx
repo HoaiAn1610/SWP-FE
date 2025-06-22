@@ -1,74 +1,44 @@
 // src/pages/manager/ManagerLayout.jsx
 import React from "react";
-import { Layout, Menu, Dropdown, Space, Avatar } from "antd";
-import {
-  BarChartOutlined,
-  LineChartOutlined,
-  UnorderedListOutlined,
-  CalendarOutlined,
-} from "@ant-design/icons";
-import { Outlet, useNavigate, useLocation, Navigate } from "react-router-dom";
+import { NavLink, Outlet } from "react-router-dom";
+import Header from "@/components/header";
 
-const { Header, Content, Sider } = Layout;
 
-const tabs = [
-  { key: "overview", icon: <BarChartOutlined />, label: "Overview" },
-  { key: "analytics", icon: <LineChartOutlined />, label: "Analytics" },
-  { key: "task-queue", icon: <UnorderedListOutlined />, label: "Task Queue" },
-  { key: "team-schedule", icon: <CalendarOutlined />, label: "Team Schedule" },
-];
 
 export default function ManagerLayout() {
-  const navigate = useNavigate();
-  const { pathname } = useLocation();
-  const activeKey = pathname.split("/")[2] || "overview";
-
+  const navItems = [
+  { to: "overview",      label: "Overview" },
+  { to: "analytics",     label: "Analytics" },
+  { to: "task-queue",    label: "Task Queue" },
+  { to: "team-schedule", label: "Team Schedule" },
+];
   return (
-    <Layout style={{ minHeight: "100vh" }}>
-      <Sider collapsedWidth={0} theme="light">
-        <div style={{ height: 64, margin: 16, fontSize: 18, fontWeight: 600 }}>
-          PreventionHub Dashboard
+          <><Header /><div className="flex min-h-screen bg-gray-50">
+      {/* Sidebar */}
+      <aside className="w-64 bg-white border-r shadow-sm">
+        <div className="p-6">
+          <h2 className="text-xl font-bold mb-8">Manager Dashboard</h2>
+          <nav className="space-y-2">
+            {navItems.map(({ to, label }) => (
+              <NavLink
+                key={to}
+                to={to}
+                end
+                className={({ isActive }) => `block px-4 py-2 rounded-md font-medium ${isActive
+                    ? "bg-indigo-600 text-white"
+                    : "text-gray-700 hover:bg-gray-100"}`}
+              >
+                {label}
+              </NavLink>
+            ))}
+          </nav>
         </div>
-        <Menu
-          mode="inline"
-          selectedKeys={[activeKey]}
-          onClick={({ key }) => navigate(`/manager/${key}`)}
-          items={tabs.map((tab) => ({
-            key: tab.key,
-            icon: tab.icon,
-            label: tab.label,
-          }))}
-        />
-      </Sider>
+      </aside>
 
-      <Layout>
-        <Header
-          style={{
-            background: "#fff",
-            padding: "0 24px",
-            display: "flex",
-            justifyContent: "flex-end",
-          }}
-        >
-          <Space size="middle">
-            <Dropdown
-              menu={{
-                items: [
-                  { key: "7", label: "Last 7 days" },
-                  { key: "30", label: "Last 30 days" },
-                ],
-              }}
-            >
-              <a onClick={(e) => e.preventDefault()}>Last 7 days</a>
-            </Dropdown>
-            <Avatar style={{ backgroundColor: "#7265e6" }}>PM</Avatar>
-          </Space>
-        </Header>
-
-        <Content style={{ margin: 24 }}>
-          <Outlet />
-        </Content>
-      </Layout>
-    </Layout>
+      {/* Main content: Outlet là nơi render OverviewPage, AnalyticsPage, ... */}
+      <main className="flex-1 p-8">
+        <Outlet />
+      </main>
+    </div></>
   );
 }

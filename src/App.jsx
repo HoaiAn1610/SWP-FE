@@ -10,7 +10,7 @@ import Login from "./pages/auth/login";
 import Register from "./pages/auth/register";
 import EcommerceHome from "./pages/common/home";
 
-// import ProtectedRoute from "./components/protected-route";
+// import ProtectedRoute from "@/components/protected-route";
 import LessonPage from "@/pages/auth/course/LessonPage";
 import QuizPage from "@/pages/auth/course/QuizPage";
 
