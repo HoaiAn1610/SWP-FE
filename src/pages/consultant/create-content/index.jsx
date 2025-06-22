@@ -1,7 +1,6 @@
 // src/pages/consultant/create-content/index.jsx
 import React, { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import ConsultantHeader from "../ConsultantHeader ";
 import api from "@/config/axios"; // axios instance
 import { uploadFile } from "@/utils/upload"; // helper uploadFile
 import { FiUser } from "react-icons/fi";
@@ -91,6 +90,22 @@ export default function ConsultantCreateContentPage() {
     });
   };
 
+  // Load lại danh sách courses
+  const reloadCourses = async () => {
+    try {
+      const { data } = await api.get(
+        `Course/get-courses-by-createById/${currentUserId}`
+      );
+      setCourses(data);
+    } catch (err) {
+      console.error("Lỗi fetch courses:", err);
+    }
+  };
+
+  useEffect(() => {
+    if (currentUserId) reloadCourses();
+  }, [currentUserId]);
+
   // Xử lý material form
   const openMaterialForm = (courseId) => {
     setSelectedCourseId(courseId);
@@ -110,6 +125,7 @@ export default function ConsultantCreateContentPage() {
       [name]: type === "number" ? Number(value) : value,
     }));
   };
+  // Chọn file và upload
   const handleMaterialFileSelect = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -131,18 +147,31 @@ export default function ConsultantCreateContentPage() {
     setMaterialFormVisible(false);
   };
 
-  const handleLogout = () => {
-    localStorage.clear();
-    window.location.href = "/login";
+  // Hàm gọi submit-to-staff
+  const handleSubmitToStaff = async (courseId) => {
+    if (
+      !window.confirm("Bạn có chắc muốn submit khóa học này lên Staff không?")
+    ) {
+      return;
+    }
+    try {
+      // POST lên backend
+      await api.post(`/Course/${courseId}/submit-to-staff`);
+      alert("Đã gửi lên Staff thành công!");
+      // Reload lại list để cập nhật workflowState + remove khỏi Draft list
+      await reloadCourses();
+    } catch (err) {
+      console.error("Submit to staff lỗi:", err);
+      alert(
+        "Có lỗi khi gửi lên Staff. Khóa học có thể không ở trạng thái Draft."
+      );
+    }
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-
-
       <div className="flex">
-        {/* Sidebar */}
+        {/* Sidebar (bỏ comment nếu cần) */}
         {/* <aside className="w-64 bg-white shadow p-6 space-y-4">
           <Link
             to="/consultant/appointments"
@@ -319,7 +348,7 @@ export default function ConsultantCreateContentPage() {
               onSubmit={handleMaterialSubmit}
               className="bg-white p-6 rounded shadow space-y-4"
             >
-              {/* Thêm hàng flex để chứa tiêu đề và nút Close */}
+              {/* Header form */}
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-semibold">
                   Add Material to Course #{selectedCourseId}
@@ -433,43 +462,50 @@ export default function ConsultantCreateContentPage() {
               <p className="text-gray-500">Bạn chưa tạo khóa học nào.</p>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {courses.map((c) => (
-                  <div
-                    key={c.id}
-                    className="bg-white p-6 rounded shadow flex flex-col justify-between"
-                  >
-                    <div>
-                      <h3 className="text-lg font-semibold mb-2">{c.title}</h3>
-                      <p className="text-gray-600 text-sm mb-2">
-                        Level: {c.level} • Duration: {c.duration} phút
-                      </p>
-                      <p className="text-gray-500 text-sm mb-4">
-                        Status: {c.status}
-                      </p>
-                    </div>
-                    <div>
-                      {/* Add/Edit/View */}
-                      <div className="flex space-x-2 mb-2">
-                        <button
-                          onClick={() => openMaterialForm(c.id)}
-                          className="flex-1 px-3 py-2 bg-blue-600 text-white rounded"
-                        >
-                          Add
-                        </button>
-                        <Link
-                          to={`/consultant/course/${c.id}`}
-                          className="flex-1 px-3 py-2 bg-green-600 text-white rounded text-center"
-                        >
-                          View
-                        </Link>
+                {courses
+                  .filter((c) => c.workflowState === "Draft")
+                  .map((c) => (
+                    <div
+                      key={c.id}
+                      className="bg-white p-6 rounded shadow flex flex-col justify-between"
+                    >
+                      <div>
+                        <h3 className="text-lg font-semibold mb-2">
+                          {c.title}
+                        </h3>
+                        <p className="text-gray-600 text-sm mb-2">
+                          Level: {c.level} • Duration: {c.duration} phút
+                        </p>
+                        <p className="text-gray-500 text-sm mb-4">
+                          Status: {c.status}
+                        </p>
                       </div>
-                      {/* nút vàng riêng dưới */}
-                      <button className="w-full px-3 py-2 bg-yellow-500 text-white rounded">
-                        Send content to staff
-                      </button>
+                      <div>
+                        <div className="flex space-x-2 mb-2">
+                          <button
+                            onClick={() => openMaterialForm(c.id)}
+                            className="flex-1 px-3 py-2 bg-blue-600 text-white rounded"
+                          >
+                            Add
+                          </button>
+                          <button
+                            onClick={() =>
+                              navigate(`/consultant/course/${c.id}`)
+                            }
+                            className="flex-1 px-3 py-2 bg-green-600 text-white rounded"
+                          >
+                            View
+                          </button>
+                        </div>
+                        <button
+                          onClick={() => handleSubmitToStaff(c.id)}
+                          className="w-full px-3 py-2 bg-yellow-500 text-white rounded"
+                        >
+                          Sent to Staff
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
               </div>
             )}
           </div>

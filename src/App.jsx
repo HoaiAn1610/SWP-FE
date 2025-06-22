@@ -16,7 +16,7 @@ import QuizPage from "@/pages/auth/course/QuizPage";
 
 import ManagerLayout from "@/pages/manager/ManagerLayout";
 import OverviewPage from "@/pages/manager/overview";
-import AnalyticsPage from "@/pages/manager/analytics";
+import ApprovedPage from "@/pages/manager/approved";
 import TaskQueuePage from "@/pages/manager/task-queue";
 import TeamSchedulePage from "@/pages/manager/team-schedule";
 
@@ -24,11 +24,13 @@ import StaffLayout from "@/pages/staff/StaffLayout";
 import DraftContentPage from "@/pages/staff/draft-content";
 import PublishedContentPage from "@/pages/staff/published-content";
 import ViewBlogPostsPage from "@/pages/staff/view-blog-posts";
+import ViewStaffCoursePage from "./pages/staff/view-course-page";
 
 import ConsultantLayout from "@/pages/consultant/ConsultantLayout";
 import AppointmentsPage from "@/pages/consultant/appointments";
 import CreateContentPage from "@/pages/consultant/create-content";
 import BlogQApage from "@/pages/consultant/blog-qa";
+import ViewConsultantCoursePage from "./pages/consultant/view-course-page";
 
 import ErrorPage from "@/components/error";
 import AdminLayout from "@/pages/admin/AdminLayout";
@@ -63,9 +65,7 @@ function App() {
       path: "/course/:courseId/lesson",
       element: <LessonPage />,
     },
-    { path: "/course/:courseId/quiz" ,
-      element: <QuizPage />,
-    },
+    { path: "/course/:courseId/quiz", element: <QuizPage /> },
     {
       path: "/admin",
       element: (
@@ -93,6 +93,7 @@ function App() {
         { path: "appointments", element: <AppointmentsPage /> },
         { path: "create-content", element: <CreateContentPage /> },
         { path: "blog-qa", element: <BlogQApage /> },
+        { path: "course/:courseId", element: <ViewConsultantCoursePage /> },
       ],
     },
     {
@@ -105,7 +106,7 @@ function App() {
       children: [
         { index: true, element: <Navigate to="overview" replace /> },
         { path: "overview", element: <OverviewPage /> },
-        { path: "analytics", element: <AnalyticsPage /> },
+        { path: "approved", element: <ApprovedPage /> },
         { path: "task-queue", element: <TaskQueuePage /> },
         { path: "team-schedule", element: <TeamSchedulePage /> },
       ],
@@ -122,6 +123,7 @@ function App() {
         { path: "draft-content", element: <DraftContentPage /> },
         { path: "published-content", element: <PublishedContentPage /> },
         { path: "view-blog-posts", element: <ViewBlogPostsPage /> },
+        { path: "course/:courseId", element: <ViewStaffCoursePage /> },
       ],
     },
   ]);
