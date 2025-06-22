@@ -1,4 +1,3 @@
-// src/pages/auth/course/QuizPage.jsx
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Header from "@/components/header";
@@ -10,11 +9,11 @@ const QuizPage = () => {
   const navigate     = useNavigate();
 
   const [questions, setQuestions]           = useState([]);
-  const [answers, setAnswers]               = useState({}); // { [questionId]: selectedOptionId }
+  const [answers, setAnswers]               = useState({}); 
   const [loading, setLoading]               = useState(true);
   const [error, setError]                   = useState(null);
   const [currentIndex, setCurrentIndex]     = useState(0);
-  const [result, setResult]                 = useState(null); // { score, total }
+  const [result, setResult]                 = useState(null); 
 
   // 1) Lấy câu hỏi khi component mount
   useEffect(() => {
@@ -22,7 +21,6 @@ const QuizPage = () => {
       try {
         setLoading(true);
         const res = await api.get(`/courses/${courseId}/Quiz/get-quiz`);
-        // Giả sử res.data = [ { questionId, questionText, options: [{ id, optionText },…] }, … ]
         const mapped = res.data.map(q => ({
           id:           q.questionId,
           questionText: q.questionText,
@@ -54,7 +52,6 @@ const QuizPage = () => {
       return;
     }
 
-    // Nếu là câu cuối thì submit lên server để lấy điểm
     const payload = questions.map(q => ({
       questionId: q.id,
       optionId:   answers[q.id]
@@ -65,7 +62,6 @@ const QuizPage = () => {
         `/courses/${courseId}/Quiz/submit-answers`,
         payload
       );
-      // Giả sử API trả về { score: 3, total: 10 }
       setResult({
         score: res.data.score,
         total: res.data.total ?? questions.length

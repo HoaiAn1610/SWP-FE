@@ -79,11 +79,11 @@ export default function AppointmentsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <ConsultantHeader />
+   
 
       <div className="flex">
         {/* Sidebar */}
-        <aside className="w-64 bg-white shadow p-4 space-y-2">
+        {/* <aside className="w-64 bg-white shadow p-4 space-y-2">
           <Link
             to="/consultant/appointments"
             className="block px-3 py-2 rounded hover:bg-gray-100 bg-gradient-to-r from-purple-500 to-indigo-500 text-white"
@@ -102,7 +102,7 @@ export default function AppointmentsPage() {
           >
             Blog Q&A
           </Link>
-        </aside>
+        </aside> */}
 
         {/* Nội dung chính */}
         <main className="flex-1 p-6 space-y-8">
