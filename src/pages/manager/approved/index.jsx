@@ -27,7 +27,7 @@ export default function ApprovedPage() {
 
   // View course
   const handleView = (courseId) => {
-    navigate(`/staff/course/${courseId}`);
+    navigate(`/manager/course/${courseId}`);
   };
 
   // Approve course
