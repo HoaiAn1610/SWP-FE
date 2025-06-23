@@ -1,5 +1,5 @@
-// src/pages/auth/course/index.jsx
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Header from "@/components/header";
 import FilterPanel from "@/components/courses/FilterPanel";
 import CourseList from "@/components/courses/CourseList";
@@ -11,11 +11,11 @@ import {
   getCoursesByCategory,
 } from "@/service/courseService";
 import api from "@/config/axios";
-import { useNavigate } from "react-router-dom";
-import "./styles.css"
+import "./styles.css";
+
 export default function CoursesPage() {
   const [courses, setCourses] = useState([]);
-  const [enrollments, setEnrollments] = useState([]);   // <-- state chứa enrollments
+  const [enrollments, setEnrollments] = useState([]);   // chứa enrollment của user
   const [filters, setFilters] = useState({
     level: "All Levels",
     category: "All Categories",
@@ -26,25 +26,29 @@ export default function CoursesPage() {
   const [error, setError] = useState(null);
   const limit = 9;
 
+  const [selectedCourse, setSelectedCourse] = useState(null);
+  const [showModal, setShowModal] = useState(false);
   const navigate = useNavigate();
 
-  // fetch danh sách enrollment của user hiện tại
+  // 1) fetch enrollments của user
   useEffect(() => {
     const fetchEnrollments = async () => {
       try {
         const userId = localStorage.getItem("id");
+        if (!userId) return;
         const { data } = await api.get(
           `/CourseEnrollment/users/${userId}/enrollments`
         );
         setEnrollments(data);
       } catch (err) {
         console.error("Lỗi fetch enrollments:", err);
+        setEnrollments([]);
       }
     };
     fetchEnrollments();
   }, []);
 
-  // fetch courses theo filter + phân trang
+  // 2) fetch courses dựa trên filters + paging + chỉ Approved
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -57,16 +61,11 @@ export default function CoursesPage() {
         const onlyCat =
           category !== "All Categories" && level === "All Levels";
 
-        if (onlyLevel) {
-          data = await getCoursesByLevel(level);
-        } else if (onlyCat) {
-          data = await getCoursesByCategory(category);
-        } else if (
-          level === "All Levels" &&
-          category === "All Categories"
-        ) {
+        if (onlyLevel) data = await getCoursesByLevel(level);
+        else if (onlyCat) data = await getCoursesByCategory(category);
+        else if (level === "All Levels" && category === "All Categories")
           data = await getAllCourses();
-        } else {
+        else {
           const all = await getAllCourses();
           data = all.filter(
             (c) => c.level === level && c.category === category
@@ -76,7 +75,7 @@ export default function CoursesPage() {
         // chỉ show Approved
         data = data.filter((c) => c.status === "Approved");
 
-        // phân trang
+        // paging
         const total = Math.ceil(data.length / limit) || 1;
         setTotalPages(total);
         const start = (page - 1) * limit;
@@ -95,14 +94,14 @@ export default function CoursesPage() {
     fetchData();
   }, [filters, page]);
 
-  // generate helper structures:
+  // helper: danh sách id đã enroll + map status
   const enrolledCourseIds = enrollments.map((e) => e.courseId);
-  const statusMap = enrollments.reduce((map, e) => {
-    map[e.courseId] = e.status;
-    return map;
+  const statusMap = enrollments.reduce((m, e) => {
+    m[e.courseId] = e.status; // "Enrolled" or "Completed"
+    return m;
   }, {});
 
-  // các hàm filter, modal, …
+  // filter handlers
   const handleFilterChange = (upd) => {
     setFilters((f) => ({ ...f, ...upd }));
     setPage(1);
@@ -112,8 +111,7 @@ export default function CoursesPage() {
     setPage(1);
   };
 
-  const [selectedCourse, setSelectedCourse] = useState(null);
-  const [showModal, setShowModal] = useState(false);
+  // modal handlers
   const handleSelectCourse = (course) => {
     setSelectedCourse(course);
     setShowModal(true);
@@ -126,7 +124,6 @@ export default function CoursesPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-
       <div className="max-w-7xl mx-auto px-4 py-8 grid grid-cols-1 md:grid-cols-12 gap-6">
         <aside className="md:col-span-3">
           <div className="sticky top-24 h-[calc(100vh-6rem)] overflow-auto bg-white p-6 rounded-lg shadow">
@@ -137,7 +134,6 @@ export default function CoursesPage() {
             />
           </div>
         </aside>
-
         <main className="md:col-span-9">
           {loading && <div className="text-center py-20">Loading…</div>}
           {!loading && error && (
@@ -172,9 +168,11 @@ export default function CoursesPage() {
         </main>
       </div>
 
+      {/* overlay chi tiết */}
       {showModal && selectedCourse && (
         <CourseDetailOverlay
           course={selectedCourse}
+          status={statusMap[selectedCourse.id]}
           onClose={handleCloseModal}
         />
       )}

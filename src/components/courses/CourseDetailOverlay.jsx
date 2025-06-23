@@ -1,15 +1,17 @@
 // src/components/courses/CourseDetailOverlay.jsx
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import api from "@/config/axios";
 
-export default function CourseDetailOverlay({ course, onClose }) {
+export default function CourseDetailOverlay({ course, status, onClose }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const [materials, setMaterials] = useState([]);
   const [loadingMaterials, setLoadingMaterials] = useState(false);
   const [errorMaterials, setErrorMaterials] = useState(null);
-  const [enrolling, setEnrolling] = useState(false);
+  const [processing, setProcessing] = useState(false);
 
+  // 1) Lấy materials khi mở overlay
   useEffect(() => {
     if (!course) return;
     setLoadingMaterials(true);
@@ -22,38 +24,69 @@ export default function CourseDetailOverlay({ course, onClose }) {
 
   if (!course) return null;
 
-  const handleStartCourse = async () => {
-    setEnrolling(true);
+  const userId = localStorage.getItem("id");
+
+  // 2) Hàm xử lý khi bấm nút action (Start / Continue / Review)
+  const handleAction = async () => {
+    // 2a) Nếu chưa login → chuyển đến login với redirect về trang hiện tại
+    if (!userId) {
+      onClose();
+      navigate(
+        `/login?redirect=${encodeURIComponent(location.pathname)}`
+      );
+      return;
+    }
+
+    // 2b) Nếu đã enroll nhưng chưa hoàn thành → Continue
+    if (status === "Enrolled") {
+      onClose();
+      navigate(`/course/${course.id}/lesson`);
+      return;
+    }
+
+    // 2c) Nếu đã hoàn thành → Review
+    if (status === "Completed") {
+      onClose();
+      navigate(`/course/${course.id}/lesson`); // hoặc trang review tuỳ backend
+      return;
+    }
+
+    // 2d) Nếu chưa enroll → gọi API enroll rồi vào lesson
+    setProcessing(true);
     try {
       await api.post(`/CourseEnrollment/courses/${course.id}/enroll`);
-      // nếu enroll thành công:
       onClose();
       navigate(`/course/${course.id}/lesson`);
     } catch (err) {
-      const status = err.response?.status;
-      if (status === 401 || status === 403) {
+      // nếu thất bại do 401/403, nhắc login
+      const code = err.response?.status;
+      if (code === 401 || code === 403) {
         if (
           window.confirm(
             "Bạn cần đăng nhập để bắt đầu khóa học. Chuyển đến trang Đăng nhập?"
           )
         ) {
           onClose();
-          navigate(`/login?redirect=/course/${course.id}/lesson`);
+          navigate(
+            `/login?redirect=${encodeURIComponent(location.pathname)}`
+          );
         }
-      } else if (status === 400) {
+      } else {
+        // lỗi khác (ví dụ đã enroll)
         alert(
           err.response?.data?.message ||
-            "Bạn đã ghi danh hoặc có lỗi. Nhấn OK để vào khóa học."
+            "Không thể ghi danh. Vui lòng thử lại sau."
         );
-        onClose();
-        navigate(`/course/${course.id}/lesson`);
-      } else {
-        alert("Lỗi khi ghi danh: " + (err.message || ""));
       }
     } finally {
-      setEnrolling(false);
+      setProcessing(false);
     }
   };
+
+  // 3) Xác định nhãn nút và style theo status
+  let buttonLabel = "Start Course";
+  if (status === "Enrolled") buttonLabel = "Continue Course";
+  else if (status === "Completed") buttonLabel = "Review Course";
 
   return (
     <div
@@ -64,13 +97,16 @@ export default function CourseDetailOverlay({ course, onClose }) {
         className="bg-white rounded-lg shadow-xl w-11/12 max-w-2xl max-h-[90vh] overflow-y-auto relative"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* nút đóng */}
         <button
           onClick={onClose}
           className="absolute top-3 right-3 text-gray-500 hover:text-gray-800"
         >
           ✕
         </button>
+
         <div className="p-6 space-y-4">
+          {/* ảnh banner */}
           {course.image && (
             <img
               src={course.image}
@@ -78,10 +114,14 @@ export default function CourseDetailOverlay({ course, onClose }) {
               className="w-full h-40 object-cover rounded-md mb-4"
             />
           )}
+
+          {/* tiêu đề + mô tả */}
           <h2 className="text-2xl font-bold text-gray-800">
             {course.title}
           </h2>
           <p className="text-gray-600">{course.description}</p>
+
+          {/* badges Level / Category / Duration */}
           <div className="flex flex-wrap gap-4 text-sm text-gray-700 mt-2">
             {course.level && (
               <span className="px-2 py-1 bg-indigo-100 text-indigo-800 rounded-full">
@@ -100,6 +140,7 @@ export default function CourseDetailOverlay({ course, onClose }) {
             )}
           </div>
 
+          {/* danh sách materials */}
           <div className="mt-4">
             <h3 className="text-lg font-semibold text-gray-800 mb-2">
               Course Materials
@@ -135,17 +176,18 @@ export default function CourseDetailOverlay({ course, onClose }) {
             )}
           </div>
 
+          {/* nút action */}
           <div className="mt-6 flex justify-end">
             <button
-              onClick={handleStartCourse}
-              disabled={enrolling}
-              className={`px-4 py-2 rounded-md text-white ${
-                enrolling
+              onClick={handleAction}
+              disabled={processing}
+              className={`px-4 py-2 rounded-md text-white transition ${
+                processing
                   ? "bg-gray-400 cursor-not-allowed"
                   : "bg-indigo-600 hover:bg-indigo-700"
               }`}
             >
-              {enrolling ? "Đang xử lý..." : "Start Course"}
+              {processing ? "Đang xử lý..." : buttonLabel}
             </button>
           </div>
         </div>
