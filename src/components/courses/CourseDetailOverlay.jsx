@@ -25,17 +25,19 @@ export default function CourseDetailOverlay({ course, status, onClose }) {
   if (!course) return null;
 
   const userId = localStorage.getItem("id");
-
+  const { pathname } = useLocation();
   // 2) Hàm xử lý khi bấm nút action (Start / Continue / Review)
   const handleAction = async () => {
     // 2a) Nếu chưa login → chuyển đến login với redirect về trang hiện tại
     if (!userId) {
-      onClose();
-      navigate(
-        `/login?redirect=${encodeURIComponent(location.pathname)}`
-      );
-      return;
-    }
+     onClose();
+     // sẽ redirect về /course?openOverlay=<course.id>
+     const backUrl = `${pathname}?openOverlay=${course.id}`;
+     navigate(
+       `/login?redirect=${encodeURIComponent(backUrl)}`
+     );
+     return;
+   }
 
     // 2b) Nếu đã enroll nhưng chưa hoàn thành → Continue
     if (status === "Enrolled") {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import Header from "@/components/header";
 import FilterPanel from "@/components/courses/FilterPanel";
 import CourseList from "@/components/courses/CourseList";
@@ -30,6 +30,9 @@ export default function CoursesPage() {
   const [showModal, setShowModal] = useState(false);
   const navigate = useNavigate();
 
+   const { search } = useLocation();
+  const qs = new URLSearchParams(search);
+  const openId = qs.get("openOverlay");
   // 1) fetch enrollments của user
   useEffect(() => {
     const fetchEnrollments = async () => {
@@ -120,7 +123,12 @@ export default function CoursesPage() {
     setShowModal(false);
     setSelectedCourse(null);
   };
-
+   useEffect(() => {
+    if (openId && courses.length) {
+      const c = courses.find(c => String(c.id) === openId);
+      if (c) handleSelectCourse(c);
+    }
+  }, [openId, courses]);
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
