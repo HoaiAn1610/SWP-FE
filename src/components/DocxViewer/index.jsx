@@ -1,43 +1,34 @@
 // src/components/DocxViewer.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import mammoth from "mammoth";
 
-export default function DocxViewer() {
+export default function DocxViewer({ file }) {
   const [htmlContent, setHtmlContent] = useState("");
-  const [error, setError] = useState("");
+  const [error, setError]             = useState("");
 
-  const handleFile = async (e) => {
-    const file = e.target.files[0];
+  useEffect(() => {
     if (!file) return;
-    try {
-      const arrayBuffer = await file.arrayBuffer();
-      const { value: html } = await mammoth.convertToHtml({ arrayBuffer });
-      setHtmlContent(html);
-      setError("");
-    } catch (err) {
-      console.error(err);
-      setError("Không đọc được file .docx");
-    }
-  };
+
+    (async () => {
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        const { value: html } = await mammoth.convertToHtml({ arrayBuffer });
+        setHtmlContent(html);
+        setError("");
+      } catch (err) {
+        console.error(err);
+        setError("Không đọc được file .docx");
+      }
+    })();
+  }, [file]);
+
+  if (error) return <p className="text-red-500">{error}</p>;
+  if (!htmlContent) return <p>Đang tải nội dung tài liệu…</p>;
 
   return (
-    <div className="space-y-4">
-      <label className="block font-medium">Chọn file .docx:</label>
-      <input
-        type="file"
-        accept=".docx"
-        onChange={handleFile}
-        className="border rounded px-3 py-2"
-      />
-
-      {error && <p className="text-red-500">{error}</p>}
-
-      {htmlContent && (
-        <div
-          className="prose max-w-none bg-white p-6 rounded shadow"
-          dangerouslySetInnerHTML={{ __html: htmlContent }}
-        />
-      )}
-    </div>
+    <div
+      className="prose max-w-none bg-white p-6 rounded shadow"
+      dangerouslySetInnerHTML={{ __html: htmlContent }}
+    />
   );
 }

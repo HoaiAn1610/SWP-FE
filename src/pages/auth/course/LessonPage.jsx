@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import Header from "@/components/header";
 import api from "@/config/axios";
+import DocxViewer from "@/components/DocxViewer";
 
 export default function LessonPage() {
   const { courseId } = useParams();
@@ -31,6 +32,9 @@ export default function LessonPage() {
   const [selectedSub, setSelectedSub]         = useState(null);
   const [detailedQuestions, setDetailedQuestions] = useState([]);
   const [loadingDetail, setLoadingDetail]     = useState(false);
+
+  // chỉ thay đổi phần Documents:
+  const [docFile, setDocFile] = useState(null);
 
   // 1) Check login & fetch course + materials
   useEffect(() => {
@@ -101,9 +105,8 @@ export default function LessonPage() {
     })();
   }, [activeTab, courseId, isLoggedIn, userId]);
 
-  // 3) Khi click vào 1 submission → load detail bằng hai bước:
-  //    a) GET /quiz/submissions/{id} → answers[]
-  //    b) GET /Question/get-question/{questionId} → chi tiết câu + options
+  // 3) Khi click vào 1 submission → load detail (giữ nguyên)
+
   const viewDetail = async sub => {
     setSelectedSub(sub);
     setDetailedQuestions([]);
@@ -112,14 +115,13 @@ export default function LessonPage() {
     try {
       const { data: detail } = await api.get(`/quiz/submissions/${sub.id}`);
       const answers = detail.answers; // [{questionId, optionId, scoreValue}, ...]
-
       const qps = await Promise.all(
         answers.map(a =>
           api.get(`/Question/get-question/${a.questionId}`)
             .then(r => ({
               questionId:   a.questionId,
               questionText: r.data.questionText,
-              options:      r.data.options,        // {id, optionText, scoreValue}
+              options:      r.data.options,
               userAnswer:   { optionId: a.optionId, scoreValue: a.scoreValue }
             }))
         )
@@ -133,16 +135,34 @@ export default function LessonPage() {
     }
   };
 
+  // 4) Mới: handleViewDocument
+  const handleViewDocument = async (doc) => {
+    try {
+      // fetch raw .docx về ArrayBuffer
+      const res = await fetch(doc.url.startsWith("/") ? doc.url : `/${doc.url}`);
+      const buffer = await res.arrayBuffer();
+      // gói thành File object
+      const file = new File(
+        [buffer],
+        `${doc.title}.docx`,
+        { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" }
+      );
+      setDocFile(file);
+    } catch (err) {
+      console.error("Không tải được tài liệu .docx:", err);
+    }
+  };
+
   if (!isLoggedIn) return null;
   if (loadingCourse) return <p className="text-center py-10">Đang tải khoá học…</p>;
   if (errorCourse)   return <p className="text-center text-red-500 py-10">{errorCourse}</p>;
 
   // chuẩn bị video/docs
-  const videoItem = materials.find(m => m.type === "Video");
+  const videoItem = materials.find(m => m.type==="Video");
   const videoSrc  = videoItem
     ? (videoItem.url.startsWith("/") ? videoItem.url : `/${videoItem.url}`)
     : "";
-  const docs = materials.filter(m => m.type === "Document");
+  const docs = materials.filter(m => m.type==="Document");
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -165,13 +185,13 @@ export default function LessonPage() {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`pb-2 ${
-                activeTab===tab
-                  ? "border-b-2 border-indigo-600 text-indigo-600"
-                  : "text-gray-600"
-              }`}
+              className={`pb-2 ${activeTab===tab
+                ? "border-b-2 border-indigo-600 text-indigo-600"
+                : "text-gray-600"}`}
             >
-              {tab==="video"?"Video":tab==="docs"?"Documents":"Quiz"}
+              {tab==="video"? "Video"
+               : tab==="docs"? "Documents"
+               : "Quiz"}
             </button>
           ))}
         </div>
@@ -192,16 +212,28 @@ export default function LessonPage() {
                   <div key={doc.id} className="border-b pb-4">
                     <h3 className="font-semibold text-gray-800">{doc.title}</h3>
                     <p className="text-gray-600 mb-2">{doc.description}</p>
-                    <a
-                      href={doc.url.startsWith("/")?doc.url:`/${doc.url}`}
-                      target="_blank" rel="noreferrer"
-                      className="text-indigo-600 hover:underline"
+                    <button
+                      onClick={()=>handleViewDocument(doc)}
+                      className="px-4 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700"
                     >
-                      Mở tài liệu
-                    </a>
+                      View Document
+                    </button>
                   </div>
                 ))
             }
+
+            {/* nếu đã load docFile, show DocxViewer */}
+            {docFile && (
+              <div className="mt-6">
+                <button
+                  onClick={()=>setDocFile(null)}
+                  className="mb-4 text-gray-500 hover:text-gray-800"
+                >
+                  ✕ Đóng tài liệu
+                </button>
+                <DocxViewer file={docFile}/>
+              </div>
+            )}
           </div>
         )}
 
@@ -248,7 +280,6 @@ export default function LessonPage() {
                       ))}
                     </ul>
 
-                    {/* Retake button */}
                     <div className="mt-4 text-center">
                       <button
                         onClick={()=>navigate(`/course/${courseId}/quiz`)}
@@ -264,7 +295,7 @@ export default function LessonPage() {
         )}
       </div>
 
-      {/* Detail Overlay */}
+      {/* Detail Overlay (giữ nguyên) */}
       {showDetail && (
         <div
           className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50"
