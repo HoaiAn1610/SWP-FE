@@ -9,12 +9,12 @@ export default function ViewConsultantCoursePage() {
   const navigate = useNavigate();
   const currentID = courseId;
 
-  // state chung
+  // trạng thái chung
   const [loading, setLoading] = useState(true);
   const [course, setCourse] = useState(null);
   const [materials, setMaterials] = useState([]);
 
-  // --- edit course ---
+  // edit khóa học
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({
     title: "",
@@ -29,7 +29,7 @@ export default function ViewConsultantCoursePage() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const imageRef = useRef(null);
 
-  // --- edit material ---
+  // edit vật liệu
   const [editingMaterialId, setEditingMaterialId] = useState(null);
   const [materialEditData, setMaterialEditData] = useState({
     type: "",
@@ -41,27 +41,34 @@ export default function ViewConsultantCoursePage() {
   const [uploadingMaterialFile, setUploadingMaterialFile] = useState(false);
   const materialFileRef = useRef(null);
 
-  // Fetch course + materials
   useEffect(() => {
     (async () => {
+      // 1. Fetch thông tin course
       try {
-        const [{ data: c }, { data: m }] = await Promise.all([
-          api.get(`Course/get-course/${courseId}`),
-          api.get(`courses/${courseId}/CourseMaterial/get-materials-of-course`),
-        ]);
+        const { data: c } = await api.get(`Course/get-course/${courseId}`);
         setCourse(c);
-        setMaterials(m);
       } catch (err) {
-        console.error(err);
+        console.error("Không tải được course:", err);
         alert("Không tải được dữ liệu khóa học.");
         navigate(-1);
+        return;
+      }
+      // 2. Fetch materials (nếu lỗi thì bỏ qua)
+      try {
+        const { data: m } = await api.get(
+          `courses/${courseId}/CourseMaterial/get-materials-of-course`
+        );
+        setMaterials(m);
+      } catch (err) {
+        console.warn("Không lấy được materials, bỏ qua:", err);
+        setMaterials([]);
       } finally {
         setLoading(false);
       }
     })();
   }, [courseId, navigate]);
 
-  // --- Handlers khóa học ---
+  // --- Handlers edit course ---
   const startEditing = () => {
     setEditData({
       id: currentID,
@@ -108,7 +115,7 @@ export default function ViewConsultantCoursePage() {
     }
   };
 
-  // --- Handlers material ---
+  // --- Handlers edit material ---
   const startMaterialEdit = (mat) => {
     setEditingMaterialId(mat.id);
     setMaterialEditData({
@@ -164,7 +171,7 @@ export default function ViewConsultantCoursePage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <main className="container mx-auto p-8 space-y-8">
-        {/* Header + nút Edit course */}
+        {/* Header + nút Edit/Back */}
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-semibold">
             {isEditing ? "Edit Course" : `View Course: ${course.title}`}
@@ -173,21 +180,21 @@ export default function ViewConsultantCoursePage() {
             {isEditing ? (
               <button
                 onClick={() => setIsEditing(false)}
-                className="px-3 py-1 bg-gray-300 rounded hover:bg-gray-400"
+                className="px-3 py-1 bg-gray-300 rounded"
               >
                 Cancel
               </button>
             ) : (
               <button
                 onClick={startEditing}
-                className="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600"
+                className="px-3 py-1 bg-yellow-500 text-white rounded"
               >
                 Edit
               </button>
             )}
             <button
               onClick={() => navigate(-1)}
-              className="px-3 py-1 bg-gray-300 rounded hover:bg-gray-400"
+              className="px-3 py-1 bg-gray-300 rounded"
             >
               Back
             </button>
@@ -200,7 +207,6 @@ export default function ViewConsultantCoursePage() {
             onSubmit={handleEditSubmit}
             className="bg-white p-6 rounded shadow space-y-4"
           >
-            {/* Title & Image */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block font-medium">Title</label>
@@ -242,8 +248,6 @@ export default function ViewConsultantCoursePage() {
                 />
               </div>
             </div>
-
-            {/* Các trường còn lại... */}
             <div>
               <label className="block font-medium">Description</label>
               <textarea
@@ -366,144 +370,143 @@ export default function ViewConsultantCoursePage() {
         {/* MATERIALS */}
         <section className="space-y-4">
           <h2 className="text-xl font-semibold">Materials</h2>
-          {materials.length === 0 && (
+          {materials.length === 0 ? (
             <p className="text-gray-500">Chưa có material nào.</p>
-          )}
-          {materials.map((m) =>
-            editingMaterialId === m.id ? (
-              // FORM EDIT MATERIAL
-              <form
-                key={m.id}
-                onSubmit={handleMaterialEditSubmit}
-                className="bg-white p-4 rounded shadow space-y-3"
-              >
-                {/* Type */}
-                <div>
-                  <label className="block font-medium">Type</label>
-                  <select
-                    name="type"
-                    value={materialEditData.type}
-                    onChange={handleMaterialChange}
-                    className="w-full border rounded px-3 py-2"
-                    required
-                  >
-                    <option value="">-- Chọn loại --</option>
-                    <option value="Video">Video</option>
-                    <option value="Document">Document</option>
-                  </select>
-                </div>
-                {/* Title */}
-                <div>
-                  <label className="block font-medium">Title</label>
-                  <input
-                    name="title"
-                    value={materialEditData.title}
-                    onChange={handleMaterialChange}
-                    className="w-full border rounded px-3 py-2"
-                    required
-                  />
-                </div>
-                {/* URL */}
-                <div>
-                  <label className="block font-medium">URL</label>
-                  <div className="flex items-center space-x-4">
+          ) : (
+            materials.map((m) =>
+              editingMaterialId === m.id ? (
+                <form
+                  key={m.id}
+                  onSubmit={handleMaterialEditSubmit}
+                  className="bg-white p-4 rounded shadow space-y-3"
+                >
+                  {/* Type */}
+                  <div>
+                    <label className="block font-medium">Type</label>
+                    <select
+                      name="type"
+                      value={materialEditData.type}
+                      onChange={handleMaterialChange}
+                      className="w-full border rounded px-3 py-2"
+                      required
+                    >
+                      <option value="">-- Chọn loại --</option>
+                      <option value="Video">Video</option>
+                      <option value="Document">Document</option>
+                    </select>
+                  </div>
+                  {/* Title */}
+                  <div>
+                    <label className="block font-medium">Title</label>
+                    <input
+                      name="title"
+                      value={materialEditData.title}
+                      onChange={handleMaterialChange}
+                      className="w-full border rounded px-3 py-2"
+                      required
+                    />
+                  </div>
+                  {/* URL */}
+                  <div>
+                    <label className="block font-medium">URL</label>
+                    <div className="flex items-center space-x-4">
+                      <button
+                        type="button"
+                        onClick={() => materialFileRef.current.click()}
+                        className="px-4 py-2 bg-blue-600 text-white rounded"
+                        disabled={uploadingMaterialFile}
+                      >
+                        {uploadingMaterialFile ? "Uploading…" : "Select File…"}
+                      </button>
+                      <span className="text-sm text-gray-600 break-all">
+                        {materialEditData.url}
+                      </span>
+                    </div>
+                    <input
+                      type="file"
+                      accept="*/*"
+                      ref={materialFileRef}
+                      onChange={handleMaterialFileSelect}
+                      className="hidden"
+                    />
+                  </div>
+                  {/* Description */}
+                  <div>
+                    <label className="block font-medium">Description</label>
+                    <textarea
+                      name="description"
+                      value={materialEditData.description}
+                      onChange={handleMaterialChange}
+                      className="w-full border rounded px-3 py-2"
+                      rows={2}
+                    />
+                  </div>
+                  {/* Sort Order */}
+                  <div>
+                    <label className="block font-medium">Sort Order</label>
+                    <input
+                      name="sortOrder"
+                      type="number"
+                      value={materialEditData.sortOrder}
+                      onChange={handleMaterialChange}
+                      className="w-full border rounded px-3 py-2"
+                    />
+                  </div>
+                  {/* Buttons */}
+                  <div className="flex space-x-2">
+                    <button
+                      type="submit"
+                      className="px-4 py-2 bg-green-600 text-white rounded"
+                    >
+                      Save
+                    </button>
                     <button
                       type="button"
-                      onClick={() => materialFileRef.current.click()}
-                      className="px-4 py-2 bg-blue-600 text-white rounded"
-                      disabled={uploadingMaterialFile}
+                      onClick={() => setEditingMaterialId(null)}
+                      className="px-4 py-2 bg-gray-300 rounded"
                     >
-                      {uploadingMaterialFile ? "Uploading…" : "Select File…"}
+                      Cancel
                     </button>
-                    <span className="text-sm text-gray-600 break-all">
-                      {materialEditData.url}
-                    </span>
                   </div>
-                  <input
-                    type="file"
-                    accept="*/*"
-                    ref={materialFileRef}
-                    onChange={handleMaterialFileSelect}
-                    className="hidden"
-                  />
-                </div>
-                {/* Description */}
-                <div>
-                  <label className="block font-medium">Description</label>
-                  <textarea
-                    name="description"
-                    value={materialEditData.description}
-                    onChange={handleMaterialChange}
-                    className="w-full border rounded px-3 py-2"
-                    rows={2}
-                  />
-                </div>
-                {/* Sort Order */}
-                <div>
-                  <label className="block font-medium">Sort Order</label>
-                  <input
-                    name="sortOrder"
-                    type="number"
-                    value={materialEditData.sortOrder}
-                    onChange={handleMaterialChange}
-                    className="w-full border rounded px-3 py-2"
-                  />
-                </div>
-                {/* Buttons */}
-                <div className="flex space-x-2">
-                  <button
-                    type="submit"
-                    className="px-4 py-2 bg-green-600 text-white rounded"
-                  >
-                    Save
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setEditingMaterialId(null)}
-                    className="px-4 py-2 bg-gray-300 rounded"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            ) : (
-              // VIEW MATERIAL
-              <div
-                key={m.id}
-                className="bg-white p-4 rounded shadow flex justify-between items-center"
-              >
-                <div className="space-y-1">
-                  <div>
-                    <strong>Type:</strong> {m.type}
-                  </div>
-                  <div>
-                    <strong>Title:</strong> {m.title}
-                  </div>
-                  <div>
-                    <strong>URL:</strong>{" "}
-                    <a
-                      href={m.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 underline"
-                    >
-                      {m.url}
-                    </a>
-                  </div>
-                  <div>
-                    <strong>Description:</strong> {m.description}
-                  </div>
-                  <div>
-                    <strong>Sort Order:</strong> {m.sortOrder}
-                  </div>
-                </div>
-                <button
-                  onClick={() => startMaterialEdit(m)}
-                  className="px-3 py-1 bg-yellow-500 text-white rounded"
+                </form>
+              ) : (
+                <div
+                  key={m.id}
+                  className="bg-white p-4 rounded shadow flex justify-between items-center"
                 >
-                  Edit
-                </button>
-              </div>
+                  <div className="space-y-1">
+                    <div>
+                      <strong>Type:</strong> {m.type}
+                    </div>
+                    <div>
+                      <strong>Title:</strong> {m.title}
+                    </div>
+                    <div>
+                      <strong>URL:</strong>{" "}
+                      <a
+                        href={m.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 underline"
+                      >
+                        {m.url}
+                      </a>
+                    </div>
+                    <div>
+                      <strong>Description:</strong> {m.description}
+                    </div>
+                    <div>
+                      <strong>Sort Order:</strong> {m.sortOrder}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => startMaterialEdit(m)}
+                    className="px-3 py-1 bg-yellow-500 text-white rounded"
+                  >
+                    Edit
+                  </button>
+                </div>
+              )
             )
           )}
         </section>

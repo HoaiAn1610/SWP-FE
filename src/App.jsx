@@ -14,11 +14,15 @@ import EcommerceHome from "./pages/common/home";
 import LessonPage from "@/pages/auth/course/LessonPage";
 import QuizPage from "@/pages/auth/course/QuizPage";
 
+import PersonalInfoLayout from "@/pages/personal-information/PersonalInfoLayout";
+import MyProfilePage from "@/pages/personal-information/my-profile";
+
 import ManagerLayout from "@/pages/manager/ManagerLayout";
 import OverviewPage from "@/pages/manager/overview";
 import ApprovedPage from "@/pages/manager/approved";
 import TaskQueuePage from "@/pages/manager/task-queue";
 import TeamSchedulePage from "@/pages/manager/team-schedule";
+import ViewManagerCoursePage from "./pages/manager/view-course-page";
 
 import StaffLayout from "@/pages/staff/StaffLayout";
 import DraftContentPage from "@/pages/staff/draft-content";
@@ -67,6 +71,15 @@ function App() {
     },
     { path: "/course/:courseId/quiz", element: <QuizPage /> },
     {
+      path: "/account",
+      element: <PersonalInfoLayout />,
+      errorElement: <ErrorPage />,
+      children: [
+        { index: true, element: <Navigate to="MyProfilePage" replace /> },
+        { path: "MyProfilePage", element: <MyProfilePage /> },
+      ],
+    },
+    {
       path: "/admin",
       element: (
         <ProtectedRoute role="Admin">
@@ -109,6 +122,7 @@ function App() {
         { path: "approved", element: <ApprovedPage /> },
         { path: "task-queue", element: <TaskQueuePage /> },
         { path: "team-schedule", element: <TeamSchedulePage /> },
+        { path: "course/:courseId", element: <ViewManagerCoursePage /> },
       ],
     },
     {
