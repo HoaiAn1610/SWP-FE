@@ -13,48 +13,43 @@ export default function EcommerceHome() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // overlay
+  // overlay detail
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [showModal, setShowModal] = useState(false);
 
-  // 1) Lấy all courses
+  // 1) Lấy toàn bộ courses
   useEffect(() => {
     setLoading(true);
     getAllCourses()
-      .then((data) => setCourses(data))
-      .catch((err) => setError(err.message || "Error loading courses"))
+      .then(data => setCourses(data))
+      .catch(err => setError(err.message || "Error loading courses"))
       .finally(() => setLoading(false));
   }, []);
 
-  // 2) Nếu user đã login thì fetch enrollments
+  // 2) Lấy enrollments nếu user đã login
   useEffect(() => {
-    const fetchEnrollments = async () => {
-      const userId = localStorage.getItem("id");
-      if (!userId) return;
-      try {
-        const { data } = await api.get(
-          `/CourseEnrollment/users/${userId}/enrollments`
-        );
-        setEnrollments(data);
-      } catch (err) {
+    const userId = localStorage.getItem("id");
+    if (!userId) return;
+    api.get(`/CourseEnrollment/users/${userId}/enrollments`)
+      .then(({ data }) => setEnrollments(data))
+      .catch(err => {
         console.error("Lỗi fetch enrollments:", err);
-      }
-    };
-    fetchEnrollments();
+        setEnrollments([]);
+      });
   }, []);
 
-  // chỉ lấy 3 khóa đầu
+  // chỉ show 3 khóa đầu làm Featured
   const featured = courses.slice(0, 3);
 
-  // build enrolledCourseIds và statusMap
-  const enrolledCourseIds = enrollments.map((e) => e.courseId);
-  const statusMap = enrollments.reduce((acc, e) => {
-    acc[e.courseId] = e.status;
-    return acc;
+  // build helper: danh sách id đã enroll và map status
+  const enrolledCourseIds = enrollments.map(e => e.courseId);
+  const statusMap = enrollments.reduce((m, e) => {
+    m[e.courseId] = e.status; // "Enrolled" hoặc "Completed"
+    return m;
   }, {});
 
-  // khi bấm Learn More trên CourseList
-  const handleSelectCourse = (course) => {
+  // khi click Learn More → mở overlay
+  const handleSelectCourse = course => {
     setSelectedCourse(course);
     setShowModal(true);
   };
@@ -64,7 +59,7 @@ export default function EcommerceHome() {
   };
 
   if (loading) return <p className="text-center py-10">Loading…</p>;
-  if (error) return <p className="text-center text-red-500 py-10">Error: {error}</p>;
+  if (error)   return <p className="text-center text-red-500 py-10">Error: {error}</p>;
 
   return (
     <>
@@ -101,10 +96,11 @@ export default function EcommerceHome() {
         </div>
       </section>
 
-      {/* Overlay chi tiết khóa học */}
+      {/* Overlay chi tiết mỗi course */}
       {showModal && selectedCourse && (
         <CourseDetailOverlay
           course={selectedCourse}
+          status={statusMap[selectedCourse.id]}
           onClose={handleCloseModal}
         />
       )}
