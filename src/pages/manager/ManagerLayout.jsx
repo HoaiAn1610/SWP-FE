@@ -6,7 +6,7 @@ import Header from "@/components/header";
 export default function ManagerLayout() {
   const navItems = [
     { to: "overview", label: "Overview" },
-    { to: "approved", label: "approved" },
+    { to: "approved", label: "Approved" },
     { to: "task-queue", label: "Task Queue" },
     { to: "team-schedule", label: "Team Schedule" },
   ];
