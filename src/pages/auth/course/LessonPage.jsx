@@ -4,7 +4,12 @@ import { useParams, useNavigate, useLocation } from "react-router-dom";
 import Header from "@/components/header";
 import api from "@/config/axios";
 import DocxViewer from "@/components/DocxViewer";
-
+const normalizeUrl = (url) => {
+  if (!url) return "";
+  if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  if (url.startsWith("/")) return url;
+  return `/${url}`;
+};
 export default function LessonPage() {
   const { courseId } = useParams();
   const navigate     = useNavigate();
@@ -159,9 +164,7 @@ export default function LessonPage() {
 
   // chuẩn bị video/docs
   const videoItem = materials.find(m => m.type==="Video");
-  const videoSrc  = videoItem
-    ? (videoItem.url.startsWith("/") ? videoItem.url : `/${videoItem.url}`)
-    : "";
+  const videoSrc = normalizeUrl(videoItem?.url);
   const docs = materials.filter(m => m.type==="Document");
 
   return (
@@ -212,28 +215,38 @@ export default function LessonPage() {
                   <div key={doc.id} className="border-b pb-4">
                     <h3 className="font-semibold text-gray-800">{doc.title}</h3>
                     <p className="text-gray-600 mb-2">{doc.description}</p>
-                    <button
-                      onClick={()=>handleViewDocument(doc)}
-                      className="px-4 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700"
-                    >
-                      View Document
-                    </button>
+                   <button
+                  onClick={async () => {
+                    // tải file .docx về và gói thành File để DocxViewer xử lý
+                    const res = await fetch(normalizeUrl(doc.url));
+                    const buf = await res.arrayBuffer();
+                    const file = new File(
+                      [buf],
+                      `${doc.title}.docx`,
+                      { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" }
+                    );
+                    setDocFile(file);
+                  }}
+                 className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+                >
+                  View Document
+                </button>
                   </div>
                 ))
             }
 
             {/* nếu đã load docFile, show DocxViewer */}
-            {docFile && (
-              <div className="mt-6">
-                <button
-                  onClick={()=>setDocFile(null)}
-                  className="mb-4 text-gray-500 hover:text-gray-800"
-                >
-                  ✕ Đóng tài liệu
-                </button>
-                <DocxViewer file={docFile}/>
-              </div>
-            )}
+        {docFile && (
+          <div className="mt-6">
+            <button
+              onClick={() => setDocFile(null)}
+              className="mb-4 text-gray-500 hover:text-gray-800"
+            >
+              ✕ Đóng tài liệu
+            </button>
+            <DocxViewer file={docFile} />
+          </div>
+        )}
           </div>
         )}
 
