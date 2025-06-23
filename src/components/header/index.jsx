@@ -1,15 +1,17 @@
+// src/components/Header.jsx
 import React, { useEffect, useRef, useState } from "react";
-import { FiSearch, FiUser, FiShoppingCart } from "react-icons/fi";
+import { FiSearch, FiUser } from "react-icons/fi";
 import { Link } from "react-router-dom";
 import logo from "@/assets/logo.png";
 
 const Header = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [username, setUsername] = useState("");
+  const [role, setRole] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
-  // Close dropdown on outside click
+  // Đóng dropdown khi click ra ngoài
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
@@ -20,19 +22,37 @@ const Header = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Check login on mount
+  // Kiểm tra login + load username, role
   useEffect(() => {
     const id = localStorage.getItem("id");
     if (id) {
       setIsLoggedIn(true);
-      const stored = localStorage.getItem("name");
-      setUsername(stored?.trim() ? stored : "Member");
+      const storedName = localStorage.getItem("name");
+      setUsername(storedName?.trim() ? storedName : "Member");
+      const storedRole = localStorage.getItem("role") || "";
+      setRole(storedRole);
     }
   }, []);
 
   const handleLogout = () => {
     localStorage.clear();
     window.location.href = "/login";
+  };
+
+  // Link dashboard theo role
+  const dashboardLink = () => {
+    switch (role.toLowerCase()) {
+      case "admin":
+        return "/admin/user-management";
+      case "manager":
+        return "/manager/overview";
+      case "consultant":
+        return "/consultant/appointments";
+      case "staff":
+        return "/staff/draft-content";
+      default:
+        return null;
+    }
   };
 
   return (
@@ -76,19 +96,39 @@ const Header = () => {
 
               {isDropdownOpen && (
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded shadow border">
+                  {/* Chào hỏi */}
                   <div className="px-4 py-2 font-semibold text-gray-800">
                     Hello, {username}
                   </div>
+
+                  {/* My Pages chỉ hiện khi role hợp lệ */}
+                  {dashboardLink() && (
+                    <>
+                      <div className="border-t" />
+                      <div className="px-4 py-2 text-xs text-gray-500 uppercase">
+                        My Pages
+                      </div>
+                      <Link
+                        to={dashboardLink()}
+                        className="block px-4 py-2 hover:bg-gray-100 text-gray-700"
+                      >
+                        {role.charAt(0).toUpperCase() + role.slice(1)} Dashboard
+                      </Link>
+                    </>
+                  )}
+
+                  <div className="border-t my-1" />
+
+                  {/* Profile & Logout */}
                   <Link
-                    to="/profile"
-                    className="block px-4 py-2 hover:bg-gray-100"
+                    to="/account/MyProfilePage"
+                    className="block px-4 py-2 hover:bg-gray-100 text-gray-700"
                   >
                     My Profile
                   </Link>
-                  <div className="border-t my-1" />
                   <button
                     onClick={handleLogout}
-                    className="w-full text-left px-4 py-2 hover:bg-gray-100"
+                    className="w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-700"
                   >
                     Logout
                   </button>
@@ -103,8 +143,6 @@ const Header = () => {
               Login
             </Link>
           )}
-
-        
         </div>
       </div>
     </header>

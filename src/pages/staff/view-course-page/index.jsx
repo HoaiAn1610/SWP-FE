@@ -7,14 +7,13 @@ import { uploadFile } from "@/utils/upload";
 export default function ViewStaffCoursePage() {
   const { courseId } = useParams();
   const navigate = useNavigate();
-  const currentID = courseId;
 
-  // state chung
+  // common state
   const [loading, setLoading] = useState(true);
   const [course, setCourse] = useState(null);
   const [materials, setMaterials] = useState([]);
 
-  // --- edit course ---
+  // edit course
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({
     title: "",
@@ -29,7 +28,7 @@ export default function ViewStaffCoursePage() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const imageRef = useRef(null);
 
-  // --- edit material ---
+  // edit material
   const [editingMaterialId, setEditingMaterialId] = useState(null);
   const [materialEditData, setMaterialEditData] = useState({
     type: "",
@@ -41,30 +40,32 @@ export default function ViewStaffCoursePage() {
   const [uploadingMaterialFile, setUploadingMaterialFile] = useState(false);
   const materialFileRef = useRef(null);
 
-  // Fetch course + materials
   useEffect(() => {
     (async () => {
       try {
-        const [{ data: c }, { data: m }] = await Promise.all([
-          api.get(`Course/get-course/${courseId}`),
-          api.get(`courses/${courseId}/CourseMaterial/get-materials-of-course`),
-        ]);
+        const { data: c } = await api.get(`Course/get-course/${courseId}`);
         setCourse(c);
-        setMaterials(m);
       } catch (err) {
-        console.error(err);
-        alert("Không tải được dữ liệu khóa học.");
-        navigate(-1);
+        console.error("Failed to load course data:", err);
+        alert("Failed to load course data.");
+        return navigate(-1);
+      }
+      try {
+        const { data: m } = await api.get(
+          `courses/${courseId}/CourseMaterial/get-materials-of-course`
+        );
+        setMaterials(m);
+      } catch {
+        setMaterials([]);
       } finally {
         setLoading(false);
       }
     })();
   }, [courseId, navigate]);
 
-  // --- Handlers khóa học ---
+  // --- Course handlers ---
   const startEditing = () => {
     setEditData({
-      id: currentID,
       title: course.title,
       image: course.image,
       description: course.description,
@@ -73,7 +74,6 @@ export default function ViewStaffCoursePage() {
       level: course.level,
       duration: course.duration,
       passingScore: course.passingScore,
-      workflowState: course.workflowState,
     });
     setIsEditing(true);
   };
@@ -99,21 +99,18 @@ export default function ViewStaffCoursePage() {
     e.preventDefault();
     try {
       await api.put(`Course/update-course/${courseId}`, editData);
-      setCourse((c) => ({ ...c, ...editData, status: "Pending" }));
+      setCourse((c) => ({ ...c, ...editData }));
       setIsEditing(false);
-      alert("Cập nhật khóa học thành công!");
-    } catch (err) {
-      console.error(err);
-      alert("Cập nhật thất bại.");
+      alert("Course updated successfully!");
+    } catch {
+      alert("Update failed.");
     }
   };
 
-  // --- Handlers material ---
+  // --- Material handlers ---
   const startMaterialEdit = (mat) => {
     setEditingMaterialId(mat.id);
     setMaterialEditData({
-      id: mat.id,
-      courseId: currentID,
       type: mat.type,
       title: mat.title,
       url: mat.url,
@@ -152,73 +149,76 @@ export default function ViewStaffCoursePage() {
         )
       );
       setEditingMaterialId(null);
-      alert("Cập nhật material thành công!");
-    } catch (err) {
-      console.error(err);
-      alert("Cập nhật material thất bại.");
+      alert("Material updated!");
+    } catch {
+      alert("Update material failed.");
     }
   };
 
   if (loading) return <div className="p-8">Loading…</div>;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <main className="container mx-auto p-8 space-y-8">
-        {/* Header + nút Edit course */}
+    <div className="min-h-screen bg-gray-100">
+      <main className="max-w-4xl mx-auto p-8 space-y-8">
+        {/* Header */}
         <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-semibold">
-            {isEditing ? "Edit Course" : `View Course: ${course.title}`}
+          <h1 className="text-2xl font-bold text-gray-800">
+            {isEditing ? "Edit Course" : course.title}
           </h1>
           <div className="space-x-2">
             {isEditing ? (
               <button
                 onClick={() => setIsEditing(false)}
-                className="px-3 py-1 bg-gray-300 rounded hover:bg-gray-400"
+                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition"
               >
                 Cancel
               </button>
             ) : (
               <button
                 onClick={startEditing}
-                className="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600"
+                className="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition"
               >
                 Edit
               </button>
             )}
             <button
               onClick={() => navigate(-1)}
-              className="px-3 py-1 bg-gray-300 rounded hover:bg-gray-400"
+              className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition"
             >
               Back
             </button>
           </div>
         </div>
 
-        {/* FORM EDIT COURSE */}
+        {/* Edit Course Form */}
         {isEditing && (
           <form
             onSubmit={handleEditSubmit}
-            className="bg-white p-6 rounded shadow space-y-4"
+            className="bg-white p-6 rounded-lg shadow space-y-6"
           >
-            {/* Title & Image */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block font-medium">Title</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Title
+                </label>
                 <input
                   name="title"
                   value={editData.title}
                   onChange={handleEditChange}
-                  className="w-full border rounded px-3 py-2"
+                  className="w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
+                  required
                 />
               </div>
               <div>
-                <label className="block font-medium">Image</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Image
+                </label>
                 <div className="flex items-center space-x-4">
                   <button
                     type="button"
                     onClick={() => imageRef.current.click()}
                     disabled={uploadingImage}
-                    className="px-4 py-2 bg-blue-600 text-white rounded"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:scale-105 transform transition"
                   >
                     {uploadingImage ? "Uploading…" : "Select Image…"}
                   </button>
@@ -227,9 +227,9 @@ export default function ViewStaffCoursePage() {
                       href={editData.image}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm text-gray-600 underline break-all"
+                      className="text-indigo-600 underline break-all text-sm"
                     >
-                      {editData.image}
+                      View Image
                     </a>
                   )}
                 </div>
@@ -242,79 +242,90 @@ export default function ViewStaffCoursePage() {
                 />
               </div>
             </div>
-
-            {/* Các trường còn lại... */}
-            <div>
-              <label className="block font-medium">Description</label>
-              <textarea
-                name="description"
-                value={editData.description}
-                onChange={handleEditChange}
-                className="w-full border rounded px-3 py-2"
-                rows={2}
-              />
-            </div>
-            <div>
-              <label className="block font-medium">Content</label>
-              <textarea
-                name="content"
-                value={editData.content}
-                onChange={handleEditChange}
-                className="w-full border rounded px-3 py-2"
-                rows={4}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-4">
               <div>
-                <label className="block font-medium">Category</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Description
+                </label>
+                <textarea
+                  name="description"
+                  rows={2}
+                  value={editData.description}
+                  onChange={handleEditChange}
+                  className="w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Content
+                </label>
+                <textarea
+                  name="content"
+                  rows={4}
+                  value={editData.content}
+                  onChange={handleEditChange}
+                  className="w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Category
+                </label>
                 <input
                   name="category"
                   value={editData.category}
                   onChange={handleEditChange}
-                  className="w-full border rounded px-3 py-2"
+                  className="w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
                 />
               </div>
               <div>
-                <label className="block font-medium">Level</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Level
+                </label>
                 <select
                   name="level"
                   value={editData.level}
                   onChange={handleEditChange}
-                  className="w-full border rounded px-3 py-2"
+                  className="w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
+                  required
                 >
-                  <option value="">-- Chọn mức độ --</option>
+                  <option value="">-- Select --</option>
                   <option value="Low">Low</option>
                   <option value="Medium">Medium</option>
                   <option value="High">High</option>
                 </select>
               </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block font-medium">Duration (phút)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Duration (min)
+                </label>
                 <input
                   name="duration"
                   type="number"
                   value={editData.duration}
                   onChange={handleEditChange}
-                  className="w-full border rounded px-3 py-2"
+                  className="w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
                 />
               </div>
               <div>
-                <label className="block font-medium">Passing Score</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Passing Score
+                </label>
                 <input
                   name="passingScore"
                   type="number"
                   value={editData.passingScore}
                   onChange={handleEditChange}
-                  className="w-full border rounded px-3 py-2"
+                  className="w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
                 />
               </div>
             </div>
             <div className="text-right">
               <button
                 type="submit"
-                className="px-6 py-2 bg-green-600 text-white rounded"
+                className="px-6 py-2 bg-green-600 text-white rounded-md hover:scale-105 transform transition"
               >
                 Save Changes
               </button>
@@ -322,9 +333,9 @@ export default function ViewStaffCoursePage() {
           </form>
         )}
 
-        {/* VIEW COURSE INFO */}
+        {/* Course Details */}
         {!isEditing && (
-          <section className="bg-white p-6 rounded shadow space-y-2">
+          <section className="bg-white p-6 rounded-lg shadow space-y-3">
             <div>
               <strong>Title:</strong> {course.title}
             </div>
@@ -334,9 +345,9 @@ export default function ViewStaffCoursePage() {
                 href={course.image}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-blue-600 underline"
+                className="text-indigo-600 underline"
               >
-                {course.image}
+                View Image
               </a>
             </div>
             <div>
@@ -352,7 +363,7 @@ export default function ViewStaffCoursePage() {
               <strong>Level:</strong> {course.level}
             </div>
             <div>
-              <strong>Duration:</strong> {course.duration} phút
+              <strong>Duration:</strong> {course.duration} min
             </div>
             <div>
               <strong>Passing Score:</strong> {course.passingScore}
@@ -363,147 +374,144 @@ export default function ViewStaffCoursePage() {
           </section>
         )}
 
-        {/* MATERIALS */}
+        {/* Materials */}
         <section className="space-y-4">
-          <h2 className="text-xl font-semibold">Materials</h2>
-          {materials.length === 0 && (
-            <p className="text-gray-500">Chưa có material nào.</p>
-          )}
-          {materials.map((m) =>
-            editingMaterialId === m.id ? (
-              // FORM EDIT MATERIAL
-              <form
-                key={m.id}
-                onSubmit={handleMaterialEditSubmit}
-                className="bg-white p-4 rounded shadow space-y-3"
-              >
-                {/* Type */}
-                <div>
-                  <label className="block font-medium">Type</label>
-                  <select
-                    name="type"
-                    value={materialEditData.type}
-                    onChange={handleMaterialChange}
-                    className="w-full border rounded px-3 py-2"
-                    required
-                  >
-                    <option value="">-- Chọn loại --</option>
-                    <option value="Video">Video</option>
-                    <option value="Document">Document</option>
-                  </select>
-                </div>
-                {/* Title */}
-                <div>
-                  <label className="block font-medium">Title</label>
-                  <input
-                    name="title"
-                    value={materialEditData.title}
-                    onChange={handleMaterialChange}
-                    className="w-full border rounded px-3 py-2"
-                    required
-                  />
-                </div>
-                {/* URL */}
-                <div>
-                  <label className="block font-medium">URL</label>
-                  <div className="flex items-center space-x-4">
+          <h2 className="text-xl font-semibold text-gray-800">Materials</h2>
+          {materials.length === 0 ? (
+            <p className="text-gray-500">No materials yet.</p>
+          ) : (
+            materials.map((m) =>
+              editingMaterialId === m.id ? (
+                <form
+                  key={m.id}
+                  onSubmit={handleMaterialEditSubmit}
+                  className="bg-white p-6 rounded-lg shadow space-y-4"
+                >
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Type
+                      </label>
+                      <select
+                        name="type"
+                        value={materialEditData.type}
+                        onChange={handleMaterialChange}
+                        className="w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
+                        required
+                      >
+                        <option value="">-- Select --</option>
+                        <option value="Video">Video</option>
+                        <option value="Document">Document</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Title
+                      </label>
+                      <input
+                        name="title"
+                        value={materialEditData.title}
+                        onChange={handleMaterialChange}
+                        className="w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      File URL
+                    </label>
+                    <div className="flex items-center space-x-4">
+                      <button
+                        type="button"
+                        onClick={() => materialFileRef.current.click()}
+                        disabled={uploadingMaterialFile}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:scale-105 transform transition"
+                      >
+                        {uploadingMaterialFile ? "Uploading…" : "Select File…"}
+                      </button>
+                      {materialEditData.url && (
+                        <a
+                          href={materialEditData.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-indigo-600 underline break-all text-sm"
+                        >
+                          View File
+                        </a>
+                      )}
+                    </div>
+                    <input
+                      type="file"
+                      accept="*/*"
+                      ref={materialFileRef}
+                      onChange={handleMaterialFileSelect}
+                      className="hidden"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Description
+                    </label>
+                    <textarea
+                      name="description"
+                      rows={2}
+                      value={materialEditData.description}
+                      onChange={handleMaterialChange}
+                      className="w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Sort Order
+                    </label>
+                    <input
+                      name="sortOrder"
+                      type="number"
+                      value={materialEditData.sortOrder}
+                      onChange={handleMaterialChange}
+                      className="w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
+                    />
+                  </div>
+
+                  <div className="flex space-x-2">
+                    <button
+                      type="submit"
+                      className="px-6 py-2 bg-green-600 text-white rounded-md hover:scale-105 transform transition"
+                    >
+                      Save
+                    </button>
                     <button
                       type="button"
-                      onClick={() => materialFileRef.current.click()}
-                      className="px-4 py-2 bg-blue-600 text-white rounded"
-                      disabled={uploadingMaterialFile}
+                      onClick={() => setEditingMaterialId(null)}
+                      className="px-6 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition"
                     >
-                      {uploadingMaterialFile ? "Uploading…" : "Select File…"}
+                      Cancel
                     </button>
-                    <span className="text-sm text-gray-600 break-all">
-                      {materialEditData.url}
-                    </span>
                   </div>
-                  <input
-                    type="file"
-                    accept="*/*"
-                    ref={materialFileRef}
-                    onChange={handleMaterialFileSelect}
-                    className="hidden"
-                  />
-                </div>
-                {/* Description */}
-                <div>
-                  <label className="block font-medium">Description</label>
-                  <textarea
-                    name="description"
-                    value={materialEditData.description}
-                    onChange={handleMaterialChange}
-                    className="w-full border rounded px-3 py-2"
-                    rows={2}
-                  />
-                </div>
-                {/* Sort Order */}
-                <div>
-                  <label className="block font-medium">Sort Order</label>
-                  <input
-                    name="sortOrder"
-                    type="number"
-                    value={materialEditData.sortOrder}
-                    onChange={handleMaterialChange}
-                    className="w-full border rounded px-3 py-2"
-                  />
-                </div>
-                {/* Buttons */}
-                <div className="flex space-x-2">
-                  <button
-                    type="submit"
-                    className="px-4 py-2 bg-green-600 text-white rounded"
-                  >
-                    Save
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setEditingMaterialId(null)}
-                    className="px-4 py-2 bg-gray-300 rounded"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            ) : (
-              // VIEW MATERIAL
-              <div
-                key={m.id}
-                className="bg-white p-4 rounded shadow flex justify-between items-center"
-              >
-                <div className="space-y-1">
-                  <div>
-                    <strong>Type:</strong> {m.type}
-                  </div>
-                  <div>
-                    <strong>Title:</strong> {m.title}
-                  </div>
-                  <div>
-                    <strong>URL:</strong>{" "}
-                    <a
-                      href={m.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 underline"
-                    >
-                      {m.url}
-                    </a>
-                  </div>
-                  <div>
-                    <strong>Description:</strong> {m.description}
-                  </div>
-                  <div>
-                    <strong>Sort Order:</strong> {m.sortOrder}
-                  </div>
-                </div>
-                <button
-                  onClick={() => startMaterialEdit(m)}
-                  className="px-3 py-1 bg-yellow-500 text-white rounded"
+                </form>
+              ) : (
+                <div
+                  key={m.id}
+                  className="bg-white p-6 rounded-lg shadow flex justify-between items-center hover:shadow-lg transition"
                 >
-                  Edit
-                </button>
-              </div>
+                  <div>
+                    <div className="font-semibold text-gray-800">{m.title}</div>
+                    <div className="text-sm text-gray-600">
+                      {m.type} • Order: {m.sortOrder}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => startMaterialEdit(m)}
+                    className="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition"
+                  >
+                    Edit
+                  </button>
+                </div>
+              )
             )
           )}
         </section>
