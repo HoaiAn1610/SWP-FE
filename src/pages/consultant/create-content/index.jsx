@@ -1,9 +1,8 @@
 // src/pages/consultant/create-content/index.jsx
 import React, { useState, useRef, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import api from "@/config/axios"; // axios instance
 import { uploadFile } from "@/utils/upload"; // helper uploadFile
-import { FiUser } from "react-icons/fi";
 
 export default function ConsultantCreateContentPage() {
   const navigate = useNavigate();
@@ -26,7 +25,6 @@ export default function ConsultantCreateContentPage() {
   // --- state courses ---
   const [courses, setCourses] = useState([]);
   const currentUserId = localStorage.getItem("id");
-  const username = localStorage.getItem("name") || "Member";
 
   // --- state material form ---
   const [materialFormVisible, setMaterialFormVisible] = useState(false);
@@ -41,13 +39,19 @@ export default function ConsultantCreateContentPage() {
   const [uploadingMaterialFile, setUploadingMaterialFile] = useState(false);
   const materialFileRef = useRef(null);
 
-  // Fetch courses thuộc user
+  // Fetch lại courses của user
+  const reloadCourses = async () => {
+    try {
+      const { data } = await api.get(
+        `Course/get-courses-by-createById/${currentUserId}`
+      );
+      setCourses(data);
+    } catch (err) {
+      console.error("Lỗi fetch courses:", err);
+    }
+  };
   useEffect(() => {
-    if (!currentUserId) return;
-    api
-      .get(`Course/get-courses-by-createById/${currentUserId}`)
-      .then((res) => setCourses(res.data))
-      .catch(console.error);
+    if (currentUserId) reloadCourses();
   }, [currentUserId]);
 
   // Xử lý course form
@@ -72,11 +76,7 @@ export default function ConsultantCreateContentPage() {
   const handleCourseSubmit = async (e) => {
     e.preventDefault();
     await api.post("Course/create-course", formData);
-    // reload
-    const { data } = await api.get(
-      `Course/get-courses-by-createById/${currentUserId}`
-    );
-    setCourses(data);
+    await reloadCourses();
     setShowForm(false);
     setFormData({
       title: "",
@@ -89,22 +89,6 @@ export default function ConsultantCreateContentPage() {
       passingScore: 0,
     });
   };
-
-  // Load lại danh sách courses
-  const reloadCourses = async () => {
-    try {
-      const { data } = await api.get(
-        `Course/get-courses-by-createById/${currentUserId}`
-      );
-      setCourses(data);
-    } catch (err) {
-      console.error("Lỗi fetch courses:", err);
-    }
-  };
-
-  useEffect(() => {
-    if (currentUserId) reloadCourses();
-  }, [currentUserId]);
 
   // Xử lý material form
   const openMaterialForm = (courseId) => {
@@ -125,7 +109,6 @@ export default function ConsultantCreateContentPage() {
       [name]: type === "number" ? Number(value) : value,
     }));
   };
-  // Chọn file và upload
   const handleMaterialFileSelect = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -147,18 +130,13 @@ export default function ConsultantCreateContentPage() {
     setMaterialFormVisible(false);
   };
 
-  // Hàm gọi submit-to-staff
+  // Submit lên Staff
   const handleSubmitToStaff = async (courseId) => {
-    if (
-      !window.confirm("Bạn có chắc muốn submit khóa học này lên Staff không?")
-    ) {
+    if (!window.confirm("Bạn có chắc muốn gửi khóa học này lên Staff không?"))
       return;
-    }
     try {
-      // POST lên backend
       await api.post(`/Course/${courseId}/submit-to-staff`);
       alert("Đã gửi lên Staff thành công!");
-      // Reload lại list để cập nhật workflowState + remove khỏi Draft list
       await reloadCourses();
     } catch (err) {
       console.error("Submit to staff lỗi:", err);
@@ -169,348 +147,346 @@ export default function ConsultantCreateContentPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="flex">
-        {/* Sidebar (bỏ comment nếu cần) */}
-        {/* <aside className="w-64 bg-white shadow p-6 space-y-4">
-          <Link
-            to="/consultant/appointments"
-            className="block px-3 py-2 rounded hover:bg-gray-100"
+    <div className="min-h-screen bg-gray-100">
+      <main className="max-w-4xl mx-auto py-8 px-4 space-y-8">
+        {/* Header */}
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-bold text-gray-800">
+            Create New Course
+          </h1>
+          <button
+            onClick={() => setShowForm((v) => !v)}
+            className="px-5 py-2 bg-purple-600 text-white rounded-lg hover:scale-105 transform transition"
           >
-            Appointments
-          </Link>
-          <Link
-            to="/consultant/create-content"
-            className="block px-3 py-2 rounded bg-gradient-to-r from-purple-500 to-indigo-500 text-white"
+            {showForm ? "Đóng Form" : "Mở Form"}
+          </button>
+        </div>
+
+        {/* Course Form */}
+        {showForm && (
+          <form
+            onSubmit={handleCourseSubmit}
+            className="bg-white rounded-lg shadow p-6 space-y-6"
           >
-            Create Content
-          </Link>
-          <Link
-            to="/consultant/blog-qa"
-            className="block px-3 py-2 rounded hover:bg-gray-100"
-          >
-            Blog Q&A
-          </Link>
-        </aside> */}
-
-        {/* Main */}
-        <main className="flex-1 p-8 space-y-8">
-          {/* Course header */}
-          <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-semibold">Create New Course</h1>
-            <button
-              onClick={() => setShowForm((v) => !v)}
-              className="px-4 py-2 bg-purple-600 text-white rounded"
-            >
-              {showForm ? "Close Course Form" : "Open Course Form"}
-            </button>
-          </div>
-
-          {/* Course form */}
-          {showForm && (
-            <form
-              onSubmit={handleCourseSubmit}
-              className="bg-white p-6 rounded shadow space-y-4"
-            >
-              {/* Title & Image */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block font-medium">Title</label>
-                  <input
-                    type="text"
-                    name="title"
-                    value={formData.title}
-                    onChange={handleCourseChange}
-                    className="w-full border rounded px-3 py-2"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block font-medium">Image</label>
-                  <div className="flex items-center space-x-4">
-                    <button
-                      type="button"
-                      onClick={() => courseImageRef.current.click()}
-                      className="px-4 py-2 bg-blue-600 text-white rounded"
-                      disabled={uploadingCourseImage}
-                    >
-                      {uploadingCourseImage ? "Uploading…" : "Select Image…"}
-                    </button>
-                    {formData.image && (
-                      <span className="text-sm text-gray-600 break-all">
-                        {formData.image}
-                      </span>
-                    )}
-                  </div>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    ref={courseImageRef}
-                    onChange={handleCourseImageSelect}
-                    className="hidden"
-                  />
-                </div>
-              </div>
-
-              {/* Description */}
-              <div>
-                <label className="block font-medium">Description</label>
-                <textarea
-                  name="description"
-                  value={formData.description}
-                  onChange={handleCourseChange}
-                  className="w-full border rounded px-3 py-2"
-                  rows={2}
-                />
-              </div>
-
-              {/* Content */}
-              <div>
-                <label className="block font-medium">Content</label>
-                <textarea
-                  name="content"
-                  value={formData.content}
-                  onChange={handleCourseChange}
-                  className="w-full border rounded px-3 py-2"
-                  rows={4}
-                />
-              </div>
-
-              {/* Category + Level */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block font-medium">Category</label>
-                  <input
-                    type="text"
-                    name="category"
-                    value={formData.category}
-                    onChange={handleCourseChange}
-                    className="w-full border rounded px-3 py-2"
-                  />
-                </div>
-                <div>
-                  <label className="block font-medium">Level</label>
-                  <select
-                    name="level"
-                    value={formData.level}
-                    onChange={handleCourseChange}
-                    className="w-full border rounded px-3 py-2"
-                    required
-                  >
-                    <option value="" disabled>
-                      -- Chọn mức độ --
-                    </option>
-                    <option value="Low">Low</option>
-                    <option value="Medium">Medium</option>
-                    <option value="High">High</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Duration + PassingScore */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block font-medium">Duration (phút)</label>
-                  <input
-                    type="number"
-                    name="duration"
-                    value={formData.duration}
-                    onChange={handleCourseChange}
-                    className="w-full border rounded px-3 py-2"
-                  />
-                </div>
-                <div>
-                  <label className="block font-medium">Passing Score</label>
-                  <input
-                    type="number"
-                    name="passingScore"
-                    value={formData.passingScore}
-                    onChange={handleCourseChange}
-                    className="w-full border rounded px-3 py-2"
-                  />
-                </div>
-              </div>
-
-              <div className="text-right">
-                <button
-                  type="submit"
-                  className="px-6 py-2 bg-green-600 text-white rounded"
-                >
-                  Submit
-                </button>
-              </div>
-            </form>
-          )}
-
-          {/* Material form */}
-          {materialFormVisible && (
-            <form
-              onSubmit={handleMaterialSubmit}
-              className="bg-white p-6 rounded shadow space-y-4"
-            >
-              {/* Header form */}
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold">
-                  Add Material to Course #{selectedCourseId}
-                </h2>
-                <button
-                  type="button"
-                  onClick={() => setMaterialFormVisible(false)}
-                  className="px-3 py-1 bg-gray-300 rounded hover:bg-gray-400"
-                >
-                  Close Form
-                </button>
-              </div>
-
-              {/* Type */}
-              <div>
-                <label className="block font-medium">Type</label>
-                <select
-                  name="type"
-                  value={materialData.type}
-                  onChange={handleMaterialChange}
-                  className="w-full border rounded px-3 py-2"
-                  required
-                >
-                  <option value="" disabled>
-                    -- Chọn loại --
-                  </option>
-                  <option value="Video">Video</option>
-                  <option value="Document">Document</option>
-                </select>
-              </div>
-
+            {/* Title & Image */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Title */}
               <div>
-                <label className="block font-medium">Title</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Title
+                </label>
                 <input
                   type="text"
                   name="title"
-                  value={materialData.title}
-                  onChange={handleMaterialChange}
-                  className="w-full border rounded px-3 py-2"
+                  value={formData.title}
+                  onChange={handleCourseChange}
+                  className="w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
                   required
                 />
               </div>
-
-              {/* URL (file upload) */}
+              {/* Image */}
               <div>
-                <label className="block font-medium">URL</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Image
+                </label>
                 <div className="flex items-center space-x-4">
                   <button
                     type="button"
-                    onClick={() => materialFileRef.current.click()}
-                    className="px-4 py-2 bg-blue-600 text-white rounded"
-                    disabled={uploadingMaterialFile}
+                    onClick={() => courseImageRef.current.click()}
+                    disabled={uploadingCourseImage}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:scale-105 transform transition"
                   >
-                    {uploadingMaterialFile ? "Uploading…" : "Select File…"}
+                    {uploadingCourseImage ? "Uploading…" : "Select Image…"}
                   </button>
-                  {materialData.url && (
+                  {formData.image && (
                     <span className="text-sm text-gray-600 break-all">
-                      {materialData.url}
+                      {formData.image}
                     </span>
                   )}
                 </div>
                 <input
                   type="file"
-                  accept="*/*"
-                  ref={materialFileRef}
-                  onChange={handleMaterialFileSelect}
+                  accept="image/*"
+                  ref={courseImageRef}
+                  onChange={handleCourseImageSelect}
                   className="hidden"
                 />
               </div>
+            </div>
 
-              {/* Description */}
+            {/* Description & Content */}
+            <div className="space-y-4">
               <div>
-                <label className="block font-medium">Description</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Description
+                </label>
                 <textarea
                   name="description"
-                  value={materialData.description}
-                  onChange={handleMaterialChange}
-                  className="w-full border rounded px-3 py-2"
+                  value={formData.description}
+                  onChange={handleCourseChange}
                   rows={2}
+                  className="w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
                 />
               </div>
-
-              {/* Sort Order */}
               <div>
-                <label className="block font-medium">Sort Order</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Content
+                </label>
+                <textarea
+                  name="content"
+                  value={formData.content}
+                  onChange={handleCourseChange}
+                  rows={4}
+                  className="w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
+                />
+              </div>
+            </div>
+
+            {/* Category, Level, Duration, Passing Score */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Category
+                </label>
+                <input
+                  type="text"
+                  name="category"
+                  value={formData.category}
+                  onChange={handleCourseChange}
+                  className="w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Level
+                </label>
+                <select
+                  name="level"
+                  value={formData.level}
+                  onChange={handleCourseChange}
+                  className="w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
+                  required
+                >
+                  <option value="" disabled>
+                    -- Chọn mức độ --
+                  </option>
+                  <option value="Low">Low</option>
+                  <option value="Medium">Medium</option>
+                  <option value="High">High</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Duration (phút)
+                </label>
                 <input
                   type="number"
-                  name="sortOrder"
-                  value={materialData.sortOrder}
-                  onChange={handleMaterialChange}
-                  className="w-full border rounded px-3 py-2"
+                  name="duration"
+                  value={formData.duration}
+                  onChange={handleCourseChange}
+                  className="w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
                 />
               </div>
-
-              <div className="text-right">
-                <button
-                  type="submit"
-                  className="px-6 py-2 bg-indigo-600 text-white rounded"
-                >
-                  Add Material
-                </button>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Passing Score
+                </label>
+                <input
+                  type="number"
+                  name="passingScore"
+                  value={formData.passingScore}
+                  onChange={handleCourseChange}
+                  className="w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
+                />
               </div>
-            </form>
-          )}
+            </div>
 
-          {/* My Courses */}
-          <div className="space-y-6">
-            <h2 className="text-xl font-semibold">My Courses</h2>
-            {courses.length === 0 ? (
-              <p className="text-gray-500">Bạn chưa tạo khóa học nào.</p>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {courses
-                  .filter((c) => c.workflowState === "Draft")
-                  .map((c) => (
-                    <div
-                      key={c.id}
-                      className="bg-white p-6 rounded shadow flex flex-col justify-between"
-                    >
-                      <div>
-                        <h3 className="text-lg font-semibold mb-2">
-                          {c.title}
-                        </h3>
-                        <p className="text-gray-600 text-sm mb-2">
-                          Level: {c.level} • Duration: {c.duration} phút
-                        </p>
-                        <p className="text-gray-500 text-sm mb-4">
-                          Status: {c.status}
-                        </p>
-                      </div>
-                      <div>
-                        <div className="flex space-x-2 mb-2">
-                          <button
-                            onClick={() => openMaterialForm(c.id)}
-                            className="flex-1 px-3 py-2 bg-blue-600 text-white rounded"
-                          >
-                            Add
-                          </button>
-                          <button
-                            onClick={() =>
-                              navigate(`/consultant/course/${c.id}`)
-                            }
-                            className="flex-1 px-3 py-2 bg-green-600 text-white rounded"
-                          >
-                            View
-                          </button>
-                        </div>
-                        <button
-                          onClick={() => handleSubmitToStaff(c.id)}
-                          className="w-full px-3 py-2 bg-yellow-500 text-white rounded"
-                        >
-                          Sent to Staff
-                        </button>
-                      </div>
+            <div className="text-right">
+              <button
+                type="submit"
+                className="px-6 py-2 bg-green-600 text-white rounded-md hover:scale-105 transform transition"
+              >
+                Submit
+              </button>
+            </div>
+          </form>
+        )}
+
+        {/* My Courses */}
+        <section className="space-y-4">
+          <h2 className="text-2xl font-bold text-gray-800">My Courses</h2>
+          {courses.filter((c) => c.workflowState === "Draft").length === 0 ? (
+            <p className="text-gray-500">Bạn chưa tạo khóa học nào.</p>
+          ) : (
+            <div className="border border-blue-500 rounded-lg p-4 space-y-4">
+              {courses
+                .filter((c) => c.workflowState === "Draft")
+                .map((c) => (
+                  <div
+                    key={c.id}
+                    className="flex justify-between items-center py-2 border-b last:border-b-0"
+                  >
+                    {/* Left side: title + subtitle */}
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-800">
+                        {c.title}
+                      </h3>
+                      <p className="text-sm text-gray-600">
+                        Level: {c.level} • Duration: {c.duration} phút
+                      </p>
                     </div>
-                  ))}
+                    {/* Right side: buttons */}
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => openMaterialForm(c.id)}
+                        className="px-4 py-1 border border-blue-500 rounded hover:bg-blue-50 transition"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => navigate(`/consultant/course/${c.id}`)}
+                        className="px-4 py-1 bg-blue-500 text-white rounded hover:opacity-90 transition"
+                      >
+                        View
+                      </button>
+                      <button
+                        onClick={() => handleSubmitToStaff(c.id)}
+                        className="px-4 py-1 bg-yellow-500 text-white rounded hover:opacity-90 transition"
+                      >
+                        Sent to Staff
+                      </button>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          )}
+        </section>
+      </main>
+
+      {/* Material Form Modal */}
+      {materialFormVisible && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center p-4">
+          <form
+            onSubmit={handleMaterialSubmit}
+            className="bg-white rounded-lg shadow-lg p-6 w-full max-w-lg space-y-4"
+          >
+            {/* Header */}
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-semibold text-gray-800">
+                Add Material to Course #{selectedCourseId}
+              </h2>
+              <button
+                type="button"
+                onClick={() => setMaterialFormVisible(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Type */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Type
+              </label>
+              <select
+                name="type"
+                value={materialData.type}
+                onChange={handleMaterialChange}
+                className="w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
+                required
+              >
+                <option value="" disabled>
+                  -- Chọn loại --
+                </option>
+                <option value="Video">Video</option>
+                <option value="Document">Document</option>
+              </select>
+            </div>
+
+            {/* Title */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Title
+              </label>
+              <input
+                type="text"
+                name="title"
+                value={materialData.title}
+                onChange={handleMaterialChange}
+                className="w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
+                required
+              />
+            </div>
+
+            {/* URL */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                URL (file)
+              </label>
+              <div className="flex items-center space-x-4">
+                <button
+                  type="button"
+                  onClick={() => materialFileRef.current.click()}
+                  disabled={uploadingMaterialFile}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:scale-105 transform transition"
+                >
+                  {uploadingMaterialFile ? "Uploading…" : "Select File…"}
+                </button>
+                {materialData.url && (
+                  <span className="text-sm text-gray-600 break-all">
+                    {materialData.url}
+                  </span>
+                )}
               </div>
-            )}
-          </div>
-        </main>
-      </div>
+              <input
+                type="file"
+                accept="*/*"
+                ref={materialFileRef}
+                onChange={handleMaterialFileSelect}
+                className="hidden"
+              />
+            </div>
+
+            {/* Description */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Description
+              </label>
+              <textarea
+                name="description"
+                value={materialData.description}
+                onChange={handleMaterialChange}
+                rows={2}
+                className="w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
+              />
+            </div>
+
+            {/* Sort Order */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Sort Order
+              </label>
+              <input
+                type="number"
+                name="sortOrder"
+                value={materialData.sortOrder}
+                onChange={handleMaterialChange}
+                className="w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
+              />
+            </div>
+
+            <div className="text-right">
+              <button
+                type="submit"
+                className="px-6 py-2 bg-indigo-600 text-white rounded-md hover:scale-105 transform transition"
+              >
+                Add Material
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 }
