@@ -34,9 +34,9 @@ const RegisterPage = () => {
     setIsLoading(true);
     try {
       console.log("Register payload:", formData);
-      const response = await api.post("UserManagement/register", formData);
+      const response = await api.post("Auth/register", formData);
       console.log("Register response:", response.data);
-      toast.success("Tạo tài khoản thành công!");
+      toast.success("Check your email to verify your account!");
       navigate("/login");
     } catch (err) {
       console.error("Registration error:", err);
