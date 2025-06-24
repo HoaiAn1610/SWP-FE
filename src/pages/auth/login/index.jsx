@@ -87,13 +87,17 @@ const LoginPage = () => {
         {/* Tabs: giữ luôn redirect khi chuyển tab */}
         <div className="bg-gray-100 rounded-lg flex overflow-hidden">
           <Link
-            to={`/login${redirect ? `?redirect=${encodeURIComponent(redirect)}` : ""}`}
+            to={`/login${
+              redirect ? `?redirect=${encodeURIComponent(redirect)}` : ""
+            }`}
             className="flex-1 text-center py-2 bg-white text-blue-600 font-medium"
           >
             Login
           </Link>
           <Link
-            to={`/register${redirect ? `?redirect=${encodeURIComponent(redirect)}` : ""}`}
+            to={`/register${
+              redirect ? `?redirect=${encodeURIComponent(redirect)}` : ""
+            }`}
             className="flex-1 text-center py-2 text-gray-500 hover:bg-white hover:text-blue-600 font-medium"
           >
             Register
@@ -145,7 +149,7 @@ const LoginPage = () => {
               />
               <span className="ml-2 text-gray-600">Remember me</span>
             </label>
-            <Link to="/forgot-password" className="text-blue-600 hover:underline">
+            <Link to="/reset" className="text-blue-600 hover:underline">
               Forgot password?
             </Link>
           </div>
@@ -164,7 +168,9 @@ const LoginPage = () => {
             <div className="w-full border-t border-gray-300"></div>
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-white text-gray-500">Or continue with</span>
+            <span className="px-2 bg-white text-gray-500">
+              Or continue with
+            </span>
           </div>
         </div>
 
@@ -205,14 +211,17 @@ const LoginPage = () => {
           <p className="text-gray-600 text-sm">
             Don’t have an account?{" "}
             <Link
-              to={`/register${redirect ? `?redirect=${encodeURIComponent(redirect)}` : ""}`}
+              to={`/register${
+                redirect ? `?redirect=${encodeURIComponent(redirect)}` : ""
+              }`}
               className="text-blue-600 font-medium hover:underline"
             >
               Sign up
             </Link>
           </p>
           <p className="text-xs text-gray-400">
-            By continuing, you agree to our commitment to youth safety and prevention education
+            By continuing, you agree to our commitment to youth safety and
+            prevention education
           </p>
         </div>
       </div>

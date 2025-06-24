@@ -7,6 +7,7 @@ import Dashboard from "./components/dashboard";
 import UploadComponent from "./components/upload";
 import Courses from "./pages/auth/course";
 import Login from "./pages/auth/login";
+import ResetPasswordPage from "./pages/auth/reser-password";
 import Register from "./pages/auth/register";
 import EcommerceHome from "./pages/common/home";
 
@@ -56,6 +57,10 @@ function App() {
     {
       path: "/login",
       element: <Login />,
+    },
+    {
+      path: "/reset",
+      element: <ResetPasswordPage />,
     },
     {
       path: "/register",
