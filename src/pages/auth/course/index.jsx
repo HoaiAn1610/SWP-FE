@@ -15,11 +15,8 @@ import "./styles.css";
 
 export default function CoursesPage() {
   const [courses, setCourses] = useState([]);
-  const [enrollments, setEnrollments] = useState([]);   // chứa enrollment của user
-  const [filters, setFilters] = useState({
-    level: "All Levels",
-    category: "All Categories",
-  });
+  const [enrollments, setEnrollments] = useState([]);
+  const [filters, setFilters] = useState({ level: "All Levels", category: "All Categories" });
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -30,10 +27,19 @@ export default function CoursesPage() {
   const [showModal, setShowModal] = useState(false);
   const navigate = useNavigate();
 
-   const { search } = useLocation();
+  const { search } = useLocation();
   const qs = new URLSearchParams(search);
   const openId = qs.get("openOverlay");
-  // 1) fetch enrollments của user
+
+  // alert popup state
+  const [alertVisible, setAlertVisible] = useState(false);
+  const [alertMessage, setAlertMessage] = useState("");
+  const showAlert = (msg) => {
+    setAlertMessage(msg);
+    setAlertVisible(true);
+  };
+
+  // 1) fetch enrollments
   useEffect(() => {
     const fetchEnrollments = async () => {
       try {
@@ -44,14 +50,14 @@ export default function CoursesPage() {
         );
         setEnrollments(data);
       } catch (err) {
-        console.error("Lỗi fetch enrollments:", err);
+        showAlert("Lỗi fetch enrollments: " + (err.message || err));
         setEnrollments([]);
       }
     };
     fetchEnrollments();
   }, []);
 
-  // 2) fetch courses dựa trên filters + paging + chỉ Approved
+  // 2) fetch courses
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -59,26 +65,17 @@ export default function CoursesPage() {
       try {
         let data = [];
         const { level, category } = filters;
-        const onlyLevel =
-          level !== "All Levels" && category === "All Categories";
-        const onlyCat =
-          category !== "All Categories" && level === "All Levels";
-
+        const onlyLevel = level !== "All Levels" && category === "All Categories";
+        const onlyCat = category !== "All Categories" && level === "All Levels";
         if (onlyLevel) data = await getCoursesByLevel(level);
         else if (onlyCat) data = await getCoursesByCategory(category);
         else if (level === "All Levels" && category === "All Categories")
           data = await getAllCourses();
         else {
           const all = await getAllCourses();
-          data = all.filter(
-            (c) => c.level === level && c.category === category
-          );
+          data = all.filter(c => c.level === level && c.category === category);
         }
-
-        // chỉ show Approved
-        data = data.filter((c) => c.status === "Approved");
-
-        // paging
+        data = data.filter(c => c.status === "Approved");
         const total = Math.ceil(data.length / limit) || 1;
         setTotalPages(total);
         const start = (page - 1) * limit;
@@ -88,7 +85,9 @@ export default function CoursesPage() {
           setCourses([]);
           setTotalPages(1);
         } else {
-          setError(err.message || "Error loading courses");
+          const msg = err.message || "Error loading courses";
+          setError(msg);
+          showAlert(msg);
         }
       } finally {
         setLoading(false);
@@ -97,16 +96,14 @@ export default function CoursesPage() {
     fetchData();
   }, [filters, page]);
 
-  // helper: danh sách id đã enroll + map status
-  const enrolledCourseIds = enrollments.map((e) => e.courseId);
+  const enrolledCourseIds = enrollments.map(e => e.courseId);
   const statusMap = enrollments.reduce((m, e) => {
-    m[e.courseId] = e.status; // "Enrolled" or "Completed"
+    m[e.courseId] = e.status;
     return m;
   }, {});
 
-  // filter handlers
-  const handleFilterChange = (upd) => {
-    setFilters((f) => ({ ...f, ...upd }));
+  const handleFilterChange = upd => {
+    setFilters(f => ({ ...f, ...upd }));
     setPage(1);
   };
   const handleClearFilters = () => {
@@ -114,8 +111,7 @@ export default function CoursesPage() {
     setPage(1);
   };
 
-  // modal handlers
-  const handleSelectCourse = (course) => {
+  const handleSelectCourse = course => {
     setSelectedCourse(course);
     setShowModal(true);
   };
@@ -123,12 +119,14 @@ export default function CoursesPage() {
     setShowModal(false);
     setSelectedCourse(null);
   };
-   useEffect(() => {
+
+  useEffect(() => {
     if (openId && courses.length) {
       const c = courses.find(c => String(c.id) === openId);
       if (c) handleSelectCourse(c);
     }
   }, [openId, courses]);
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
@@ -176,13 +174,25 @@ export default function CoursesPage() {
         </main>
       </div>
 
-      {/* overlay chi tiết */}
       {showModal && selectedCourse && (
         <CourseDetailOverlay
           course={selectedCourse}
           status={statusMap[selectedCourse.id]}
           onClose={handleCloseModal}
         />
+      )}
+
+      {/* Alert Popup */}
+      {alertVisible && (
+        <div className="fixed inset-0 flex items-center justify-center z-60">
+          <div className="bg-white p-4 rounded-lg shadow-lg max-w-xs text-center border border-indigo-200">
+            <p className="mb-4 text-indigo-800 font-semibold">{alertMessage}</p>
+            <button
+              onClick={() => setAlertVisible(false)}
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md"
+            >OK</button>
+          </div>
+        </div>
       )}
     </div>
   );
