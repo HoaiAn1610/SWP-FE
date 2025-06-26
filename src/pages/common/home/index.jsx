@@ -1,10 +1,11 @@
 // src/pages/common/home/EcommerceHome.jsx
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import api from "@/config/axios";
 import Header from "@/components/header";
 import CourseList from "@/components/courses/CourseList";
 import CourseDetailOverlay from "@/components/courses/CourseDetailOverlay";
+import SurveySection from "@/pages/common/survey";
 import { getAllCourses } from "@/service/courseService";
 
 export default function EcommerceHome() {
@@ -21,8 +22,8 @@ export default function EcommerceHome() {
   useEffect(() => {
     setLoading(true);
     getAllCourses()
-      .then(data => setCourses(data))
-      .catch(err => setError(err.message || "Error loading courses"))
+      .then((data) => setCourses(data))
+      .catch((err) => setError(err.message || "Error loading courses"))
       .finally(() => setLoading(false));
   }, []);
 
@@ -30,9 +31,10 @@ export default function EcommerceHome() {
   useEffect(() => {
     const userId = localStorage.getItem("id");
     if (!userId) return;
-    api.get(`/CourseEnrollment/users/${userId}/enrollments`)
+    api
+      .get(`/CourseEnrollment/users/${userId}/enrollments`)
       .then(({ data }) => setEnrollments(data))
-      .catch(err => {
+      .catch((err) => {
         console.error("Lỗi fetch enrollments:", err);
         setEnrollments([]);
       });
@@ -42,14 +44,14 @@ export default function EcommerceHome() {
   const featured = courses.slice(0, 3);
 
   // build helper: danh sách id đã enroll và map status
-  const enrolledCourseIds = enrollments.map(e => e.courseId);
+  const enrolledCourseIds = enrollments.map((e) => e.courseId);
   const statusMap = enrollments.reduce((m, e) => {
     m[e.courseId] = e.status; // "Enrolled" hoặc "Completed"
     return m;
   }, {});
 
   // khi click Learn More → mở overlay
-  const handleSelectCourse = course => {
+  const handleSelectCourse = (course) => {
     setSelectedCourse(course);
     setShowModal(true);
   };
@@ -59,15 +61,19 @@ export default function EcommerceHome() {
   };
 
   if (loading) return <p className="text-center py-10">Loading…</p>;
-  if (error)   return <p className="text-center text-red-500 py-10">Error: {error}</p>;
+  if (error)
+    return <p className="text-center text-red-500 py-10">Error: {error}</p>;
 
   return (
     <>
       <Header />
 
+      {/* Featured Courses */}
       <section className="py-16 bg-gray-50">
         <div className="max-w-7xl mx-auto px-6">
-          <h2 className="text-3xl font-bold text-center mb-6">Featured Courses</h2>
+          <h2 className="text-3xl font-bold text-center mb-6">
+            Featured Courses
+          </h2>
 
           <CourseList
             courses={featured}
@@ -104,6 +110,9 @@ export default function EcommerceHome() {
           onClose={handleCloseModal}
         />
       )}
+
+      {/* Mục Prevention ngay dưới header */}
+      <SurveySection />
     </>
   );
 }

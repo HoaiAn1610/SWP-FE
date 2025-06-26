@@ -10,6 +10,10 @@ import Login from "./pages/auth/login";
 import ResetPasswordPage from "./pages/auth/reser-password";
 import Register from "./pages/auth/register";
 import EcommerceHome from "./pages/common/home";
+import SurveyPage from "@/pages/survey/SurveyPage";
+import SurveySection from "@/pages/survey/surveySection";
+import AssistPage from "@/pages/survey/assist";
+import CrafftPage from "@/pages/survey/Crafft";
 
 // import ProtectedRoute from "@/components/protected-route";
 import LessonPage from "@/pages/auth/course/LessonPage";
@@ -82,6 +86,16 @@ function App() {
       children: [
         { index: true, element: <Navigate to="MyProfilePage" replace /> },
         { path: "MyProfilePage", element: <MyProfilePage /> },
+      ],
+    },
+    {
+      path: "/survey",
+      element: <SurveyPage />,
+      errorElement: <ErrorPage />,
+      children: [
+        { index: true, element: <SurveySection /> },
+        { path: "assist", element: <AssistPage /> },
+        { path: "crafft", element: <CrafftPage /> },
       ],
     },
     {

@@ -1,11 +1,20 @@
 // src/pages/consultant/create-content/index.jsx
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "@/config/axios"; // axios instance
-import { uploadFile } from "@/utils/upload"; // helper uploadFile
+import api from "@/config/axios";
+import { uploadFile } from "@/utils/upload";
 
 export default function ConsultantCreateContentPage() {
   const navigate = useNavigate();
+
+  // --- Alert Popup state ---
+  const [alertVisible, setAlertVisible] = useState(false);
+  const [alertMessage, setAlertMessage] = useState("");
+
+  // --- Confirm Popup state ---
+  const [confirmVisible, setConfirmVisible] = useState(false);
+  const [confirmMessage, setConfirmMessage] = useState("");
+  const [confirmAction, setConfirmAction] = useState(() => {});
 
   // --- state course form ---
   const [showForm, setShowForm] = useState(false);
@@ -22,9 +31,11 @@ export default function ConsultantCreateContentPage() {
   const [uploadingCourseImage, setUploadingCourseImage] = useState(false);
   const courseImageRef = useRef(null);
 
-  // --- state courses ---
+  // --- state courses + filters ---
   const [courses, setCourses] = useState([]);
-  const currentUserId = localStorage.getItem("id");
+  const [filterStatus, setFilterStatus] = useState("");
+  const [filterWorkflow, setFilterWorkflow] = useState("");
+  const currentUserId = localStorage.getItem("id") || "";
 
   // --- state material form ---
   const [materialFormVisible, setMaterialFormVisible] = useState(false);
@@ -39,7 +50,7 @@ export default function ConsultantCreateContentPage() {
   const [uploadingMaterialFile, setUploadingMaterialFile] = useState(false);
   const materialFileRef = useRef(null);
 
-  // Fetch lại courses của user
+  // reload courses created by current user
   const reloadCourses = async () => {
     try {
       const { data } = await api.get(
@@ -48,13 +59,30 @@ export default function ConsultantCreateContentPage() {
       setCourses(data);
     } catch (err) {
       console.error("Lỗi fetch courses:", err);
+      setAlertMessage("Không tải được danh sách khóa học.");
+      setAlertVisible(true);
     }
   };
   useEffect(() => {
     if (currentUserId) reloadCourses();
   }, [currentUserId]);
 
-  // Xử lý course form
+  // derive distinct filter options
+  const statusOptions = Array.from(
+    new Set(courses.map((c) => c.status).filter(Boolean))
+  );
+  const workflowOptions = Array.from(
+    new Set(courses.map((c) => c.workflowState).filter(Boolean))
+  );
+
+  // filtered list
+  const filteredCourses = courses
+    .filter((c) => (filterStatus ? c.status === filterStatus : true))
+    .filter((c) =>
+      filterWorkflow ? c.workflowState === filterWorkflow : true
+    );
+
+  // --- course form handlers ---
   const handleCourseChange = (e) => {
     const { name, value, type } = e.target;
     setFormData((f) => ({
@@ -69,28 +97,38 @@ export default function ConsultantCreateContentPage() {
     try {
       const url = await uploadFile(file, "courses");
       setFormData((f) => ({ ...f, image: url }));
+    } catch {
+      setAlertMessage("Upload ảnh khóa học thất bại.");
+      setAlertVisible(true);
     } finally {
       setUploadingCourseImage(false);
     }
   };
   const handleCourseSubmit = async (e) => {
     e.preventDefault();
-    await api.post("Course/create-course", formData);
-    await reloadCourses();
-    setShowForm(false);
-    setFormData({
-      title: "",
-      image: "",
-      description: "",
-      content: "",
-      category: "",
-      level: "",
-      duration: 0,
-      passingScore: 0,
-    });
+    try {
+      await api.post("Course/create-course", formData);
+      setAlertMessage("Tạo khóa học thành công!");
+      setAlertVisible(true);
+      await reloadCourses();
+      setShowForm(false);
+      setFormData({
+        title: "",
+        image: "",
+        description: "",
+        content: "",
+        category: "",
+        level: "",
+        duration: 0,
+        passingScore: 0,
+      });
+    } catch {
+      setAlertMessage("Tạo khóa học thất bại.");
+      setAlertVisible(true);
+    }
   };
 
-  // Xử lý material form
+  // --- material form handlers ---
   const openMaterialForm = (courseId) => {
     setSelectedCourseId(courseId);
     setMaterialFormVisible(true);
@@ -116,40 +154,52 @@ export default function ConsultantCreateContentPage() {
     try {
       const url = await uploadFile(file, "materials");
       setMaterialData((m) => ({ ...m, url }));
+    } catch {
+      setAlertMessage("Upload file material thất bại.");
+      setAlertVisible(true);
     } finally {
       setUploadingMaterialFile(false);
     }
   };
   const handleMaterialSubmit = async (e) => {
     e.preventDefault();
-    await api.post(
-      `courses/${selectedCourseId}/CourseMaterial/add-material`,
-      materialData
-    );
-    alert("Thêm material thành công!");
-    setMaterialFormVisible(false);
+    try {
+      await api.post(
+        `courses/${selectedCourseId}/CourseMaterial/add-material`,
+        materialData
+      );
+      setAlertMessage("Thêm material thành công!");
+      setAlertVisible(true);
+      setMaterialFormVisible(false);
+    } catch {
+      setAlertMessage("Thêm material thất bại.");
+      setAlertVisible(true);
+    }
   };
 
-  // Submit lên Staff
-  const handleSubmitToStaff = async (courseId) => {
-    if (!window.confirm("Bạn có chắc muốn gửi khóa học này lên Staff không?"))
-      return;
-    try {
-      await api.post(`/Course/${courseId}/submit-to-staff`);
-      alert("Đã gửi lên Staff thành công!");
-      await reloadCourses();
-    } catch (err) {
-      console.error("Submit to staff lỗi:", err);
-      alert(
-        "Có lỗi khi gửi lên Staff. Khóa học có thể không ở trạng thái Draft."
-      );
-    }
+  // --- Submit to Manager via Confirm Popup ---
+  const confirmSubmitToManager = (courseId) => {
+    setConfirmMessage("Bạn có chắc muốn gửi khóa học này lên Manager không?");
+    setConfirmAction(() => async () => {
+      try {
+        await api.post(`/Course/${courseId}/submit-to-manager`);
+        setAlertMessage("Đã gửi lên Manager thành công!");
+        setAlertVisible(true);
+        await reloadCourses();
+      } catch {
+        setAlertMessage(
+          "Có lỗi khi gửi lên Manager. Khóa học có thể không ở trạng thái Draft."
+        );
+        setAlertVisible(true);
+      }
+    });
+    setConfirmVisible(true);
   };
 
   return (
     <div className="min-h-screen bg-gray-100">
       <main className="max-w-4xl mx-auto py-8 px-4 space-y-8">
-        {/* Header */}
+        {/* Header + toggle course form */}
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold text-gray-800">
             Create New Course
@@ -312,21 +362,49 @@ export default function ConsultantCreateContentPage() {
           </form>
         )}
 
-        {/* My Courses */}
+        {/* My Courses with Filters */}
         <section className="space-y-4">
           <h2 className="text-2xl font-bold text-gray-800">My Courses</h2>
-          {courses.filter((c) => c.workflowState === "Draft").length === 0 ? (
-            <p className="text-gray-500">Bạn chưa tạo khóa học nào.</p>
+
+          {/* Filters */}
+          <div className="flex flex-wrap items-center space-x-4 mb-4">
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
+            >
+              <option value="">— All Status —</option>
+              {statusOptions.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={filterWorkflow}
+              onChange={(e) => setFilterWorkflow(e.target.value)}
+              className="border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
+            >
+              <option value="">— All Workflow —</option>
+              {workflowOptions.map((w) => (
+                <option key={w} value={w}>
+                  {w}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {filteredCourses.length === 0 ? (
+            <p className="text-gray-500">Không có khóa học nào.</p>
           ) : (
             <div className="border border-blue-500 rounded-lg p-4 space-y-4">
-              {courses
-                .filter((c) => c.workflowState === "Draft")
-                .map((c) => (
-                  <div
-                    key={c.id}
-                    className="flex justify-between items-center py-2 border-b last:border-b-0"
-                  >
-                    {/* Left side: title + subtitle */}
+              {filteredCourses.map((c) => (
+                <div
+                  key={c.id}
+                  className="flex flex-col space-y-2 py-2 border-b last:border-b-0"
+                >
+                  <div className="flex justify-between items-center">
                     <div>
                       <h3 className="text-lg font-semibold text-gray-800">
                         {c.title}
@@ -334,14 +412,16 @@ export default function ConsultantCreateContentPage() {
                       <p className="text-sm text-gray-600">
                         Level: {c.level} • Duration: {c.duration} phút
                       </p>
+                      <p className="text-sm text-gray-500">
+                        Status: {c.status} • Workflow: {c.workflowState}
+                      </p>
                     </div>
-                    {/* Right side: buttons */}
                     <div className="flex space-x-2">
                       <button
                         onClick={() => openMaterialForm(c.id)}
                         className="px-4 py-1 border border-blue-500 rounded hover:bg-blue-50 transition"
                       >
-                        Edit
+                        Add
                       </button>
                       <button
                         onClick={() => navigate(`/consultant/course/${c.id}`)}
@@ -350,14 +430,22 @@ export default function ConsultantCreateContentPage() {
                         View
                       </button>
                       <button
-                        onClick={() => handleSubmitToStaff(c.id)}
+                        onClick={() => confirmSubmitToManager(c.id)}
                         className="px-4 py-1 bg-yellow-500 text-white rounded hover:opacity-90 transition"
                       >
-                        Sent to Staff
+                        Sent to Manager
                       </button>
                     </div>
                   </div>
-                ))}
+
+                  {/* Show rejected reason */}
+                  {c.reviewComments && (
+                    <div className="bg-red-50 border border-red-200 p-3 rounded text-red-700 text-sm">
+                      <strong>Rejected Reason:</strong> {c.reviewComments}
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
           )}
         </section>
@@ -485,6 +573,49 @@ export default function ConsultantCreateContentPage() {
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* Alert Popup */}
+      {alertVisible && (
+        <div className="fixed inset-0 flex items-center justify-center z-60 bg-opacity-50 backdrop-blur-sm">
+          <div className="bg-white p-4 rounded-lg shadow-lg max-w-xs text-center border border-indigo-200">
+            <p className="mb-4 text-indigo-800 font-semibold">{alertMessage}</p>
+            <button
+              onClick={() => setAlertVisible(false)}
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm Popup */}
+      {confirmVisible && (
+        <div className="fixed inset-0 flex items-center justify-center z-60 bg-opacity-50 backdrop-blur-sm">
+          <div className="bg-white p-4 rounded-lg shadow-lg max-w-xs text-center border border-indigo-200">
+            <p className="mb-4 text-indigo-800 font-semibold">
+              {confirmMessage}
+            </p>
+            <div className="flex justify-center space-x-2">
+              <button
+                onClick={() => setConfirmVisible(false)}
+                className="px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-md"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={() => {
+                  setConfirmVisible(false);
+                  confirmAction();
+                }}
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md"
+              >
+                OK
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

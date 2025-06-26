@@ -5,19 +5,19 @@ import Header from "@/components/header";
 
 export default function ManagerLayout() {
   const navItems = [
-    { to: "overview", label: "Overview" },
-    { to: "approved", label: "Approved" },
-    { to: "task-queue", label: "Task Queue" },
-    { to: "team-schedule", label: "Team Schedule" },
+    { to: "overview", label: "Tổng quan" },
+    { to: "approved", label: "Duyệt bài" },
+    { to: "task-queue", label: "Hàng đợi công việc" },
+    { to: "team-schedule", label: "Lịch nhóm" },
   ];
   return (
     <>
       <Header />
       <div className="flex min-h-screen bg-gray-50">
-        {/* Sidebar */}
+        {/* Thanh điều hướng bên */}
         <aside className="w-64 bg-white border-r shadow-sm">
           <div className="p-6">
-            <h2 className="text-xl font-bold mb-8">Manager Dashboard</h2>
+            <h2 className="text-xl font-bold mb-8">Bảng điều khiển Quản lý</h2>
             <nav className="space-y-2">
               {navItems.map(({ to, label }) => (
                 <NavLink
@@ -39,7 +39,7 @@ export default function ManagerLayout() {
           </div>
         </aside>
 
-        {/* Main content: Outlet là nơi render OverviewPage, AnalyticsPage, ... */}
+        {/* Nội dung chính: Outlet sẽ hiển thị các trang con như Tổng quan, Đã duyệt, ... */}
         <main className="flex-1 p-8">
           <Outlet />
         </main>
