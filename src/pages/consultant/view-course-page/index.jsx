@@ -1,6 +1,8 @@
 // src/pages/consultant/view-course-page/index.jsx
+
 import React, { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import mammoth from "mammoth";
 import api from "@/config/axios";
 import { uploadFile } from "@/utils/upload";
 
@@ -8,12 +10,17 @@ export default function ViewConsultantCoursePage() {
   const { courseId } = useParams();
   const navigate = useNavigate();
 
-  // common state
+  // loading & data
   const [loading, setLoading] = useState(true);
   const [course, setCourse] = useState(null);
   const [materials, setMaterials] = useState([]);
+  const [docHtml, setDocHtml] = useState({}); // for .docx → HTML
 
-  // edit course
+  // alert popup
+  const [alertVisible, setAlertVisible] = useState(false);
+  const [alertMessage, setAlertMessage] = useState("");
+
+  // --- edit course ---
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({
     title: "",
@@ -28,7 +35,7 @@ export default function ViewConsultantCoursePage() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const imageRef = useRef(null);
 
-  // edit material
+  // --- edit material ---
   const [editingMaterialId, setEditingMaterialId] = useState(null);
   const [materialEditData, setMaterialEditData] = useState({
     type: "",
@@ -40,14 +47,14 @@ export default function ViewConsultantCoursePage() {
   const [uploadingMaterialFile, setUploadingMaterialFile] = useState(false);
   const materialFileRef = useRef(null);
 
+  // fetch course + materials
   useEffect(() => {
     (async () => {
       try {
         const { data: c } = await api.get(`Course/get-course/${courseId}`);
         setCourse(c);
-      } catch (err) {
-        console.error("Failed to load course data:", err);
-        alert("Failed to load course data.");
+      } catch {
+        alert("Không tải được dữ liệu khóa học.");
         return navigate(-1);
       }
       try {
@@ -63,9 +70,34 @@ export default function ViewConsultantCoursePage() {
     })();
   }, [courseId, navigate]);
 
-  // --- Course handlers ---
+  // convert any .docx → HTML
+  useEffect(() => {
+    materials
+      .filter((m) => m.type === "Document")
+      .forEach(async (m) => {
+        try {
+          const resp = await fetch(m.url);
+          const arrayBuffer = await resp.arrayBuffer();
+          const { value: html } = await mammoth.convertToHtml({ arrayBuffer });
+          setDocHtml((prev) => ({ ...prev, [m.id]: html }));
+        } catch {
+          console.error(`Lỗi convert material ${m.id}`);
+        }
+      });
+  }, [materials]);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <span className="text-gray-500">Loading…</span>
+      </div>
+    );
+  }
+
+  // ——— Course Handlers ———
   const startEditing = () => {
     setEditData({
+      id: course.id,
       title: course.title,
       image: course.image,
       description: course.description,
@@ -74,6 +106,7 @@ export default function ViewConsultantCoursePage() {
       level: course.level,
       duration: course.duration,
       passingScore: course.passingScore,
+      workflowState: course.workflowState,
     });
     setIsEditing(true);
   };
@@ -98,16 +131,19 @@ export default function ViewConsultantCoursePage() {
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     try {
+      console.log(editData);
       await api.put(`Course/update-course/${courseId}`, editData);
       setCourse((c) => ({ ...c, ...editData }));
       setIsEditing(false);
-      alert("Course updated successfully!");
+      setAlertMessage("Cập nhật khóa học thành công!");
+      setAlertVisible(true);
     } catch {
-      alert("Update failed.");
+      setAlertMessage("Cập nhật thất bại.");
+      setAlertVisible(true);
     }
   };
 
-  // --- Material handlers ---
+  // ——— Material Handlers ———
   const startMaterialEdit = (mat) => {
     setEditingMaterialId(mat.id);
     setMaterialEditData({
@@ -149,17 +185,17 @@ export default function ViewConsultantCoursePage() {
         )
       );
       setEditingMaterialId(null);
-      alert("Material updated!");
+      setAlertMessage("Cập nhật material thành công!");
+      setAlertVisible(true);
     } catch {
-      alert("Update material failed.");
+      setAlertMessage("Cập nhật material thất bại.");
+      setAlertVisible(true);
     }
   };
 
-  if (loading) return <div className="p-8">Loading…</div>;
-
   return (
     <div className="min-h-screen bg-gray-100">
-      <main className="max-w-4xl mx-auto p-8 space-y-8">
+      <main className="max-w-4xl mx-auto py-8 px-4 space-y-8">
         {/* Header */}
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold text-gray-800">
@@ -169,21 +205,21 @@ export default function ViewConsultantCoursePage() {
             {isEditing ? (
               <button
                 onClick={() => setIsEditing(false)}
-                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition"
+                className="px-4 py-2 bg-gray-300 rounded-md"
               >
                 Cancel
               </button>
             ) : (
               <button
                 onClick={startEditing}
-                className="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition"
+                className="px-4 py-2 bg-yellow-500 text-white rounded-md"
               >
                 Edit
               </button>
             )}
             <button
               onClick={() => navigate(-1)}
-              className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition"
+              className="px-4 py-2 bg-gray-300 rounded-md"
             >
               Back
             </button>
@@ -196,29 +232,26 @@ export default function ViewConsultantCoursePage() {
             onSubmit={handleEditSubmit}
             className="bg-white p-6 rounded-lg shadow space-y-6"
           >
+            {/* Title + Image */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Title
-                </label>
+                <label className="block font-medium mb-1">Title</label>
                 <input
                   name="title"
                   value={editData.title}
                   onChange={handleEditChange}
-                  className="w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
+                  className="w-full border rounded px-3 py-2"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Image
-                </label>
+                <label className="block font-medium mb-1">Image</label>
                 <div className="flex items-center space-x-4">
                   <button
                     type="button"
                     onClick={() => imageRef.current.click()}
                     disabled={uploadingImage}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:scale-105 transform transition"
+                    className="px-4 py-2 bg-blue-600 text-white rounded"
                   >
                     {uploadingImage ? "Uploading…" : "Select Image…"}
                   </button>
@@ -227,7 +260,7 @@ export default function ViewConsultantCoursePage() {
                       href={editData.image}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-indigo-600 underline break-all text-sm"
+                      className="underline text-indigo-600"
                     >
                       View Image
                     </a>
@@ -242,53 +275,49 @@ export default function ViewConsultantCoursePage() {
                 />
               </div>
             </div>
+
+            {/* Description & Content */}
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Description
-                </label>
+                <label className="block font-medium mb-1">Description</label>
                 <textarea
                   name="description"
                   rows={2}
                   value={editData.description}
                   onChange={handleEditChange}
-                  className="w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
+                  className="w-full border rounded px-3 py-2"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Content
-                </label>
+                <label className="block font-medium mb-1">Content</label>
                 <textarea
                   name="content"
                   rows={4}
                   value={editData.content}
                   onChange={handleEditChange}
-                  className="w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
+                  className="w-full border rounded px-3 py-2"
                 />
               </div>
             </div>
+
+            {/* Category, Level, Duration, PassingScore */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Category
-                </label>
+                <label className="block font-medium mb-1">Category</label>
                 <input
                   name="category"
                   value={editData.category}
                   onChange={handleEditChange}
-                  className="w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
+                  className="w-full border rounded px-3 py-2"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Level
-                </label>
+                <label className="block font-medium mb-1">Level</label>
                 <select
                   name="level"
                   value={editData.level}
                   onChange={handleEditChange}
-                  className="w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
+                  className="w-full border rounded px-3 py-2"
                   required
                 >
                   <option value="">-- Select --</option>
@@ -298,34 +327,31 @@ export default function ViewConsultantCoursePage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Duration (min)
-                </label>
+                <label className="block font-medium mb-1">Duration (min)</label>
                 <input
                   name="duration"
                   type="number"
                   value={editData.duration}
                   onChange={handleEditChange}
-                  className="w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
+                  className="w-full border rounded px-3 py-2"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Passing Score
-                </label>
+                <label className="block font-medium mb-1">Passing Score</label>
                 <input
                   name="passingScore"
                   type="number"
                   value={editData.passingScore}
                   onChange={handleEditChange}
-                  className="w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
+                  className="w-full border rounded px-3 py-2"
                 />
               </div>
             </div>
+
             <div className="text-right">
               <button
                 type="submit"
-                className="px-6 py-2 bg-green-600 text-white rounded-md hover:scale-105 transform transition"
+                className="px-6 py-2 bg-green-600 text-white rounded"
               >
                 Save Changes
               </button>
@@ -333,22 +359,19 @@ export default function ViewConsultantCoursePage() {
           </form>
         )}
 
-        {/* Course Details */}
+        {/* View Course Details */}
         {!isEditing && (
           <section className="bg-white p-6 rounded-lg shadow space-y-3">
             <div>
               <strong>Title:</strong> {course.title}
             </div>
             <div>
-              <strong>Image URL:</strong>{" "}
-              <a
-                href={course.image}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-indigo-600 underline"
-              >
-                View Image
-              </a>
+              <strong>Image:</strong>
+              <img
+                src={course.image}
+                alt={course.title}
+                className="mt-2 max-w-full rounded border"
+              />
             </div>
             <div>
               <strong>Description:</strong> {course.description}
@@ -363,7 +386,7 @@ export default function ViewConsultantCoursePage() {
               <strong>Level:</strong> {course.level}
             </div>
             <div>
-              <strong>Duration:</strong> {course.duration} min
+              <strong>Duration:</strong> {course.duration} phút
             </div>
             <div>
               <strong>Passing Score:</strong> {course.passingScore}
@@ -375,8 +398,8 @@ export default function ViewConsultantCoursePage() {
         )}
 
         {/* Materials */}
-        <section className="space-y-4">
-          <h2 className="text-xl font-semibold text-gray-800">Materials</h2>
+        <section className="space-y-6">
+          <h2 className="text-xl font-semibold">Materials</h2>
           {materials.length === 0 ? (
             <p className="text-gray-500">No materials yet.</p>
           ) : (
@@ -389,14 +412,12 @@ export default function ViewConsultantCoursePage() {
                 >
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Type
-                      </label>
+                      <label className="block font-medium mb-1">Type</label>
                       <select
                         name="type"
                         value={materialEditData.type}
                         onChange={handleMaterialChange}
-                        className="w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
+                        className="w-full border rounded px-3 py-2"
                         required
                       >
                         <option value="">-- Select --</option>
@@ -405,29 +426,25 @@ export default function ViewConsultantCoursePage() {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Title
-                      </label>
+                      <label className="block font-medium mb-1">Title</label>
                       <input
                         name="title"
                         value={materialEditData.title}
                         onChange={handleMaterialChange}
-                        className="w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
+                        className="w-full border rounded px-3 py-2"
                         required
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      File URL
-                    </label>
+                    <label className="block font-medium mb-1">File URL</label>
                     <div className="flex items-center space-x-4">
                       <button
                         type="button"
                         onClick={() => materialFileRef.current.click()}
                         disabled={uploadingMaterialFile}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:scale-105 transform transition"
+                        className="px-4 py-2 bg-blue-600 text-white rounded"
                       >
                         {uploadingMaterialFile ? "Uploading…" : "Select File…"}
                       </button>
@@ -436,7 +453,7 @@ export default function ViewConsultantCoursePage() {
                           href={materialEditData.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-indigo-600 underline break-all text-sm"
+                          className="underline text-indigo-600 break-all"
                         >
                           View File
                         </a>
@@ -452,7 +469,7 @@ export default function ViewConsultantCoursePage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block font-medium mb-1">
                       Description
                     </label>
                     <textarea
@@ -460,34 +477,32 @@ export default function ViewConsultantCoursePage() {
                       rows={2}
                       value={materialEditData.description}
                       onChange={handleMaterialChange}
-                      className="w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
+                      className="w-full border rounded px-3 py-2"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Sort Order
-                    </label>
+                    <label className="block font-medium mb-1">Sort Order</label>
                     <input
                       name="sortOrder"
                       type="number"
                       value={materialEditData.sortOrder}
                       onChange={handleMaterialChange}
-                      className="w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
+                      className="w-full border rounded px-3 py-2"
                     />
                   </div>
 
-                  <div className="flex space-x-2">
+                  <div className="flex space-x-2 justify-end">
                     <button
                       type="submit"
-                      className="px-6 py-2 bg-green-600 text-white rounded-md hover:scale-105 transform transition"
+                      className="px-4 py-2 bg-green-600 text-white rounded"
                     >
                       Save
                     </button>
                     <button
                       type="button"
                       onClick={() => setEditingMaterialId(null)}
-                      className="px-6 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition"
+                      className="px-4 py-2 bg-gray-300 rounded"
                     >
                       Cancel
                     </button>
@@ -496,26 +511,79 @@ export default function ViewConsultantCoursePage() {
               ) : (
                 <div
                   key={m.id}
-                  className="bg-white p-6 rounded-lg shadow flex justify-between items-center hover:shadow-lg transition"
+                  className="bg-white p-6 rounded-lg shadow space-y-3"
                 >
                   <div>
-                    <div className="font-semibold text-gray-800">{m.title}</div>
-                    <div className="text-sm text-gray-600">
-                      {m.type} • Order: {m.sortOrder}
-                    </div>
+                    <strong>{m.title}</strong> ({m.type})
                   </div>
-                  <button
-                    onClick={() => startMaterialEdit(m)}
-                    className="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition"
-                  >
-                    Edit
-                  </button>
+
+                  {/* render by type */}
+                  {m.type === "Video" ? (
+                    <video
+                      controls
+                      src={m.url}
+                      className="w-full max-h-64 rounded mb-4 border"
+                    />
+                  ) : /\.(jpe?g|png|gif|bmp|webp)$/i.test(m.url) ? (
+                    <img
+                      src={m.url}
+                      alt={m.title}
+                      className="w-full max-h-64 object-contain rounded mb-4 border"
+                    />
+                  ) : m.type === "Document" ? (
+                    <div
+                      className="prose max-w-none mb-4 overflow-x-auto"
+                      dangerouslySetInnerHTML={{
+                        __html: docHtml[m.id] || "<p>Loading document…</p>",
+                      }}
+                    />
+                  ) : (
+                    <a
+                      href={m.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline text-blue-600 mb-4 block"
+                    >
+                      Download File
+                    </a>
+                  )}
+
+                  <div>
+                    <strong>Description:</strong> {m.description}
+                  </div>
+                  <div>
+                    <strong>Sort Order:</strong> {m.sortOrder}
+                  </div>
+
+                  <div className="text-right">
+                    <button
+                      onClick={() => startMaterialEdit(m)}
+                      className="px-4 py-2 bg-yellow-500 text-white rounded"
+                    >
+                      Edit
+                    </button>
+                  </div>
                 </div>
               )
             )
           )}
         </section>
       </main>
+
+      {/* Alert Popup */}
+      {alertVisible && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-xs text-center">
+            <p className="mb-4 font-semibold text-indigo-800">{alertMessage}</p>
+            <button
+              onClick={() => setAlertVisible(false)}
+              className="px-4 py-2 bg-indigo-600 text-white rounded"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

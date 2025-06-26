@@ -16,7 +16,10 @@ import "./styles.css";
 export default function CoursesPage() {
   const [courses, setCourses] = useState([]);
   const [enrollments, setEnrollments] = useState([]);
-  const [filters, setFilters] = useState({ level: "All Levels", category: "All Categories" });
+  const [filters, setFilters] = useState({
+    level: "All Levels",
+    category: "All Categories",
+  });
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -65,7 +68,8 @@ export default function CoursesPage() {
       try {
         let data = [];
         const { level, category } = filters;
-        const onlyLevel = level !== "All Levels" && category === "All Categories";
+        const onlyLevel =
+          level !== "All Levels" && category === "All Categories";
         const onlyCat = category !== "All Categories" && level === "All Levels";
         if (onlyLevel) data = await getCoursesByLevel(level);
         else if (onlyCat) data = await getCoursesByCategory(category);
@@ -73,9 +77,11 @@ export default function CoursesPage() {
           data = await getAllCourses();
         else {
           const all = await getAllCourses();
-          data = all.filter(c => c.level === level && c.category === category);
+          data = all.filter(
+            (c) => c.level === level && c.category === category
+          );
         }
-        data = data.filter(c => c.status === "Approved");
+        data = data.filter((c) => c.status === "Published");
         const total = Math.ceil(data.length / limit) || 1;
         setTotalPages(total);
         const start = (page - 1) * limit;
@@ -96,14 +102,14 @@ export default function CoursesPage() {
     fetchData();
   }, [filters, page]);
 
-  const enrolledCourseIds = enrollments.map(e => e.courseId);
+  const enrolledCourseIds = enrollments.map((e) => e.courseId);
   const statusMap = enrollments.reduce((m, e) => {
     m[e.courseId] = e.status;
     return m;
   }, {});
 
-  const handleFilterChange = upd => {
-    setFilters(f => ({ ...f, ...upd }));
+  const handleFilterChange = (upd) => {
+    setFilters((f) => ({ ...f, ...upd }));
     setPage(1);
   };
   const handleClearFilters = () => {
@@ -111,7 +117,7 @@ export default function CoursesPage() {
     setPage(1);
   };
 
-  const handleSelectCourse = course => {
+  const handleSelectCourse = (course) => {
     setSelectedCourse(course);
     setShowModal(true);
   };
@@ -122,7 +128,7 @@ export default function CoursesPage() {
 
   useEffect(() => {
     if (openId && courses.length) {
-      const c = courses.find(c => String(c.id) === openId);
+      const c = courses.find((c) => String(c.id) === openId);
       if (c) handleSelectCourse(c);
     }
   }, [openId, courses]);
@@ -190,7 +196,9 @@ export default function CoursesPage() {
             <button
               onClick={() => setAlertVisible(false)}
               className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md"
-            >OK</button>
+            >
+              OK
+            </button>
           </div>
         </div>
       )}
