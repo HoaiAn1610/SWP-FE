@@ -178,17 +178,6 @@ export default function QuizPage() {
           {/* Buttons */}
           <div className="flex justify-center space-x-4 pt-6">
             <button
-              onClick={() => {
-                setResult(null);
-                setAnswers({});
-                setCurrentIndex(0);
-                setSubmissionDetail(null);
-              }}
-              className="px-6 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition"
-            >
-              Retake Quiz
-            </button>
-            <button
               onClick={() => navigate(`/course/${courseId}/lesson`)}
               className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
             >
