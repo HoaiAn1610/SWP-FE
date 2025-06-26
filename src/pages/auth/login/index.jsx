@@ -41,27 +41,29 @@ const LoginPage = () => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const { data } = await api.post("Auth/login", {
+      // 1) Login, lấy token
+      const { data: loginData } = await api.post("Auth/login", {
         email: formData.email,
         password: formData.password,
       });
-      const { id, email, role, name } = data;
+      // giả sử server trả về { token: "Bearer xxx", expires: ... }
+      const token = loginData.token.split(" ")[1]; // bỏ chữ "Bearer "
+      localStorage.setItem("token", token);
 
-      localStorage.setItem("id", id);
-      localStorage.setItem("email", email);
-      localStorage.setItem("role", role);
-      localStorage.setItem("name", name);
+      // 2) Gọi aboutMe để lấy profile
+      const { data: me } = await api.get("UserManagement/aboutMe");
+      // me có cấu trúc UserDTO: { id, name, email, role, … }
+      localStorage.setItem("id", me.id);
+      localStorage.setItem("email", me.email);
+      localStorage.setItem("role", me.role);
+      localStorage.setItem("name", me.name);
 
       toast.success("Đăng nhập thành công!");
-      goAfterLogin(role);
+      // 3) chuyển hướng dựa trên role hoặc redirect query
+      goAfterLogin(me.role);
     } catch (err) {
       console.error(err);
-      const msg =
-        err.response?.data?.message ||
-        err.response?.data ||
-        err.message ||
-        "Lỗi không xác định";
-      toast.error(msg);
+      toast.error(err.response?.data || err.message || "Lỗi không xác định");
     } finally {
       setIsLoading(false);
     }
@@ -180,19 +182,39 @@ const LoginPage = () => {
             onSuccess={async (credentialResponse) => {
               setIsLoading(true);
               try {
-                const idToken = credentialResponse.credential;
-                const { data } = await api.post("Auth/google-login", {
-                  googleToken: idToken,
-                });
-                const { id, email, role, name } = data;
+                // 1) Gửi token Google lên backend, nhận về payload chứa JWT
+                // giả sử backend giờ trả về { token: "Bearer xxx", expires: "...", user: { id, email, role, name } }
+                const { data: loginData } = await api.post(
+                  "Auth/google-login",
+                  {
+                    googleToken: credentialResponse.credential,
+                  }
+                );
 
-                localStorage.setItem("id", id);
-                localStorage.setItem("email", email);
-                localStorage.setItem("role", role);
-                localStorage.setItem("name", name);
+                // 2) Lấy token ra và lưu
+                const bearer = loginData.token; // "Bearer abc.def.ghi"
+                const jwt = bearer.split(" ")[1]; // "abc.def.ghi"
+                localStorage.setItem("token", jwt);
+
+                // 3) Thiết lập header Authorization cho tất cả request sau này
+                api.defaults.headers.common["Authorization"] = bearer;
+
+                // 4) Nếu backend đã trả luôn thông tin user (loginData.user), dùng luôn
+                let user = loginData.user;
+                if (!user) {
+                  // nếu chưa, call về /aboutMe để lấy thông tin
+                  const { data: me } = await api.get("UserManagement/aboutMe");
+                  user = me;
+                }
+
+                // 5) Lưu thông tin vào localStorage
+                localStorage.setItem("id", user.id);
+                localStorage.setItem("email", user.email);
+                localStorage.setItem("role", user.role);
+                localStorage.setItem("name", user.name);
 
                 toast.success("Đăng nhập với Google thành công!");
-                goAfterLogin(role);
+                goAfterLogin(user.role);
               } catch (err) {
                 console.error(err);
                 toast.error("Không thể đăng nhập với Google.");
