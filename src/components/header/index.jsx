@@ -85,6 +85,9 @@ export default function Header() {
             <Link to="/course" className="text-gray-600 hover:text-blue-600">
               Courses
             </Link>
+            <Link to="/appointments/book" className="text-gray-600 hover:text-blue-600">
+              Appointment
+            </Link>
           </nav>
         </div>
 
