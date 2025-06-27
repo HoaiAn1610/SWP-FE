@@ -22,6 +22,9 @@ import QuizPage from "@/pages/auth/course/QuizPage";
 import PersonalInfoLayout from "@/pages/personal-information/PersonalInfoLayout";
 import MyProfilePage from "@/pages/personal-information/my-profile";
 
+import BookingPage from "@/pages/appointmentRequest/bookingpage";
+import BookingHistoryPage from "@/pages/appointmentRequest/bookingHistory"; 
+
 import ManagerLayout from "@/pages/manager/ManagerLayout";
 import OverviewPage from "@/pages/manager/overview";
 import ApprovedPage from "@/pages/manager/approved";
@@ -70,6 +73,22 @@ function App() {
       path: "/register",
       element: <Register />,
     },
+    {
+      path: "/course",
+      element: <Courses />,
+    },
+    {
+     path: "/appointments/book",
+     element: (
+         <BookingPage />
+     ),
+   },
+   {
+     path: "/appointments/history",
+     element: (
+         <BookingHistoryPage />
+     ),
+   },
     {
       path: "/course",
       element: <Courses />,
