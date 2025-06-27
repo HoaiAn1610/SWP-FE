@@ -4,8 +4,11 @@ import { useNavigate } from "react-router-dom";
 import api from "@/config/axios";
 import { uploadFile } from "@/utils/upload";
 
-export default function ConsultantCreateContentPage() {
+export default function CreateContentPage() {
   const navigate = useNavigate();
+
+  // Tab hiện tại: "course" hoặc "question"
+  const [activeTab, setActiveTab] = useState("course");
 
   // --- Alert Popup state ---
   const [alertVisible, setAlertVisible] = useState(false);
@@ -16,8 +19,8 @@ export default function ConsultantCreateContentPage() {
   const [confirmMessage, setConfirmMessage] = useState("");
   const [confirmAction, setConfirmAction] = useState(() => {});
 
-  // --- state course form ---
-  const [showForm, setShowForm] = useState(false);
+  // --- Course form state ---
+  const [showCourseForm, setShowCourseForm] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
     image: "",
@@ -31,13 +34,13 @@ export default function ConsultantCreateContentPage() {
   const [uploadingCourseImage, setUploadingCourseImage] = useState(false);
   const courseImageRef = useRef(null);
 
-  // --- state courses + filters ---
+  // --- Courses + filters state ---
   const [courses, setCourses] = useState([]);
   const [filterStatus, setFilterStatus] = useState("");
   const [filterWorkflow, setFilterWorkflow] = useState("");
   const currentUserId = localStorage.getItem("id") || "";
 
-  // --- state material form ---
+  // --- Material form state ---
   const [materialFormVisible, setMaterialFormVisible] = useState(false);
   const [selectedCourseId, setSelectedCourseId] = useState(null);
   const [materialData, setMaterialData] = useState({
@@ -50,7 +53,55 @@ export default function ConsultantCreateContentPage() {
   const [uploadingMaterialFile, setUploadingMaterialFile] = useState(false);
   const materialFileRef = useRef(null);
 
-  // reload courses created by current user
+  // --- Question list state ---
+  const [questions, setQuestions] = useState([]);
+  const [loadingQuestions, setLoadingQuestions] = useState(false);
+
+  // --- Create Question modal ---
+  const [createModalVisible, setCreateModalVisible] = useState(false);
+  const [newQuestion, setNewQuestion] = useState({
+    questionText: "",
+    level: "",
+    category: "",
+  });
+
+  // --- Edit Question modal (partial update) ---
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editQuestionId, setEditQuestionId] = useState(null);
+  const [editQuestionData, setEditQuestionData] = useState({
+    questionText: "",
+    level: "",
+    category: "",
+  });
+  const [originalQuestion, setOriginalQuestion] = useState(null);
+
+  // --- View Question modal ---
+  const [viewModalVisible, setViewModalVisible] = useState(false);
+  const [viewQuestion, setViewQuestion] = useState(null);
+
+  // --- Option modals ---
+  const [addOptionModalVisible, setAddOptionModalVisible] = useState(false);
+  const [newOption, setNewOption] = useState({ optionText: "", scoreValue: 0 });
+
+  const [editOptionModalVisible, setEditOptionModalVisible] = useState(false);
+  const [editOption, setEditOption] = useState({
+    optionId: null,
+    optionText: "",
+    scoreValue: 0,
+  });
+
+  // --- Category options ---
+  const categoryOptions = [
+    "Sức khỏe",
+    "Giáo dục",
+    "Gia đình",
+    "Cộng đồng",
+    "Chính sách & pháp luật",
+    "Hỗ trợ & điều trị",
+    "Truyền thông & nâng cao nhận thức",
+  ];
+
+  // --- Reload courses ---
   const reloadCourses = async () => {
     try {
       const { data } = await api.get(
@@ -58,7 +109,7 @@ export default function ConsultantCreateContentPage() {
       );
       setCourses(data);
     } catch (err) {
-      console.error("Lỗi fetch courses:", err);
+      console.error(err);
       setAlertMessage("Không tải được danh sách khóa học.");
       setAlertVisible(true);
     }
@@ -67,22 +118,25 @@ export default function ConsultantCreateContentPage() {
     if (currentUserId) reloadCourses();
   }, [currentUserId]);
 
-  // derive distinct filter options
-  const statusOptions = Array.from(
-    new Set(courses.map((c) => c.status).filter(Boolean))
-  );
-  const workflowOptions = Array.from(
-    new Set(courses.map((c) => c.workflowState).filter(Boolean))
-  );
+  // --- Fetch questions ---
+  const fetchQuestions = async () => {
+    setLoadingQuestions(true);
+    try {
+      const { data } = await api.get("Question/get-all-questions");
+      setQuestions(data);
+    } catch (err) {
+      console.error(err);
+      setAlertMessage("Không tải được danh sách câu hỏi.");
+      setAlertVisible(true);
+    } finally {
+      setLoadingQuestions(false);
+    }
+  };
+  useEffect(() => {
+    if (activeTab === "question") fetchQuestions();
+  }, [activeTab]);
 
-  // filtered list
-  const filteredCourses = courses
-    .filter((c) => (filterStatus ? c.status === filterStatus : true))
-    .filter((c) =>
-      filterWorkflow ? c.workflowState === filterWorkflow : true
-    );
-
-  // --- course form handlers ---
+  // --- Course form handlers ---
   const handleCourseChange = (e) => {
     const { name, value, type } = e.target;
     setFormData((f) => ({
@@ -98,7 +152,7 @@ export default function ConsultantCreateContentPage() {
       const url = await uploadFile(file, "courses");
       setFormData((f) => ({ ...f, image: url }));
     } catch {
-      setAlertMessage("Upload ảnh khóa học thất bại.");
+      setAlertMessage("Upload ảnh thất bại.");
       setAlertVisible(true);
     } finally {
       setUploadingCourseImage(false);
@@ -110,8 +164,8 @@ export default function ConsultantCreateContentPage() {
       await api.post("Course/create-course", formData);
       setAlertMessage("Tạo khóa học thành công!");
       setAlertVisible(true);
-      await reloadCourses();
-      setShowForm(false);
+      reloadCourses();
+      setShowCourseForm(false);
       setFormData({
         title: "",
         image: "",
@@ -128,7 +182,7 @@ export default function ConsultantCreateContentPage() {
     }
   };
 
-  // --- material form handlers ---
+  // --- Material form handlers ---
   const openMaterialForm = (courseId) => {
     setSelectedCourseId(courseId);
     setMaterialFormVisible(true);
@@ -155,7 +209,7 @@ export default function ConsultantCreateContentPage() {
       const url = await uploadFile(file, "materials");
       setMaterialData((m) => ({ ...m, url }));
     } catch {
-      setAlertMessage("Upload file material thất bại.");
+      setAlertMessage("Upload file thất bại.");
       setAlertVisible(true);
     } finally {
       setUploadingMaterialFile(false);
@@ -168,16 +222,16 @@ export default function ConsultantCreateContentPage() {
         `courses/${selectedCourseId}/CourseMaterial/add-material`,
         materialData
       );
-      setAlertMessage("Thêm material thành công!");
+      setAlertMessage("Thêm tài liệu thành công!");
       setAlertVisible(true);
       setMaterialFormVisible(false);
     } catch {
-      setAlertMessage("Thêm material thất bại.");
+      setAlertMessage("Thêm tài liệu thất bại.");
       setAlertVisible(true);
     }
   };
 
-  // --- Submit to Manager via Confirm Popup ---
+  // --- Submit to Manager ---
   const confirmSubmitToManager = (courseId) => {
     setConfirmMessage("Bạn có chắc muốn gửi khóa học này lên Manager không?");
     setConfirmAction(() => async () => {
@@ -185,10 +239,10 @@ export default function ConsultantCreateContentPage() {
         await api.post(`/Course/${courseId}/submit-to-manager`);
         setAlertMessage("Đã gửi lên Manager thành công!");
         setAlertVisible(true);
-        await reloadCourses();
+        reloadCourses();
       } catch {
         setAlertMessage(
-          "Có lỗi khi gửi lên Manager. Khóa học có thể không ở trạng thái Draft."
+          "Gửi lên Manager thất bại. Khóa học có thể không ở trạng thái Draft."
         );
         setAlertVisible(true);
       }
@@ -196,428 +250,964 @@ export default function ConsultantCreateContentPage() {
     setConfirmVisible(true);
   };
 
+  // --- Create Question handlers ---
+  const openCreateModal = () => {
+    setNewQuestion({ questionText: "", level: "", category: "" });
+    setCreateModalVisible(true);
+  };
+  const addQuestion = () => {
+    const { questionText, level, category } = newQuestion;
+    if (!questionText || !level || !category) {
+      setAlertMessage("Điền đầy đủ thông tin câu hỏi.");
+      setAlertVisible(true);
+      return;
+    }
+    api
+      .post("Question/create-questions", [newQuestion])
+      .then(() => {
+        setAlertMessage("Tạo câu hỏi thành công!");
+        setAlertVisible(true);
+        setCreateModalVisible(false);
+        fetchQuestions();
+      })
+      .catch(() => {
+        setAlertMessage("Tạo câu hỏi thất bại.");
+        setAlertVisible(true);
+      });
+  };
+
+  // --- Edit Question handlers (partial update) ---
+  const openEditModal = (q) => {
+    setEditQuestionId(q.id);
+    setOriginalQuestion(q);
+    setEditQuestionData({
+      questionText: q.questionText,
+      level: q.level,
+      category: q.category,
+    });
+    console.log(q);
+    setEditModalVisible(true);
+  };
+  const updateQuestion = () => {
+    const { questionText, level, category } = editQuestionData;
+
+    // Nếu không thay đổi gì, thông báo
+    if (
+      questionText === originalQuestion.questionText &&
+      level === originalQuestion.level &&
+      category === originalQuestion.category
+    ) {
+      setAlertMessage("Bạn chưa thay đổi gì cả.");
+      setAlertVisible(true);
+      return;
+    }
+
+    // Luôn gửi đủ cả 3 trường, dù chỉ đổi 1
+    const dto = {
+      questionText: questionText,
+      level: level,
+      category: category,
+    };
+
+    api
+      .put(`Question/update-question/${editQuestionId}`, dto)
+      .then(() => {
+        setAlertMessage("Cập nhật câu hỏi thành công!");
+        setAlertVisible(true);
+        setEditModalVisible(false);
+        fetchQuestions();
+      })
+      .catch(() => {
+        setAlertMessage("Cập nhật câu hỏi thất bại.");
+        setAlertVisible(true);
+      });
+  };
+
+  // --- Delete Question ---
+  const handleDeleteQuestion = (id) => {
+    if (!window.confirm("Bạn có chắc muốn xóa câu hỏi này?")) return;
+    api
+      .delete(`Question/delete-question/${id}`)
+      .then(() => {
+        setAlertMessage("Xóa câu hỏi thành công!");
+        setAlertVisible(true);
+        fetchQuestions();
+      })
+      .catch(() => {
+        setAlertMessage("Xóa câu hỏi thất bại.");
+        setAlertVisible(true);
+      });
+  };
+
+  // --- View Question + options handlers ---
+  const openViewModal = (q) => {
+    setViewQuestion(q);
+    setViewModalVisible(true);
+  };
+  const handleAddOption = () => {
+    if (!newOption.optionText) {
+      setAlertMessage("Điền nội dung đáp án.");
+      setAlertVisible(true);
+      return;
+    }
+    api
+      .post(`/api/Question/${viewQuestion.id}/add-options`, [newOption])
+      .then(({ data }) => {
+        setAlertMessage("Thêm đáp án thành công!");
+        setAlertVisible(true);
+        setAddOptionModalVisible(false);
+        setViewQuestion((vq) => ({ ...vq, options: [...vq.options, ...data] }));
+      })
+      .catch(() => {
+        setAlertMessage("Thêm đáp án thất bại.");
+        setAlertVisible(true);
+      });
+  };
+  const openEditOptionModal = (opt) => {
+    setEditOption({
+      optionId: opt.id,
+      optionText: opt.optionText,
+      scoreValue: opt.scoreValue,
+    });
+    setEditOptionModalVisible(true);
+  };
+  const handleUpdateOption = () => {
+    const { optionId, optionText, scoreValue } = editOption;
+    api
+      .put(`/api/Question/${viewQuestion.id}/update-options/${optionId}`, {
+        optionText,
+        scoreValue,
+      })
+      .then(() => {
+        setAlertMessage("Cập nhật đáp án thành công!");
+        setAlertVisible(true);
+        setEditOptionModalVisible(false);
+        setViewQuestion((vq) => ({
+          ...vq,
+          options: vq.options.map((o) =>
+            o.id === optionId ? { ...o, optionText, scoreValue } : o
+          ),
+        }));
+      })
+      .catch(() => {
+        setAlertMessage("Cập nhật đáp án thất bại.");
+        setAlertVisible(true);
+      });
+  };
+
+  // --- Course filters ---
+  const statusOptions = Array.from(
+    new Set(courses.map((c) => c.status).filter(Boolean))
+  );
+  const workflowOptions = Array.from(
+    new Set(courses.map((c) => c.workflowState).filter(Boolean))
+  );
+  const filteredCourses = courses
+    .filter((c) => (filterStatus ? c.status === filterStatus : true))
+    .filter((c) =>
+      filterWorkflow ? c.workflowState === filterWorkflow : true
+    );
+
   return (
     <div className="min-h-screen bg-gray-100">
-      <main className="max-w-4xl mx-auto py-8 px-4 space-y-8">
-        {/* Header + toggle course form */}
+      <main className="max-w-4xl mx-auto py-8 px-4 space-y-6">
+        {/* Header + Tabs */}
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold text-gray-800">
-            Create New Course
+            {activeTab === "course" ? "Quản lý Khóa học" : "Quản lý Câu hỏi"}
           </h1>
-          <button
-            onClick={() => setShowForm((v) => !v)}
-            className="px-5 py-2 bg-purple-600 text-white rounded-lg hover:scale-105 transform transition"
-          >
-            {showForm ? "Đóng Form" : "Mở Form"}
-          </button>
+          <div className="flex space-x-4">
+            <button
+              onClick={() => setActiveTab("course")}
+              className={`px-4 py-2 rounded ${
+                activeTab === "course"
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-200 text-gray-700"
+              }`}
+            >
+              Khóa học
+            </button>
+            <button
+              onClick={() => setActiveTab("question")}
+              className={`px-4 py-2 rounded ${
+                activeTab === "question"
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-200 text-gray-700"
+              }`}
+            >
+              Câu hỏi
+            </button>
+          </div>
         </div>
 
-        {/* Course Form */}
-        {showForm && (
-          <form
-            onSubmit={handleCourseSubmit}
-            className="bg-white rounded-lg shadow p-6 space-y-6"
-          >
-            {/* Title & Image */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Title */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Title
-                </label>
+        {activeTab === "course" ? (
+          <>
+            {/* Nút Tạo Khóa học */}
+            <div className="text-right">
+              <button
+                onClick={() => setShowCourseForm((v) => !v)}
+                className="px-5 py-2 bg-purple-600 text-white rounded-lg hover:scale-105 transition"
+              >
+                {showCourseForm ? "Đóng Form" : "Tạo Khóa học"}
+              </button>
+            </div>
+
+            {/* Course Form */}
+            {showCourseForm && (
+              <form
+                onSubmit={handleCourseSubmit}
+                className="bg-white rounded-lg shadow p-6 space-y-6"
+              >
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">
+                      Tiêu đề
+                    </label>
+                    <input
+                      name="title"
+                      value={formData.title}
+                      onChange={handleCourseChange}
+                      className="w-full border rounded px-3 py-2"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">
+                      Ảnh
+                    </label>
+                    <div className="flex items-center space-x-4">
+                      <button
+                        type="button"
+                        onClick={() => courseImageRef.current.click()}
+                        disabled={uploadingCourseImage}
+                        className="px-4 py-2 bg-blue-600 text-white rounded"
+                      >
+                        {uploadingCourseImage ? "Đang tải…" : "Chọn Ảnh…"}
+                      </button>
+                      {formData.image && (
+                        <span className="text-sm text-gray-600 break-all">
+                          {formData.image}
+                        </span>
+                      )}
+                    </div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      ref={courseImageRef}
+                      onChange={handleCourseImageSelect}
+                      className="hidden"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">
+                      Mô tả
+                    </label>
+                    <textarea
+                      name="description"
+                      rows={2}
+                      value={formData.description}
+                      onChange={handleCourseChange}
+                      className="w-full border rounded px-3 py-2"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">
+                      Nội dung
+                    </label>
+                    <textarea
+                      name="content"
+                      rows={4}
+                      value={formData.content}
+                      onChange={handleCourseChange}
+                      className="w-full border rounded px-3 py-2"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">
+                      Nhóm chủ đề
+                    </label>
+                    <select
+                      name="category"
+                      value={formData.category}
+                      onChange={handleCourseChange}
+                      className="w-full border rounded px-3 py-2"
+                      required
+                    >
+                      <option value="" disabled>
+                        -- Chọn nhóm --
+                      </option>
+                      {categoryOptions.map((cat) => (
+                        <option key={cat} value={cat}>
+                          {cat}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">
+                      Mức độ
+                    </label>
+                    <select
+                      name="level"
+                      value={formData.level}
+                      onChange={handleCourseChange}
+                      className="w-full border rounded px-3 py-2"
+                      required
+                    >
+                      <option value="" disabled>
+                        -- Chọn mức độ --
+                      </option>
+                      <option value="Low">Thấp</option>
+                      <option value="Medium">Trung bình</option>
+                      <option value="High">Cao</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">
+                      Thời lượng (phút)
+                    </label>
+                    <input
+                      type="number"
+                      name="duration"
+                      value={formData.duration}
+                      onChange={handleCourseChange}
+                      className="w-full border rounded px-3 py-2"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">
+                      Điểm đậu
+                    </label>
+                    <input
+                      type="number"
+                      name="passingScore"
+                      value={formData.passingScore}
+                      onChange={handleCourseChange}
+                      className="w-full border rounded px-3 py-2"
+                    />
+                  </div>
+                </div>
+                <div className="text-right">
+                  <button
+                    type="submit"
+                    className="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                  >
+                    Gửi
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* Danh sách Khóa học */}
+            <section className="space-y-4">
+              <h2 className="text-2xl font-bold">Khóa học của tôi</h2>
+              <div className="flex space-x-4 mb-4">
+                <select
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value)}
+                  className="border rounded px-3 py-2"
+                >
+                  <option value="">— Tất cả trạng thái —</option>
+                  {statusOptions.map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={filterWorkflow}
+                  onChange={(e) => setFilterWorkflow(e.target.value)}
+                  className="border rounded px-3 py-2"
+                >
+                  <option value="">— Tất cả quy trình —</option>
+                  {workflowOptions.map((w) => (
+                    <option key={w} value={w}>
+                      {w}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {filteredCourses.length === 0 ? (
+                <p className="text-gray-500">Chưa có khóa học nào.</p>
+              ) : (
+                <div className="border rounded p-4 space-y-4">
+                  {filteredCourses.map((c) => (
+                    <div
+                      key={c.id}
+                      className="flex justify-between items-center p-2 bg-white rounded shadow"
+                    >
+                      <div>
+                        <h3 className="font-semibold">{c.title}</h3>
+                        <p className="text-sm text-gray-600">
+                          Mức độ: {c.level} • Thời lượng: {c.duration} phút
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          Trạng thái: {c.status} • Quy trình: {c.workflowState}
+                        </p>
+                        {c.reviewComments && (
+                          <p className="text-sm text-red-600 mt-1">
+                            Lý do từ chối: {c.reviewComments}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => openMaterialForm(c.id)}
+                          className="px-3 py-1 border rounded hover:bg-gray-50"
+                        >
+                          Thêm tài liệu
+                        </button>
+                        <button
+                          onClick={() => navigate(`/consultant/course/${c.id}`)}
+                          className="px-3 py-1 bg-blue-500 text-white rounded"
+                        >
+                          Xem
+                        </button>
+                        <button
+                          onClick={() => confirmSubmitToManager(c.id)}
+                          className="px-3 py-1 bg-yellow-500 text-white rounded"
+                        >
+                          Gửi lên Manager
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+          </>
+        ) : (
+          <>
+            {/* Tab Câu hỏi */}
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold">Danh sách Câu hỏi</h2>
+              <button
+                onClick={openCreateModal}
+                className="px-5 py-2 bg-green-600 text-white rounded-lg hover:scale-105 transition"
+              >
+                Thêm Câu hỏi
+              </button>
+            </div>
+            {loadingQuestions ? (
+              <p>Đang tải...</p>
+            ) : (
+              <table className="min-w-full bg-white rounded-lg shadow">
+                <thead className="bg-gray-200">
+                  <tr>
+                    <th className="px-4 py-2">#</th>
+                    <th className="px-4 py-2 text-left">Nội dung</th>
+                    <th className="px-4 py-2">Mức độ</th>
+                    <th className="px-4 py-2">Hành động</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {questions.map((q, idx) => (
+                    <tr
+                      key={q.id}
+                      className={idx % 2 === 0 ? "bg-gray-50" : ""}
+                    >
+                      <td className="px-4 py-2">{idx + 1}</td>
+                      <td className="px-4 py-2">{q.questionText}</td>
+                      <td className="px-4 py-2">{q.level}</td>
+                      <td className="px-4 py-2 space-x-2">
+                        <button
+                          onClick={() => openViewModal(q)}
+                          className="px-3 py-1 bg-blue-500 text-white rounded"
+                        >
+                          Xem
+                        </button>
+                        <button
+                          onClick={() => openEditModal(q)}
+                          className="px-3 py-1 bg-yellow-400 text-gray-800 rounded"
+                        >
+                          Sửa
+                        </button>
+                        <button
+                          onClick={() => handleDeleteQuestion(q.id)}
+                          className="px-3 py-1 bg-red-500 text-white rounded"
+                        >
+                          Xóa
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </>
+        )}
+
+        {/* Modal Tạo Câu hỏi */}
+        {createModalVisible && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl mx-4 overflow-hidden">
+              <div className="px-6 py-4 border-b">
+                <h2 className="text-xl font-semibold text-gray-800">
+                  Tạo câu hỏi mới
+                </h2>
+              </div>
+              <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+                <div className="flex space-x-4">
+                  <input
+                    type="text"
+                    placeholder="Nội dung câu hỏi"
+                    value={newQuestion.questionText}
+                    onChange={(e) =>
+                      setNewQuestion((q) => ({
+                        ...q,
+                        questionText: e.target.value,
+                      }))
+                    }
+                    className="flex-1 border-gray-300 rounded px-3 py-2"
+                  />
+                  <select
+                    value={newQuestion.level}
+                    onChange={(e) =>
+                      setNewQuestion((q) => ({
+                        ...q,
+                        level: e.target.value,
+                      }))
+                    }
+                    className="w-40 border-gray-300 rounded px-3 py-2"
+                  >
+                    <option value="" disabled>
+                      -- Mức độ --
+                    </option>
+                    <option value="Low">Thấp</option>
+                    <option value="Medium">Trung bình</option>
+                    <option value="High">Cao</option>
+                  </select>
+                  <select
+                    value={newQuestion.category}
+                    onChange={(e) =>
+                      setNewQuestion((q) => ({
+                        ...q,
+                        category: e.target.value,
+                      }))
+                    }
+                    className="w-48 border-gray-300 rounded px-3 py-2"
+                  >
+                    <option value="" disabled>
+                      -- Nhóm chủ đề --
+                    </option>
+                    {categoryOptions.map((cat) => (
+                      <option key={cat} value={cat}>
+                        {cat}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={addQuestion}
+                    className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+                  >
+                    + Thêm
+                  </button>
+                </div>
+              </div>
+              <div className="px-6 py-4 border-t text-right">
+                <button
+                  onClick={() => setCreateModalVisible(false)}
+                  className="px-4 py-2 border rounded hover:bg-gray-100"
+                >
+                  Hủy
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal Sửa Câu hỏi */}
+        {editModalVisible && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl mx-4 overflow-hidden">
+              <div className="px-6 py-4 border-b">
+                <h2 className="text-xl font-semibold text-gray-800">
+                  Sửa câu hỏi
+                </h2>
+              </div>
+              <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+                <div className="flex space-x-4">
+                  <input
+                    type="text"
+                    placeholder="Nội dung câu hỏi"
+                    value={editQuestionData.questionText}
+                    onChange={(e) =>
+                      setEditQuestionData((q) => ({
+                        ...q,
+                        questionText: e.target.value,
+                      }))
+                    }
+                    className="flex-1 border-gray-300 rounded px-3 py-2"
+                  />
+                  <select
+                    value={editQuestionData.level}
+                    onChange={(e) =>
+                      setEditQuestionData((q) => ({
+                        ...q,
+                        level: e.target.value,
+                      }))
+                    }
+                    className="w-40 border-gray-300 rounded px-3 py-2"
+                  >
+                    <option value="" disabled>
+                      -- Mức độ --
+                    </option>
+                    <option value="Low">Thấp</option>
+                    <option value="Medium">Trung bình</option>
+                    <option value="High">Cao</option>
+                  </select>
+                  <select
+                    value={editQuestionData.category}
+                    onChange={(e) =>
+                      setEditQuestionData((q) => ({
+                        ...q,
+                        category: e.target.value,
+                      }))
+                    }
+                    className="w-48 border-gray-300 rounded px-3 py-2"
+                  >
+                    <option value="" disabled>
+                      -- Nhóm chủ đề --
+                    </option>
+                    {categoryOptions.map((cat) => (
+                      <option key={cat} value={cat}>
+                        {cat}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={updateQuestion}
+                    className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+                  >
+                    Lưu
+                  </button>
+                </div>
+              </div>
+              <div className="px-6 py-4 border-t text-right">
+                <button
+                  onClick={() => setEditModalVisible(false)}
+                  className="px-4 py-2 border rounded hover:bg-gray-100"
+                >
+                  Hủy
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal Xem chi tiết + Thêm/Sửa đáp án */}
+        {viewModalVisible && viewQuestion && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4 overflow-hidden">
+              <div className="px-6 py-4 border-b flex justify-between items-center">
+                <h2 className="text-xl font-semibold text-gray-800">
+                  Chi tiết câu hỏi
+                </h2>
+                <button
+                  onClick={() => setAddOptionModalVisible(true)}
+                  className="px-3 py-1 bg-green-600 text-white rounded"
+                >
+                  Thêm đáp án
+                </button>
+              </div>
+              <div className="p-6 space-y-4">
+                <p>
+                  <span className="font-semibold">Nội dung:</span>{" "}
+                  {viewQuestion.questionText}
+                </p>
+                <p>
+                  <span className="font-semibold">Mức độ:</span>{" "}
+                  {viewQuestion.level}
+                </p>
+                <div>
+                  <span className="font-semibold">Các lựa chọn:</span>
+                  <ul className="list-disc list-inside mt-2 space-y-2">
+                    {viewQuestion.options.map((opt) => (
+                      <li key={opt.id} className="flex justify-between">
+                        <span>
+                          {opt.optionText}{" "}
+                          {opt.scoreValue > 0 && (
+                            <span className="text-green-600">(Đúng)</span>
+                          )}
+                        </span>
+                        <button
+                          onClick={() => openEditOptionModal(opt)}
+                          className="px-2 py-1 bg-yellow-400 text-gray-800 rounded"
+                        >
+                          Sửa đáp án
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+              <div className="px-6 py-4 border-t text-right">
+                <button
+                  onClick={() => setViewModalVisible(false)}
+                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                >
+                  Đóng
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal Thêm đáp án */}
+        {addOptionModalVisible && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 overflow-hidden">
+              <div className="px-6 py-4 border-b">
+                <h2 className="text-xl font-semibold text-gray-800">
+                  Thêm đáp án
+                </h2>
+              </div>
+              <div className="p-6 space-y-4">
                 <input
                   type="text"
+                  placeholder="Nội dung đáp án"
+                  value={newOption.optionText}
+                  onChange={(e) =>
+                    setNewOption((o) => ({ ...o, optionText: e.target.value }))
+                  }
+                  className="w-full border rounded px-3 py-2"
+                />
+                <input
+                  type="number"
+                  placeholder="Score value"
+                  value={newOption.scoreValue}
+                  onChange={(e) =>
+                    setNewOption((o) => ({
+                      ...o,
+                      scoreValue: Number(e.target.value),
+                    }))
+                  }
+                  className="w-full border rounded px-3 py-2"
+                />
+              </div>
+              <div className="px-6 py-4 border-t flex justify-end space-x-2">
+                <button
+                  onClick={() => setAddOptionModalVisible(false)}
+                  className="px-4 py-2 border rounded hover:bg-gray-100"
+                >
+                  Hủy
+                </button>
+                <button
+                  onClick={handleAddOption}
+                  className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                >
+                  Lưu đáp án
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal Sửa đáp án */}
+        {editOptionModalVisible && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 overflow-hidden">
+              <div className="px-6 py-4 border-b">
+                <h2 className="text-xl font-semibold text-gray-800">
+                  Sửa đáp án
+                </h2>
+              </div>
+              <div className="p-6 space-y-4">
+                <input
+                  type="text"
+                  placeholder="Nội dung đáp án"
+                  value={editOption.optionText}
+                  onChange={(e) =>
+                    setEditOption((o) => ({ ...o, optionText: e.target.value }))
+                  }
+                  className="w-full border rounded px-3 py-2"
+                />
+                <input
+                  type="number"
+                  placeholder="Score value"
+                  value={editOption.scoreValue}
+                  onChange={(e) =>
+                    setEditOption((o) => ({
+                      ...o,
+                      scoreValue: Number(e.target.value),
+                    }))
+                  }
+                  className="w-full border rounded px-3 py-2"
+                />
+              </div>
+              <div className="px-6 py-4 border-t flex justify-end space-x-2">
+                <button
+                  onClick={() => setEditOptionModalVisible(false)}
+                  className="px-4 py-2 border rounded hover:bg-gray-100"
+                >
+                  Hủy
+                </button>
+                <button
+                  onClick={handleUpdateOption}
+                  className="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600"
+                >
+                  Cập nhật đáp án
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Material Form Modal */}
+        {materialFormVisible && (
+          <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center p-4">
+            <form
+              onSubmit={handleMaterialSubmit}
+              className="bg-white rounded-lg shadow-lg p-6 w-full max-w-lg space-y-4"
+            >
+              <div className="flex justify-between items-center">
+                <h2 className="text-xl font-semibold">
+                  Thêm tài liệu cho khóa #{selectedCourseId}
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => setMaterialFormVisible(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  ×
+                </button>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Loại</label>
+                <select
+                  name="type"
+                  value={materialData.type}
+                  onChange={handleMaterialChange}
+                  className="w-full border rounded px-3 py-2"
+                  required
+                >
+                  <option value="" disabled>
+                    -- Chọn loại --
+                  </option>
+                  <option value="Video">Video</option>
+                  <option value="Document">Tài liệu</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Tiêu đề
+                </label>
+                <input
                   name="title"
-                  value={formData.title}
-                  onChange={handleCourseChange}
-                  className="w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
+                  value={materialData.title}
+                  onChange={handleMaterialChange}
+                  className="w-full border rounded px-3 py-2"
                   required
                 />
               </div>
-              {/* Image */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Image
+                <label className="block text-sm font-medium mb-1">
+                  File (URL)
                 </label>
                 <div className="flex items-center space-x-4">
                   <button
                     type="button"
-                    onClick={() => courseImageRef.current.click()}
-                    disabled={uploadingCourseImage}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:scale-105 transform transition"
+                    onClick={() => materialFileRef.current.click()}
+                    disabled={uploadingMaterialFile}
+                    className="px-4 py-2 bg-blue-600 text-white rounded"
                   >
-                    {uploadingCourseImage ? "Uploading…" : "Select Image…"}
+                    {uploadingMaterialFile ? "Đang tải…" : "Chọn file…"}
                   </button>
-                  {formData.image && (
+                  {materialData.url && (
                     <span className="text-sm text-gray-600 break-all">
-                      {formData.image}
+                      {materialData.url}
                     </span>
                   )}
                 </div>
                 <input
                   type="file"
-                  accept="image/*"
-                  ref={courseImageRef}
-                  onChange={handleCourseImageSelect}
+                  accept="*/*"
+                  ref={materialFileRef}
+                  onChange={handleMaterialFileSelect}
                   className="hidden"
                 />
               </div>
-            </div>
-
-            {/* Description & Content */}
-            <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Description
-                </label>
+                <label className="block text-sm font-medium mb-1">Mô tả</label>
                 <textarea
                   name="description"
-                  value={formData.description}
-                  onChange={handleCourseChange}
                   rows={2}
-                  className="w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
+                  value={materialData.description}
+                  onChange={handleMaterialChange}
+                  className="w-full border rounded px-3 py-2"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Content
-                </label>
-                <textarea
-                  name="content"
-                  value={formData.content}
-                  onChange={handleCourseChange}
-                  rows={4}
-                  className="w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
-                />
-              </div>
-            </div>
-
-            {/* Category, Level, Duration, Passing Score */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Category
-                </label>
+                <label className="block text-sm font-medium mb-1">Thứ tự</label>
                 <input
-                  type="text"
-                  name="category"
-                  value={formData.category}
-                  onChange={handleCourseChange}
-                  className="w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
+                  type="number"
+                  name="sortOrder"
+                  value={materialData.sortOrder}
+                  onChange={handleMaterialChange}
+                  className="w-full border rounded px-3 py-2"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Level
-                </label>
-                <select
-                  name="level"
-                  value={formData.level}
-                  onChange={handleCourseChange}
-                  className="w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
-                  required
+              <div className="text-right">
+                <button
+                  type="submit"
+                  className="px-6 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
                 >
-                  <option value="" disabled>
-                    -- Chọn mức độ --
-                  </option>
-                  <option value="Low">Low</option>
-                  <option value="Medium">Medium</option>
-                  <option value="High">High</option>
-                </select>
+                  Thêm tài liệu
+                </button>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Duration (phút)
-                </label>
-                <input
-                  type="number"
-                  name="duration"
-                  value={formData.duration}
-                  onChange={handleCourseChange}
-                  className="w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Passing Score
-                </label>
-                <input
-                  type="number"
-                  name="passingScore"
-                  value={formData.passingScore}
-                  onChange={handleCourseChange}
-                  className="w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
-                />
-              </div>
-            </div>
-
-            <div className="text-right">
-              <button
-                type="submit"
-                className="px-6 py-2 bg-green-600 text-white rounded-md hover:scale-105 transform transition"
-              >
-                Submit
-              </button>
-            </div>
-          </form>
+            </form>
+          </div>
         )}
 
-        {/* My Courses with Filters */}
-        <section className="space-y-4">
-          <h2 className="text-2xl font-bold text-gray-800">My Courses</h2>
-
-          {/* Filters */}
-          <div className="flex flex-wrap items-center space-x-4 mb-4">
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className="border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
-            >
-              <option value="">— All Status —</option>
-              {statusOptions.map((s) => (
-                <option key={s} value={s}>
-                  {s}
-                </option>
-              ))}
-            </select>
-
-            <select
-              value={filterWorkflow}
-              onChange={(e) => setFilterWorkflow(e.target.value)}
-              className="border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
-            >
-              <option value="">— All Workflow —</option>
-              {workflowOptions.map((w) => (
-                <option key={w} value={w}>
-                  {w}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {filteredCourses.length === 0 ? (
-            <p className="text-gray-500">Không có khóa học nào.</p>
-          ) : (
-            <div className="border border-blue-500 rounded-lg p-4 space-y-4">
-              {filteredCourses.map((c) => (
-                <div
-                  key={c.id}
-                  className="flex flex-col space-y-2 py-2 border-b last:border-b-0"
-                >
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-800">
-                        {c.title}
-                      </h3>
-                      <p className="text-sm text-gray-600">
-                        Level: {c.level} • Duration: {c.duration} phút
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        Status: {c.status} • Workflow: {c.workflowState}
-                      </p>
-                    </div>
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => openMaterialForm(c.id)}
-                        className="px-4 py-1 border border-blue-500 rounded hover:bg-blue-50 transition"
-                      >
-                        Add
-                      </button>
-                      <button
-                        onClick={() => navigate(`/consultant/course/${c.id}`)}
-                        className="px-4 py-1 bg-blue-500 text-white rounded hover:opacity-90 transition"
-                      >
-                        View
-                      </button>
-                      <button
-                        onClick={() => confirmSubmitToManager(c.id)}
-                        className="px-4 py-1 bg-yellow-500 text-white rounded hover:opacity-90 transition"
-                      >
-                        Sent to Manager
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Show rejected reason */}
-                  {c.reviewComments && (
-                    <div className="bg-red-50 border border-red-200 p-3 rounded text-red-700 text-sm">
-                      <strong>Rejected Reason:</strong> {c.reviewComments}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-      </main>
-
-      {/* Material Form Modal */}
-      {materialFormVisible && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center p-4">
-          <form
-            onSubmit={handleMaterialSubmit}
-            className="bg-white rounded-lg shadow-lg p-6 w-full max-w-lg space-y-4"
-          >
-            {/* Header */}
-            <div className="flex justify-between items-center">
-              <h2 className="text-xl font-semibold text-gray-800">
-                Add Material to Course #{selectedCourseId}
-              </h2>
-              <button
-                type="button"
-                onClick={() => setMaterialFormVisible(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                ×
-              </button>
-            </div>
-
-            {/* Type */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Type
-              </label>
-              <select
-                name="type"
-                value={materialData.type}
-                onChange={handleMaterialChange}
-                className="w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
-                required
-              >
-                <option value="" disabled>
-                  -- Chọn loại --
-                </option>
-                <option value="Video">Video</option>
-                <option value="Document">Document</option>
-              </select>
-            </div>
-
-            {/* Title */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Title
-              </label>
-              <input
-                type="text"
-                name="title"
-                value={materialData.title}
-                onChange={handleMaterialChange}
-                className="w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
-                required
-              />
-            </div>
-
-            {/* URL */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                URL (file)
-              </label>
-              <div className="flex items-center space-x-4">
+        {/* Confirm Popup */}
+        {confirmVisible && (
+          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
+            <div className="bg-white p-6 rounded-lg shadow-lg text-center">
+              <p className="mb-4 font-semibold text-indigo-800">
+                {confirmMessage}
+              </p>
+              <div className="flex justify-center space-x-2">
                 <button
-                  type="button"
-                  onClick={() => materialFileRef.current.click()}
-                  disabled={uploadingMaterialFile}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:scale-105 transform transition"
+                  onClick={() => setConfirmVisible(false)}
+                  className="px-4 py-2 border rounded"
                 >
-                  {uploadingMaterialFile ? "Uploading…" : "Select File…"}
+                  Hủy
                 </button>
-                {materialData.url && (
-                  <span className="text-sm text-gray-600 break-all">
-                    {materialData.url}
-                  </span>
-                )}
+                <button
+                  onClick={() => {
+                    setConfirmVisible(false);
+                    confirmAction();
+                  }}
+                  className="px-4 py-2 bg-indigo-600 text-white rounded"
+                >
+                  OK
+                </button>
               </div>
-              <input
-                type="file"
-                accept="*/*"
-                ref={materialFileRef}
-                onChange={handleMaterialFileSelect}
-                className="hidden"
-              />
             </div>
-
-            {/* Description */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Description
-              </label>
-              <textarea
-                name="description"
-                value={materialData.description}
-                onChange={handleMaterialChange}
-                rows={2}
-                className="w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
-              />
-            </div>
-
-            {/* Sort Order */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Sort Order
-              </label>
-              <input
-                type="number"
-                name="sortOrder"
-                value={materialData.sortOrder}
-                onChange={handleMaterialChange}
-                className="w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
-              />
-            </div>
-
-            <div className="text-right">
-              <button
-                type="submit"
-                className="px-6 py-2 bg-indigo-600 text-white rounded-md hover:scale-105 transform transition"
-              >
-                Add Material
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* Alert Popup */}
-      {alertVisible && (
-        <div className="fixed inset-0 flex items-center justify-center z-60 bg-opacity-50 backdrop-blur-sm">
-          <div className="bg-white p-4 rounded-lg shadow-lg max-w-xs text-center border border-indigo-200">
-            <p className="mb-4 text-indigo-800 font-semibold">{alertMessage}</p>
-            <button
-              onClick={() => setAlertVisible(false)}
-              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md"
-            >
-              OK
-            </button>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Confirm Popup */}
-      {confirmVisible && (
-        <div className="fixed inset-0 flex items-center justify-center z-60 bg-opacity-50 backdrop-blur-sm">
-          <div className="bg-white p-4 rounded-lg shadow-lg max-w-xs text-center border border-indigo-200">
-            <p className="mb-4 text-indigo-800 font-semibold">
-              {confirmMessage}
-            </p>
-            <div className="flex justify-center space-x-2">
+        {/* Alert Popup */}
+        {alertVisible && (
+          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
+            <div className="bg-white p-6 rounded-lg shadow-lg text-center">
+              <p className="mb-4 font-semibold text-indigo-800">
+                {alertMessage}
+              </p>
               <button
-                onClick={() => setConfirmVisible(false)}
-                className="px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-md"
-              >
-                Hủy
-              </button>
-              <button
-                onClick={() => {
-                  setConfirmVisible(false);
-                  confirmAction();
-                }}
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md"
+                onClick={() => setAlertVisible(false)}
+                className="px-4 py-2 bg-indigo-600 text-white rounded"
               >
                 OK
               </button>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </main>
     </div>
   );
 }
