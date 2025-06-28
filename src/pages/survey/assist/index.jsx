@@ -1,8 +1,11 @@
 // src/pages/survey/AssistSurveyPage.jsx
-import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import React, { useState, useEffect, useMemo } from "react";
+import { useParams, Link } from "react-router-dom";
 import Header from "@/components/header";
 import api from "@/config/axios";
+import { getCoursesByLevel } from "@/service/courseService";
+import CourseList from "@/components/courses/CourseList";
+import CourseDetailOverlay from "@/components/courses/CourseDetailOverlay";
 
 export default function AssistSurveyPage() {
   const { surveyId } = useParams();
@@ -23,6 +26,19 @@ export default function AssistSurveyPage() {
 
   // 4) Toggle detail display
   const [showDetail, setShowDetail] = useState(false);
+
+  // 5) Course suggestions & booking
+  const isLoggedIn = useMemo(() => !!localStorage.getItem("token"), []);
+  const [suggestedCourses, setSuggestedCourses] = useState([]);
+  const [selectedCourse, setSelectedCourse] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+
+  // Helper tính risk
+  const computeRiskLevel = score => {
+    if (score <= 4)   return "Low";
+    if (score <= 27)  return "Medium";
+    return "High";
+  };
 
   // Load questions and group
   useEffect(() => {
@@ -61,9 +77,24 @@ export default function AssistSurveyPage() {
     }
   }, [qIndex, groups, subIndex]);
 
-  // Submit answers when all groups done
+  // When all questions done: submit or compute locally
   useEffect(() => {
-    if (groups.length && subIndex >= groups.length) {
+    if (!groups.length || subIndex < groups.length) return;
+
+    // Compute score & risk locally
+    const totalScore = answers.reduce((sum, a) => sum + (a.scoreValue || 0), 0);
+    const riskLevel = computeRiskLevel(totalScore);
+    const recommendation = (() => {
+      switch (riskLevel) {
+        case "Low":   return "Bạn có mức rủi ro thấp. Tham khảo các khóa cơ bản về phòng ngừa và nâng cao sức khỏe.";
+        case "Medium":return "Bạn có mức rủi ro trung bình. Mời tham gia khoá tư vấn trực tuyến hoặc workshop giảm sử dụng.";
+        case "High":  return "Bạn có mức rủi ro cao. Vui lòng đặt lịch tư vấn cá nhân ngay với chuyên gia.";
+        default:       return "";
+      }
+    })();
+
+    if (isLoggedIn) {
+      // Gửi lên server nếu đã login
       (async () => {
         try {
           const payload = answers.map(a => ({ questionId: a.questionId, optionId: a.optionId }));
@@ -73,22 +104,35 @@ export default function AssistSurveyPage() {
           setError(e.response?.data?.message || e.message);
         }
       })();
+    } else {
+      // Không gọi API, hiển thị kết quả tạm
+      setSubmissionDetail({ score: totalScore, riskLevel, recommendation, answers });
     }
-  }, [subIndex, groups, answers, surveyId]);
+  }, [subIndex, groups, answers, surveyId, isLoggedIn]);
 
-  // Fetch submission detail
+  // Fetch submission detail từ server nếu login
   useEffect(() => {
-    if (!submissionId) return;
+    if (!submissionId || !isLoggedIn) return;
     api.get(`/surveys/5/submissions/${submissionId}`)
       .then(({ data }) => setSubmissionDetail(data))
       .catch(console.error);
-  }, [submissionId, surveyId]);
+  }, [submissionId, surveyId, isLoggedIn]);
 
-  // Handle answer selection
+  // Fetch khoá học gợi ý khi có detail và login & risk != High
+  useEffect(() => {
+    if (!submissionDetail || !isLoggedIn) return;
+    const lvl = submissionDetail.riskLevel.toLowerCase();
+    if (lvl === "high") return;
+    getCoursesByLevel(lvl)
+      .then(c => setSuggestedCourses(c.slice(0, 3)))
+      .catch(console.error);
+  }, [submissionDetail, isLoggedIn]);
+
+  // Handle answer selection (lưu thêm scoreValue)
   const handleAnswer = opt => {
     const group = groups[subIndex];
     const current = group.questions[qIndex];
-    setAnswers(a => [...a, { questionId: current.id, optionId: opt.id }]);
+    setAnswers(a => [...a, { questionId: current.id, optionId: opt.id, scoreValue: opt.scoreValue }]);
     if (current.sequence === 1 && opt.scoreValue === 0) {
       setSubIndex(i => i + 1);
       setQIndex(0);
@@ -97,25 +141,11 @@ export default function AssistSurveyPage() {
     }
   };
 
-  // Recommendations by risk level
-  const getRecommendationsByRisk = level => {
-    switch (level) {
-      case "Low":
-        return "Bạn có mức rủi ro thấp. Tham khảo các khóa cơ bản về phòng ngừa và nâng cao sức khỏe.";
-      case "Medium":
-        return "Bạn có mức rủi ro trung bình. Mời tham gia khoá tư vấn trực tuyến hoặc workshop giảm sử dụng.";
-      case "High":
-        return "Bạn có mức rủi ro cao. Vui lòng đặt lịch tư vấn cá nhân ngay với chuyên gia.";
-      default:
-        return "";
-    }
-  };
-
-  // Render states
+  // Render loading / error
   if (loading) return <p className="text-center py-10">Đang tải khảo sát…</p>;
   if (error)   return <p className="text-center text-red-500 py-10">{error}</p>;
 
-  // If detail loaded, show summary + detail toggle
+  // Khi có submissionDetail (từ server hoặc local)
   if (submissionDetail) {
     const { score, riskLevel, recommendation, answers: ansList } = submissionDetail;
     // build flat map of questions
@@ -136,24 +166,46 @@ export default function AssistSurveyPage() {
           <div className="bg-white p-6 rounded-lg shadow-lg">
             <h1 className="text-3xl font-semibold mb-4">Kết quả Khảo sát</h1>
             <dl className="space-y-3">
-              <div className="flex justify-between">
-                <dt className="font-medium">Score:</dt>
-                <dd>{score}</dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="font-medium">Risk Level:</dt>
-                <dd>{riskLevel}</dd>
-              </div>
-              <div>
-                <dt className="font-medium">Recommendation:</dt>
-                <dd className="mt-1 text-gray-700">{recommendation}</dd>
-              </div>
-              <div>
-                <dt className="font-medium">Gợi ý thêm:</dt>
-                <dd className="mt-1 text-indigo-600">{getRecommendationsByRisk(riskLevel)}</dd>
-              </div>
+              <div className="flex justify-between"><dt>Score:</dt><dd>{score}</dd></div>
+              <div className="flex justify-between"><dt>Risk Level:</dt><dd>{riskLevel}</dd></div>
+              <div><dt>Recommendation:</dt><dd className="mt-1 text-gray-700">{recommendation}</dd></div>
+              <div><dt>Gợi ý thêm:</dt><dd className="mt-1 text-indigo-600">{recommendation}</dd></div>
             </dl>
           </div>
+
+          {/* Gợi ý khoá học (chỉ khi login và Low/Medium) */}
+          {isLoggedIn && (riskLevel === "Low" || riskLevel === "Medium") && (
+            <div className="bg-white p-6 rounded-lg shadow-lg">
+              <h2 className="text-2xl font-semibold text-indigo-700 mb-4">Gợi ý khoá học</h2>
+              <CourseList
+                courses={suggestedCourses}
+                enrolledCourseIds={[]}
+                statusMap={{}}
+                onSelect={course => { setSelectedCourse(course); setShowModal(true); }}
+              />
+            </div>
+          )}
+
+          {/* overlay detail cho CourseList */}
+          {showModal && selectedCourse && (
+            <CourseDetailOverlay
+              course={selectedCourse}
+              status={null}
+              onClose={() => setShowModal(false)}
+            />
+          )}
+
+          {/* Nút đặt lịch (chỉ khi login và Medium/High) */}
+          {isLoggedIn && (riskLevel === "Medium" || riskLevel === "High") && (
+            <div className="text-center">
+              <Link
+                to="/appointments/book"
+                className="inline-block mt-4 px-8 py-3 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition"
+              >
+                {riskLevel === "High" ? "Đặt lịch Tư vấn Ngay" : "Xem Lịch Tư vấn"}
+              </Link>
+            </div>
+          )}
 
           <button
             onClick={() => setShowDetail(d => !d)}
@@ -162,23 +214,19 @@ export default function AssistSurveyPage() {
             {showDetail ? "Ẩn chi tiết bài làm" : "Xem chi tiết bài làm"}
           </button>
 
-          {showDetail && (
-            <div className="space-y-6">
-              {Object.entries(groupedAns).map(([subName, items]) => (
-                <div key={subName} className="bg-white p-6 rounded-lg shadow-lg">
-                  <h2 className="text-2xl font-semibold mb-4">{subName}</h2>
-                  <ul className="space-y-4">
-                    {items.map((it, idx) => (
-                      <li key={idx} className="border-l-4 border-indigo-500 bg-gray-50 p-4 rounded">
-                        <p className="font-medium">{it.questionText}</p>
-                        <p className="mt-1 text-indigo-600">Lựa chọn của bạn: {it.optionText}</p>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
+          {showDetail && Object.entries(groupedAns).map(([subName, items]) => (
+            <div key={subName} className="bg-white p-6 rounded-lg shadow-lg">
+              <h2 className="text-2xl font-semibold mb-4">{subName}</h2>
+              <ul className="space-y-4">
+                {items.map((it, idx) => (
+                  <li key={idx} className="border-l-4 border-indigo-500 bg-gray-50 p-4 rounded">
+                    <p className="font-medium">{it.questionText}</p>
+                    <p className="mt-1 text-indigo-600">Lựa chọn của bạn: {it.optionText}</p>
+                  </li>
+                ))}
+              </ul>
             </div>
-          )}
+          ))}
         </div>
       </div>
     );
