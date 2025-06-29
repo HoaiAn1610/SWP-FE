@@ -1,6 +1,7 @@
 // src/pages/admin/AdminLayout.jsx
 import React from "react";
 import { Layout, Menu } from "antd";
+import Header from "@/components/header";
 import {
   UserOutlined,
   SettingOutlined,
@@ -32,7 +33,7 @@ const AdminLayout = () => {
   };
 
   return (
-    <Layout style={{ minHeight: "100vh" }}>
+    <><Header /><Layout style={{ minHeight: "100vh" }}>
       <Sider collapsedWidth={0}>
         <div
           className="logo"
@@ -40,15 +41,13 @@ const AdminLayout = () => {
             height: 32,
             margin: 16,
             background: "rgba(255,255,255,0.3)",
-          }}
-        />
+          }} />
         <Menu
           theme="dark"
           mode="inline"
           selectedKeys={[selectedKey]}
           items={menuItems}
-          onClick={onMenuClick}
-        />
+          onClick={onMenuClick} />
       </Sider>
       <Layout>
         <Content
@@ -62,7 +61,7 @@ const AdminLayout = () => {
           <Outlet />
         </Content>
       </Layout>
-    </Layout>
+    </Layout></>
   );
 };
 
