@@ -1,219 +1,180 @@
-// src/pages/survey/AssistSurveyPage.jsx
+// src/pages/admin/AdminPage.jsx
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
-import Header from "@/components/header";
 import api from "@/config/axios";
+import Header from "@/components/header";
+import { Link } from "react-router-dom";
 
-export default function AssistSurveyPage() {
-  const { surveyId } = useParams();
-
-  // 1) Load & group questions by substance
-  const [groups, setGroups] = useState([]);
-  const [loading, setLoading] = useState(true);
+export default function AdminPage() {
+  const [users, setUsers] = useState([]);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // 2) User progress
-  const [subIndex, setSubIndex] = useState(0);
-  const [qIndex, setQIndex] = useState(0);
-  const [answers, setAnswers] = useState([]);
+  // Alert / Confirm state
+  const [alertVisible, setAlertVisible] = useState(false);
+  const [alertMessage, setAlertMessage] = useState("");
+  const [confirmVisible, setConfirmVisible] = useState(false);
+  const [confirmMessage, setConfirmMessage] = useState("");
+  const [confirmAction, setConfirmAction] = useState(() => {});
 
-  // 3) Submission result
-  const [submissionId, setSubmissionId] = useState(null);
-  const [submissionDetail, setSubmissionDetail] = useState(null);
+  // Fetch all users
+  const fetchUsers = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get("/Admin/get-users");
+      setUsers(res.data);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  // 4) Toggle detail display
-  const [showDetail, setShowDetail] = useState(false);
-
-  // Load questions and group
   useEffect(() => {
-    async function load() {
+    fetchUsers();
+  }, []);
+
+  // Select a user to view details
+  const selectUser = async (userId) => {
+    setError(null);
+    try {
+      const res = await api.get(`/Admin/get-user/${userId}`);
+      setSelectedUser(res.data);
+    } catch (e) {
+      setError(e.message);
+    }
+  };
+
+  // Hide confirm
+  const hideConfirm = () => setConfirmVisible(false);
+
+  // Actions
+  const handleDelete = (userId) => {
+    setConfirmMessage("Bạn có chắc muốn xoá người dùng này?");
+    setConfirmAction(() => async () => {
       try {
-        setLoading(true);
-        const res = await api.get(`/surveys/5/submissions/get-questions`);
-        const map = new Map();
-        res.data.forEach(q => {
-          if (!map.has(q.substanceId)) {
-            map.set(q.substanceId, { id: q.substanceId, name: q.substanceName, questions: [] });
-          }
-          map.get(q.substanceId).questions.push(q);
-        });
-        const arr = Array.from(map.values()).map(g => ({
-          ...g,
-          questions: g.questions.sort((a, b) => a.sequence - b.sequence)
-        }));
-        setGroups(arr);
+        await api.delete(`/Admin/delete-user/${userId}`);
+        setAlertMessage("Đã xóa người dùng.");
+        setAlertVisible(true);
+        setSelectedUser(null);
+        fetchUsers();
       } catch (e) {
-        setError(e.response?.data?.message || e.message);
-      } finally {
-        setLoading(false);
+        setAlertMessage(`Xóa thất bại: ${e.message}`);
+        setAlertVisible(true);
       }
-    }
-    load();
-  }, [surveyId]);
-
-  // Advance to next group when questions exhausted
-  useEffect(() => {
-    if (!groups.length) return;
-    const group = groups[subIndex];
-    if (group && qIndex >= group.questions.length) {
-      setSubIndex(i => i + 1);
-      setQIndex(0);
-    }
-  }, [qIndex, groups, subIndex]);
-
-  // Submit answers when all groups done
-  useEffect(() => {
-    if (groups.length && subIndex >= groups.length) {
-      (async () => {
-        try {
-          const payload = answers.map(a => ({ questionId: a.questionId, optionId: a.optionId }));
-          const res = await api.post(`/surveys/5/submissions/submit`, payload);
-          setSubmissionId(res.data.id);
-        } catch (e) {
-          setError(e.response?.data?.message || e.message);
-        }
-      })();
-    }
-  }, [subIndex, groups, answers, surveyId]);
-
-  // Fetch submission detail
-  useEffect(() => {
-    if (!submissionId) return;
-    api.get(`/surveys/5/submissions/${submissionId}`)
-      .then(({ data }) => setSubmissionDetail(data))
-      .catch(console.error);
-  }, [submissionId, surveyId]);
-
-  // Handle answer selection
-  const handleAnswer = opt => {
-    const group = groups[subIndex];
-    const current = group.questions[qIndex];
-    setAnswers(a => [...a, { questionId: current.id, optionId: opt.id }]);
-    if (current.sequence === 1 && opt.scoreValue === 0) {
-      setSubIndex(i => i + 1);
-      setQIndex(0);
-    } else {
-      setQIndex(i => i + 1);
-    }
+    });
+    setConfirmVisible(true);
   };
 
-  // Recommendations by risk level
-  const getRecommendationsByRisk = level => {
-    switch (level) {
-      case "Low":
-        return "Bạn có mức rủi ro thấp. Tham khảo các khóa cơ bản về phòng ngừa và nâng cao sức khỏe.";
-      case "Medium":
-        return "Bạn có mức rủi ro trung bình. Mời tham gia khoá tư vấn trực tuyến hoặc workshop giảm sử dụng.";
-      case "High":
-        return "Bạn có mức rủi ro cao. Vui lòng đặt lịch tư vấn cá nhân ngay với chuyên gia.";
-      default:
-        return "";
-    }
+  const handleForceReset = (userId) => {
+    setConfirmMessage("Xác nhận đặt lại mật khẩu?");
+    setConfirmAction(() => async () => {
+      try {
+        await api.post(`/Admin/force-reset-password/${userId}`);
+        setAlertMessage("Đã gửi yêu cầu reset mật khẩu.");
+        setAlertVisible(true);
+      } catch (e) {
+        setAlertMessage(`Reset thất bại: ${e.message}`);
+        setAlertVisible(true);
+      }
+    });
+    setConfirmVisible(true);
   };
-
-  // Render states
-  if (loading) return <p className="text-center py-10">Đang tải khảo sát…</p>;
-  if (error)   return <p className="text-center text-red-500 py-10">{error}</p>;
-
-  // If detail loaded, show summary + detail toggle
-  if (submissionDetail) {
-    const { score, riskLevel, recommendation, answers: ansList } = submissionDetail;
-    // build flat map of questions
-    const flatMap = {};
-    groups.forEach(g => g.questions.forEach(q => flatMap[q.id] = { ...q, substanceName: g.name }));
-    // group answers by substance
-    const groupedAns = ansList.reduce((acc, a) => {
-      const q = flatMap[a.questionId];
-      if (!acc[q.substanceName]) acc[q.substanceName] = [];
-      acc[q.substanceName].push({ questionText: q.questionText, optionText: q.options.find(o => o.id === a.optionId)?.optionText });
-      return acc;
-    }, {});
-
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <Header />
-        <div className="max-w-3xl mx-auto py-8 px-4 space-y-6">
-          <div className="bg-white p-6 rounded-lg shadow-lg">
-            <h1 className="text-3xl font-semibold mb-4">Kết quả Khảo sát</h1>
-            <dl className="space-y-3">
-              <div className="flex justify-between">
-                <dt className="font-medium">Score:</dt>
-                <dd>{score}</dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="font-medium">Risk Level:</dt>
-                <dd>{riskLevel}</dd>
-              </div>
-              <div>
-                <dt className="font-medium">Recommendation:</dt>
-                <dd className="mt-1 text-gray-700">{recommendation}</dd>
-              </div>
-              <div>
-                <dt className="font-medium">Gợi ý thêm:</dt>
-                <dd className="mt-1 text-indigo-600">{getRecommendationsByRisk(riskLevel)}</dd>
-              </div>
-            </dl>
-          </div>
-
-          <button
-            onClick={() => setShowDetail(d => !d)}
-            className="px-5 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition shadow"
-          >
-            {showDetail ? "Ẩn chi tiết bài làm" : "Xem chi tiết bài làm"}
-          </button>
-
-          {showDetail && (
-            <div className="space-y-6">
-              {Object.entries(groupedAns).map(([subName, items]) => (
-                <div key={subName} className="bg-white p-6 rounded-lg shadow-lg">
-                  <h2 className="text-2xl font-semibold mb-4">{subName}</h2>
-                  <ul className="space-y-4">
-                    {items.map((it, idx) => (
-                      <li key={idx} className="border-l-4 border-indigo-500 bg-gray-50 p-4 rounded">
-                        <p className="font-medium">{it.questionText}</p>
-                        <p className="mt-1 text-indigo-600">Lựa chọn của bạn: {it.optionText}</p>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  // In-progress rendering
-  if (!groups.length || subIndex >= groups.length) {
-    return <p className="text-center py-10">Đang gửi kết quả…</p>;
-  }
-  const group = groups[subIndex];
-  const current = group.questions[qIndex];
-  if (!current) {
-    return <p className="text-center py-10">Đang chuyển nhóm…</p>;
-  }
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      <div className="max-w-3xl mx-auto py-8 px-4">
-        <div className="bg-white p-6 rounded-lg shadow-lg">
-          <h1 className="text-2xl font-semibold mb-2">{group.name} – Câu hỏi {current.sequence}</h1>
-          <p className="text-gray-700 mb-4">{current.questionText}</p>
-          <div className="space-y-3">
-            {current.options.map(opt => (
-              <button
-                key={opt.id}
-                onClick={() => handleAnswer(opt)}
-                className="w-full text-left px-4 py-3 border border-gray-200 rounded-lg hover:bg-indigo-50 transition"
-              >
-                {opt.optionText}
-              </button>
-            ))}
-          </div>
+      <div className="max-w-6xl mx-auto py-8 px-4 grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* User List */}
+        <div className="md:col-span-1">
+          <h2 className="text-xl font-semibold mb-4">Danh sách người dùng</h2>
+          {loading ? (
+            <p>Đang tải…</p>
+          ) : error ? (
+            <p className="text-red-500">Lỗi: {error}</p>
+          ) : (
+            <ul className="space-y-2">
+              {users.map(u => (
+                <li
+                  key={u.id}
+                  onClick={() => selectUser(u.id)}
+                  className={`p-2 rounded cursor-pointer hover:bg-indigo-100 ${selectedUser?.id === u.id ? 'bg-indigo-50' : ''}`}
+                >
+                  {u.name} ({u.email})
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        {/* User Details & Actions */}
+        <div className="md:col-span-2 relative">
+          {selectedUser ? (
+            <div className="bg-white p-6 rounded-lg shadow">
+              <h2 className="text-2xl font-semibold mb-2">Chi tiết người dùng</h2>
+              <p><strong>Tên:</strong> {selectedUser.name}</p>
+              <p><strong>Email:</strong> {selectedUser.email}</p>
+              <p><strong>Vai trò:</strong> {selectedUser.role}</p>
+
+              <div className="mt-4 space-x-2">
+                <button
+                  onClick={() => handleDelete(selectedUser.id)}
+                  className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+                >Xóa người dùng</button>
+
+                <button
+                  onClick={() => handleForceReset(selectedUser.id)}
+                  className="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600"
+                >Đặt lại mật khẩu</button>
+
+                <Link
+                  to={`/admin/assign-role/${selectedUser.id}`}
+                  className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+                >Phân vai trò</Link>
+
+                <Link
+                  to={`/admin/update-user/${selectedUser.id}`}
+                  className="px-4 py-2 bg-indigo-500 text-white rounded hover:bg-indigo-600"
+                >Cập nhật thông tin</Link>
+              </div>
+            </div>
+          ) : (
+            <p>Chọn người dùng để xem chi tiết</p>
+          )}
         </div>
       </div>
+
+      {/* Alert */}
+      {alertVisible && (
+        <div className="fixed inset-0 flex items-center justify-center z-60">
+          <div className="bg-white p-4 rounded-lg shadow-lg max-w-xs text-center border border-indigo-200">
+            <p className="mb-4 text-indigo-800 font-semibold">{alertMessage}</p>
+            <button
+              onClick={() => setAlertVisible(false)}
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md"
+            >OK</button>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm */}
+      {confirmVisible && (
+        <div className="fixed inset-0 flex items-center justify-center z-60">
+          <div className="bg-white p-4 rounded-lg shadow-lg max-w-xs text-center border border-indigo-200">
+            <p className="mb-4 text-indigo-800 font-semibold">{confirmMessage}</p>
+            <div className="flex justify-center space-x-2">
+              <button
+                onClick={hideConfirm}
+                className="px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-md"
+              >Hủy</button>
+              <button
+                onClick={() => { confirmAction(); hideConfirm(); }}
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md"
+              >OK</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
