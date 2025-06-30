@@ -110,21 +110,36 @@ export default function ApprovedPage() {
     setScheduleModalVisible(true);
   };
   const submitSchedule = async () => {
-    const dt = new Date(`${publishDate}T${publishTime}`);
+    // ghép chuỗi ngày giờ từ input
+    const dtString = `${publishDate}T${publishTime}`;
+    const dt = new Date(dtString);
     if (isNaN(dt)) {
       showAlert("Ngày giờ không hợp lệ!");
       return;
     }
-    // gửi lên API
+
+    // format theo ISO nhưng bỏ phần mili giây để tránh sai lệch
+    // hoặc theo format backend yêu cầu, ví dụ "YYYY-MM-DD HH:mm:ss"
+    const publishAt = dt.toISOString().split(".")[0] + "Z";
+    // const publishAt = dayjs(dt).format("YYYY-MM-DD HH:mm:ss");
+
+    console.log("👉 Gửi payload:", { publishAt });
+
     try {
-      await api.put(`/Course/${currentPublishId}/schedule-publish`, {
-        publishAt: dt.toISOString(),
-      });
+      const res = await api.put(
+        `/Course/${currentPublishId}/schedule-publish`,
+        { publishAt }
+      );
+      console.log("👈 Response:", res.data);
       showAlert(`Đã lên lịch xuất bản vào ${publishDate} ${publishTime}!`);
       reloadCourses();
     } catch (err) {
-      console.error(err);
-      showAlert("Lên lịch thất bại.");
+      // in chi tiết lỗi phía server
+      console.error("💥 Lỗi Lên lịch:", err.response?.data || err.message);
+      showAlert(
+        "Lên lịch thất bại: " +
+          (err.response?.data?.message || err.response?.data || err.message)
+      );
     } finally {
       setScheduleModalVisible(false);
     }

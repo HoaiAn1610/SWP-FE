@@ -2,7 +2,6 @@
 import { useState } from "react";
 import { MdPerson, MdEmail, MdLock, MdPhone, MdCake } from "react-icons/md";
 import { FcGoogle } from "react-icons/fc";
-import { FaFacebookF } from "react-icons/fa";
 import api from "../../../config/axios";
 import { toast } from "react-toastify";
 import { useNavigate, Link } from "react-router-dom";
@@ -19,32 +18,108 @@ const RegisterPage = () => {
     ageGroup: "",
   });
   const [isLoading, setIsLoading] = useState(false);
+
+  // state mới cho OTP modal
+  const [showOtpModal, setShowOtpModal] = useState(false);
+  const [otpCode, setOtpCode] = useState("");
+
+  // state mới cho lỗi DOB
+  const [dobError, setDobError] = useState("");
+
   const navigate = useNavigate();
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
+
+    // nếu thay đổi DOB thì xóa lỗi cũ
+    if (name === "dob") {
+      setDobError("");
+    }
+
     setFormData((prev) => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
   };
 
+  // Gửi form đăng ký
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
+
+    // === VALIDATE DOB TRƯỚC ===
+    if (formData.dob) {
+      const today = new Date();
+      const dobDate = new Date(formData.dob);
+      let age = today.getFullYear() - dobDate.getFullYear();
+      // điều chỉnh nếu chưa tới ngày sinh trong năm nay
+      if (
+        today <
+        new Date(
+          dobDate.getFullYear() + age,
+          dobDate.getMonth(),
+          dobDate.getDate()
+        )
+      ) {
+        age--;
+      }
+      if (age < 13 || age > 120) {
+        setDobError("Tuổi phải từ 13 đến 120.");
+        setIsLoading(false);
+        return;
+      }
+    }
+
     try {
       console.log("Register payload:", formData);
-      const response = await api.post("Auth/register", formData);
-      console.log("Register response:", response.data);
-      toast.success("Check your email to verify your account!");
+      await api.post("Auth/register", formData);
+      toast.success("Mã xác thực đã được gửi về email của bạn!");
+      setShowOtpModal(true);
+    } catch (err) {
+      console.error("Registration error response:", err.response);
+      console.error("Server validation payload:", err.response?.data);
+      const errors = err.response?.data?.errors;
+      // hiển thị lỗi từ server, ưu tiên Dob nếu có
+      if (errors) {
+        if (errors.Dob) {
+          toast.error(errors.Dob.join(", "));
+        } else {
+          Object.values(errors)
+            .flat()
+            .forEach((msg) => toast.error(msg));
+        }
+      } else {
+        const message =
+          err.response?.data?.message || err.message || "Lỗi không xác định";
+        toast.error(message);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Xác nhận OTP
+  const handleConfirmOtp = async () => {
+    if (!otpCode) {
+      toast.error("Vui lòng nhập mã xác thực");
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const { data } = await api.post("Auth/confirm-email", {
+        OobCode: otpCode,
+      });
+      console.log("ConfirmEmail response:", data);
+      toast.success("Email đã được xác thực thành công!");
+      setShowOtpModal(false);
       navigate("/login");
     } catch (err) {
-      console.error("Registration error:", err);
+      console.error("Confirm OTP error:", err.response);
       const message =
-        err.response?.data?.message ||
         err.response?.data ||
+        err.response?.data?.message ||
         err.message ||
-        "Lỗi không xác định";
+        "Mã xác thực không hợp lệ hoặc đã hết hạn.";
       toast.error(message);
     } finally {
       setIsLoading(false);
@@ -54,13 +129,10 @@ const RegisterPage = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-600 to-blue-500 p-4">
       <div className="max-w-md w-full bg-white rounded-2xl shadow-lg overflow-hidden">
-        {/* Header with logo & title */}
+        {/* Header với logo & title */}
         <div className="px-8 py-6 text-center">
           <div className="flex items-center justify-center mb-4">
-            <div className="flex flex-col items-center">
-              <img src={logo} alt="PreventionHub" className="h-12 w-12 mb-2" />
-              {/* <h1 className="text-xl font-bold text-gray-900">PreventionHub</h1> */}
-            </div>
+            <img src={logo} alt="PreventionHub" className="h-12 w-12 mb-2" />
           </div>
           <h2 className="text-3xl font-bold text-gray-900 mb-2">
             Create Your Account
@@ -85,7 +157,7 @@ const RegisterPage = () => {
           </div>
         </div>
 
-        {/* Form */}
+        {/* Form đăng ký */}
         <form onSubmit={handleSubmit} className="px-8 space-y-5 pb-6">
           {/* Full Name */}
           <div>
@@ -118,6 +190,9 @@ const RegisterPage = () => {
               onChange={handleInputChange}
               className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-400"
             />
+            {dobError && (
+              <p className="text-red-500 text-sm mt-1">{dobError}</p>
+            )}
           </div>
 
           {/* Phone */}
@@ -169,7 +244,6 @@ const RegisterPage = () => {
               onChange={handleInputChange}
               className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-400"
             />
-            {/* Bạn có thể thêm icon hiện/ẩn mật khẩu ở đây */}
           </div>
 
           {/* Age Group */}
@@ -235,9 +309,7 @@ const RegisterPage = () => {
               onSuccess={async (credentialResponse) => {
                 setIsLoading(true);
                 try {
-                  const idToken = credentialResponse.credential; // ← đây là JWT ID Token
-                  console.log("ID Token:", idToken);
-
+                  const idToken = credentialResponse.credential;
                   const { data } = await api.post("Auth/google-login", {
                     googleToken: idToken,
                   });
@@ -258,7 +330,7 @@ const RegisterPage = () => {
               onError={() => {
                 toast.error("Google Sign-In thất bại.");
               }}
-              useOneTap={false} // tắt One-Tap nếu không cần
+              useOneTap={false}
             />
           </div>
           <p className="text-center text-gray-600 mt-4">
@@ -273,6 +345,37 @@ const RegisterPage = () => {
           </p>
         </div>
       </div>
+
+      {/* Modal OTP */}
+      {showOtpModal && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-sm">
+            <h3 className="text-xl font-semibold mb-4 text-center">
+              Nhập mã xác thực
+            </h3>
+            <input
+              type="text"
+              placeholder="Mã OTP"
+              value={otpCode}
+              onChange={(e) => setOtpCode(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-purple-400"
+            />
+            <button
+              onClick={handleConfirmOtp}
+              disabled={isLoading}
+              className="w-full py-2 bg-purple-600 text-white rounded-lg font-semibold disabled:opacity-50 transition-opacity"
+            >
+              {isLoading ? "Đang xác thực..." : "Xác thực"}
+            </button>
+            <button
+              onClick={() => setShowOtpModal(false)}
+              className="mt-3 w-full py-2 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-100"
+            >
+              Hủy
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

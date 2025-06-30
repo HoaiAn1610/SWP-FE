@@ -1,28 +1,37 @@
 // src/pages/consultant/appointments/ViewAppointments.jsx
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import api from "@/config/axios";
 
+// Popup component
+const AlertPopup = ({ message, onClose }) => (
+  <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
+    <div className="bg-white p-6 rounded-lg shadow-lg text-center">
+      <p className="mb-4 font-semibold text-indigo-800">{message}</p>
+      <button
+        onClick={onClose}
+        className="px-4 py-2 bg-indigo-600 text-white rounded"
+      >
+        OK
+      </button>
+    </div>
+  </div>
+);
+
 export default function ViewAppointments() {
-  const consultantId = localStorage.getItem("id"); // lấy từ token sau khi login
+  const consultantId = localStorage.getItem("id");
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("pending"); // pending | confirmed | completed | others
+  const [activeTab, setActiveTab] = useState("pending");
+  const navigate = useNavigate();
 
-  // Hàm format ngày DD/MM/YYYY
-  const formatDate = (dateStr) => {
-    const [year, month, day] = dateStr.split("-");
-    const dd = day.padStart(2, "0");
-    const mm = month.padStart(2, "0");
-    return `${dd}/${mm}/${year}`;
-  };
+  // popup state
+  const [alertVisible, setAlertVisible] = useState(false);
+  const [alertMessage, setAlertMessage] = useState("");
 
-  // Hàm format giờ HH:mm (bỏ phần giây nếu có)
-  const formatTime = (timeStr) => {
-    const [hour, minute] = timeStr.split(":");
-    const hh = hour.padStart(2, "0");
-    const mm = minute.padStart(2, "0");
-    return `${hh}:${mm}`;
-  };
+  // format helpers
+  const formatDate = (ds) => ds.split("-").reverse().join("/");
+  const formatTime = (ts) => ts.slice(0, 5);
 
   useEffect(() => {
     (async () => {
@@ -30,17 +39,22 @@ export default function ViewAppointments() {
         const { data: apps } = await api.get(
           `/AppointmentRequest/consultants/${consultantId}`
         );
-        const appsWithSchedule = await Promise.all(
+        const withSched = await Promise.all(
           apps.map(async (a) => {
             try {
-              const { data: sched } = await api.get(
+              const { data: s } = await api.get(
                 `/ConsultantSchedule/get-schedule/${a.scheduleId}`
               );
+              // cộng 7h nếu cần
+              const startDt = new Date(`${s.scheduleDate}T${s.startTime}`);
+              startDt.setHours(startDt.getHours() + 7);
+              const endDt = new Date(`${s.scheduleDate}T${s.endTime}`);
+              endDt.setHours(endDt.getHours() + 7);
               return {
                 ...a,
-                scheduleDate: sched.scheduleDate,
-                startTime: sched.startTime,
-                endTime: sched.endTime,
+                scheduleDate: s.scheduleDate,
+                startTime: startDt.toTimeString().slice(0, 8),
+                endTime: endDt.toTimeString().slice(0, 8),
               };
             } catch {
               return {
@@ -52,42 +66,78 @@ export default function ViewAppointments() {
             }
           })
         );
-        setAppointments(appsWithSchedule);
-      } catch (err) {
-        console.error(err);
+        setAppointments(withSched);
+      } catch (e) {
+        console.error(e);
+        setAlertMessage("Lỗi khi load dữ liệu");
+        setAlertVisible(true);
       } finally {
         setLoading(false);
       }
     })();
   }, [consultantId]);
 
+  const handleConfirm = async (id) => {
+    try {
+      await api.put(`/AppointmentRequest/${id}/update-status`, {
+        status: "Confirmed",
+        cancelReason: null,
+      });
+      setAppointments((apps) =>
+        apps.map((a) => (a.id === id ? { ...a, status: "Confirmed" } : a))
+      );
+    } catch {
+      setAlertMessage("Xác nhận thất bại");
+      setAlertVisible(true);
+    }
+  };
+
+  const handleStart = async (id) => {
+    try {
+      await api.put(`/AppointmentRequest/${id}/update-status`, {
+        status: "Starting",
+        cancelReason: null,
+      });
+      setAppointments((apps) =>
+        apps.map((a) => (a.id === id ? { ...a, status: "Starting" } : a))
+      );
+      navigate(`/consultant/appointments/meeting/${id}`);
+    } catch {
+      setAlertMessage("Không thể bắt đầu");
+      setAlertVisible(true);
+    }
+  };
+
   if (loading) return <p>Loading…</p>;
 
-  // phân chia theo tab
   const tabs = {
     pending: {
       label: "Chờ xác nhận",
-      list: appointments
-        .filter((a) => a.status === "Pending")
-        .sort(
-          (a, b) =>
-            new Date(`${a.scheduleDate}T${a.startTime}`) -
-            new Date(`${b.scheduleDate}T${b.startTime}`)
-        ),
+      list: appointments.filter((a) => a.status === "Pending"),
+      color: "bg-yellow-100 text-yellow-800",
     },
     confirmed: {
       label: "Đã xác nhận",
       list: appointments.filter((a) => a.status === "Confirmed"),
+      color: "bg-blue-100 text-blue-800",
+    },
+    starting: {
+      label: "Đang bắt đầu",
+      list: appointments.filter((a) => a.status === "Starting"),
+      color: "bg-purple-100 text-purple-800",
     },
     completed: {
       label: "Hoàn thành",
       list: appointments.filter((a) => a.status === "Completed"),
+      color: "bg-green-100 text-green-800",
     },
     others: {
       label: "Khác",
       list: appointments.filter(
-        (a) => !["Pending", "Confirmed", "Completed"].includes(a.status)
+        (a) =>
+          !["Pending", "Confirmed", "Starting", "Completed"].includes(a.status)
       ),
+      color: "bg-red-100 text-red-800",
     },
   };
 
@@ -110,44 +160,76 @@ export default function ViewAppointments() {
         ))}
       </div>
 
-      {/* Tab content */}
+      {/* List */}
       <div className="space-y-4">
-        {tabs[activeTab].list.map((a) => (
-          <div
-            key={a.id}
-            className="bg-white p-4 rounded shadow flex justify-between items-center"
-          >
-            <div>
-              <h3 className="font-semibold">{a.clientName}</h3>
-              <p className="text-sm text-gray-600">
-                {a.scheduleDate ? (
-                  <>
-                    <div>{formatDate(a.scheduleDate)}</div>
-                    <div>
-                      {formatTime(a.startTime)} - {formatTime(a.endTime)}
-                    </div>
-                  </>
-                ) : (
-                  "Chưa có lịch"
-                )}
-              </p>
-            </div>
-            <span
-              className={`px-3 py-1 rounded-full text-sm ${
-                a.status === "Pending"
-                  ? "bg-yellow-100 text-yellow-800"
-                  : a.status === "Confirmed"
-                  ? "bg-blue-100 text-blue-800"
-                  : a.status === "Completed"
-                  ? "bg-green-100 text-green-800"
-                  : "bg-red-100 text-red-800"
-              }`}
+        {tabs[activeTab].list.map((a) => {
+          const { label, color } = tabs[activeTab];
+          return (
+            <div
+              key={a.id}
+              className="bg-white p-4 rounded shadow flex justify-between items-center"
             >
-              {activeTab === "others" ? a.status : tabs[activeTab].label}
-            </span>
-          </div>
-        ))}
+              <div>
+                <h3 className="font-semibold">{a.clientName}</h3>
+                <p className="text-sm text-gray-600">
+                  {a.scheduleDate
+                    ? `${formatDate(a.scheduleDate)} • ${formatTime(
+                        a.startTime
+                      )}–${formatTime(a.endTime)}`
+                    : "Chưa có lịch"}
+                </p>
+              </div>
+
+              {/* Badge + Action */}
+              <div className="flex items-center">
+                <span
+                  className={`px-3 py-1 rounded-full text-sm ${color} mr-2`}
+                >
+                  {label}
+                </span>
+
+                {/* Các nút hành động */}
+                {activeTab === "pending" && (
+                  <button
+                    onClick={() => handleConfirm(a.id)}
+                    className="px-4 py-2 bg-green-600 text-white rounded"
+                  >
+                    Xác nhận
+                  </button>
+                )}
+                {activeTab === "confirmed" && (
+                  <button
+                    onClick={() => handleStart(a.id)}
+                    className="px-4 py-2 bg-indigo-600 text-white rounded"
+                  >
+                    Bắt đầu
+                  </button>
+                )}
+                {(activeTab === "starting" ||
+                  activeTab === "completed" ||
+                  activeTab === "others") && (
+                  <button
+                    onClick={() =>
+                      navigate(`/consultant/appointments/meeting/${a.id}`)
+                    }
+                    className="px-4 py-2 bg-indigo-600 text-white rounded"
+                  >
+                    {activeTab === "starting" ? "Tiếp tục" : "Xem"}
+                  </button>
+                )}
+              </div>
+            </div>
+          );
+        })}
       </div>
+
+      {/* Alert Popup */}
+      {alertVisible && (
+        <AlertPopup
+          message={alertMessage}
+          onClose={() => setAlertVisible(false)}
+        />
+      )}
     </div>
   );
 }
