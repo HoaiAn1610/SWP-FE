@@ -1,0 +1,149 @@
+@import url('https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@300;600&display=swap');
+
+.certificateRoot {
+  position: relative;
+  width: 900px;
+  height: 650px;
+  background-color: #fff;
+  padding: 12px;
+  border: 12px solid #d4af37;      /* viền vàng kim ngoài */
+  box-shadow: 0 0 20px rgba(0,0,0,0.15);
+  font-family: 'Montserrat', sans-serif;
+  overflow: hidden;
+}
+
+/* pseudo-watermark ánh kim */
+.certificateRoot::before {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, rgba(212,175,55,0.1) 0%, transparent 60%);
+  transform: translate(-50%,-50%);
+  pointer-events: none;
+}
+
+/* MỚI: khung viền nhỏ bên trong viền ngoài */
+.innerFrame {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  right: 20px;
+  bottom: 20px;
+  border: 4px solid #1565C0;       /* viền xanh dương nhỏ */
+  pointer-events: none;
+}
+
+/* góc tam giác xanh ở 2 góc (nếu vẫn muốn giữ) */
+.triangleTopLeft {
+  position: absolute;
+  top: 0; left: 0;
+  width: 160px; height: 160px;
+  background-color: #1565C0;
+  clip-path: polygon(0 0, 100% 0, 0 100%);
+}
+.triangleBottomRight {
+  position: absolute;
+  bottom: 0; right: 0;
+  width: 160px; height: 160px;
+  background-color: #1565C0;
+  clip-path: polygon(100% 0, 100% 100%, 0 100%);
+}
+
+.content {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  text-align: center;
+}
+
+/* TIÊU ĐỀ */
+.title {
+  font-family: 'Great Vibes', cursive;
+  font-size: 2.5rem;
+  color: #1565C0;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+}
+
+.subtitle {
+  font-size: 1.1rem;
+  font-style: italic;
+  color: #555;
+  margin-bottom: 16px;
+}
+
+.recipientName {
+  font-family: 'Great Vibes', cursive;
+  font-size: 2.8rem;
+  color: #1565C0;
+  margin-bottom: 12px;
+}
+
+.divider {
+  width: 50%;
+  height: 2px;
+  background-color: #ccc;
+  margin: 16px auto;
+}
+
+.courseDescription {
+  font-size: 1rem;
+  color: #333;
+  margin-bottom: 4px;
+}
+
+.courseTitle {
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: #222;
+}
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 0 80px;
+  margin-top: 24px;
+}
+
+.signatureBlock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.signatureLine {
+  display: block;
+  width: 180px;
+  border-top: 2px solid #333;
+  margin-bottom: 4px;
+}
+.signatureLabel {
+  font-size: 0.85rem;
+  color: #555;
+}
+
+.seal {
+  width: 80px;
+  height: 80px;
+  border: 4px solid #333;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  color: #555;
+}
+
+.bottomInfo {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 80px;
+  font-size: 0.9rem;
+  color: #555;
+}

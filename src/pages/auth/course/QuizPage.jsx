@@ -174,7 +174,16 @@ export default function QuizPage() {
               })}
             </div>
           )}
-
+                              {result.passedStatus && (
+            <div className="flex justify-center space-x-4 pt-6">
+              <button
+                onClick={() => navigate(`/course/${courseId}/certificate`)}
+                className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+              >
+                View Certificate
+              </button>
+            </div>
+          )}
           {/* Buttons */}
           <div className="flex justify-center space-x-4 pt-6">
             <button
