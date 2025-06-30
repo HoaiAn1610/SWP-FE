@@ -1,4 +1,3 @@
-// src/pages/appointmentRequest/bookingpage/index.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/header";
@@ -6,6 +5,20 @@ import api from "@/config/axios";
 
 export default function BookingPage() {
   const navigate = useNavigate();
+
+  // Helper: format date/time with +7h offset
+  const formatDateWithOffset = dateStr => {
+    const dt = new Date(dateStr);
+    dt.setHours(dt.getHours() + 7);
+    return dt.toLocaleDateString();
+  };
+  const formatTimeWithOffset = (dateStr, timeStr) => {
+    const [hour, minute] = timeStr.split(":");
+    const dt = new Date(dateStr);
+    dt.setHours(Number(hour), Number(minute));
+    dt.setHours(dt.getHours() + 7);
+    return dt.toTimeString().slice(0,5);
+  };
 
   // Danh sách consultants
   const [consultants, setConsultants] = useState([]);
@@ -33,9 +46,7 @@ export default function BookingPage() {
     setConfirmAction(() => action);
     setConfirmVisible(true);
   };
-  const hideConfirm = () => {
-    setConfirmVisible(false);
-  };
+  const hideConfirm = () => setConfirmVisible(false);
 
   // Load consultants
   useEffect(() => {
@@ -66,16 +77,12 @@ export default function BookingPage() {
   // Khi user bấm nút "Xác nhận đặt lịch", hiện confirm trước
   const handleAttemptBooking = () => {
     if (!selectedConsultant || !selectedScheduleId) return;
-    const dateStr = schedules.find(s => s.id === selectedScheduleId)?.scheduleDate;
-    const timeStr = schedules.find(s => s.id === selectedScheduleId)
-                      ? schedules.find(s => s.id === selectedScheduleId).startTime.slice(0,5)
-                        + "–" +
-                        schedules.find(s => s.id === selectedScheduleId).endTime.slice(0,5)
-                      : "";
+    const sched = schedules.find(s => s.id === selectedScheduleId);
+    const dateDisplay = formatDateWithOffset(sched.scheduleDate);
+    const timeDisplay = `${formatTimeWithOffset(sched.scheduleDate, sched.startTime)}–${formatTimeWithOffset(sched.scheduleDate, sched.endTime)}`;
     showConfirm(
-      `Bạn có chắc muốn đặt lịch với ${selectedConsultant.name} vào ${new Date(dateStr).toLocaleDateString()} lúc ${timeStr} không?`,
+      `Bạn có chắc muốn đặt lịch với ${selectedConsultant.name} vào ${dateDisplay} lúc ${timeDisplay} không?`,
       () => {
-        // callback thực sự gọi API
         api.post("/AppointmentRequest", {
           consultantId: selectedConsultant.id,
           scheduleId: selectedScheduleId
@@ -188,10 +195,10 @@ export default function BookingPage() {
                       }`}
                     >
                       <span className="font-medium text-indigo-800">
-                        {new Date(s.scheduleDate).toLocaleDateString()}
+                        {formatDateWithOffset(s.scheduleDate)}
                       </span>{" "}
                       <span className="text-gray-700">
-                        {s.startTime.slice(0,5)} - {s.endTime.slice(0,5)}
+                        {formatTimeWithOffset(s.scheduleDate, s.startTime)} - {formatTimeWithOffset(s.scheduleDate, s.endTime)}
                       </span>
                     </button>
                   </li>
@@ -241,10 +248,7 @@ export default function BookingPage() {
                 Huỷ
               </button>
               <button
-                onClick={() => {
-                  confirmAction();
-                  hideConfirm();
-                }}
+                onClick={() => { confirmAction(); hideConfirm(); }}
                 className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md"
               >
                 OK

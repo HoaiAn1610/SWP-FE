@@ -18,6 +18,7 @@ import CrafftPage from "@/pages/survey/Crafft";
 // import ProtectedRoute from "@/components/protected-route";
 import LessonPage from "@/pages/auth/course/LessonPage";
 import QuizPage from "@/pages/auth/course/QuizPage";
+import CertificatePage from "@/pages/auth/course/CertificatePage";
 
 import PersonalInfoLayout from "@/pages/personal-information/PersonalInfoLayout";
 import MyProfilePage from "@/pages/personal-information/my-profile";
@@ -95,6 +96,7 @@ function App() {
       element: <LessonPage />,
     },
     { path: "/course/:courseId/quiz", element: <QuizPage /> },
+    {path: "/course/:courseId/certificate", element: <CertificatePage />},
     {
       path: "/account",
       element: <PersonalInfoLayout />,
