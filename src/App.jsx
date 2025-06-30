@@ -2,6 +2,7 @@
 import React from "react";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { RouterProvider, createBrowserRouter } from "react-router-dom";
+import ChatWidget from "@/components/inquiry/ChatWidget.jsx";
 
 import Dashboard from "./components/dashboard";
 import UploadComponent from "./components/upload";
@@ -36,6 +37,7 @@ import StaffLayout from "@/pages/staff/StaffLayout";
 import DraftContentPage from "@/pages/staff/draft-content";
 import PublishedContentPage from "@/pages/staff/published-content";
 import ViewBlogPostsPage from "@/pages/staff/view-blog-posts";
+// import InquiryAssignmentPage from "@/pages/staff/InquiryAssignmentPage";
 import ViewStaffCoursePage from "./pages/staff/view-course-page";
 
 import ConsultantLayout from "@/pages/consultant/ConsultantLayout";
@@ -173,6 +175,7 @@ function App() {
         { path: "draft-content", element: <DraftContentPage /> },
         { path: "published-content", element: <PublishedContentPage /> },
         { path: "view-blog-posts", element: <ViewBlogPostsPage /> },
+        // { path: "inquiry-assignment", element: <InquiryAssignmentPage /> },
         { path: "course/:courseId", element: <ViewStaffCoursePage /> },
       ],
     },
@@ -181,6 +184,7 @@ function App() {
   return (
     <GoogleOAuthProvider clientId={clientId}>
       <RouterProvider router={router} />
+      <ChatWidget />
     </GoogleOAuthProvider>
   );
 }

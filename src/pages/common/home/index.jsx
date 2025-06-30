@@ -6,6 +6,7 @@ import Header from "@/components/header";
 import CourseList from "@/components/courses/CourseList";
 import CourseDetailOverlay from "@/components/courses/CourseDetailOverlay";
 import SurveySection from "@/pages/common/survey";
+import ChatWidget from "@/components/inquiry/ChatWidget.jsx";
 import { getAllCourses } from "@/service/courseService";
 
 export default function EcommerceHome() {
@@ -113,6 +114,9 @@ export default function EcommerceHome() {
 
       {/* Mục Prevention ngay dưới header */}
       <SurveySection />
+
+      {/* ==== Inquiry Chat Widget ==== */}
+      <ChatWidget />
     </>
   );
 }
