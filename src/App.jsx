@@ -23,7 +23,7 @@ import PersonalInfoLayout from "@/pages/personal-information/PersonalInfoLayout"
 import MyProfilePage from "@/pages/personal-information/my-profile";
 
 import BookingPage from "@/pages/appointmentRequest/bookingpage";
-import BookingHistoryPage from "@/pages/appointmentRequest/bookingHistory"; 
+import BookingHistoryPage from "@/pages/appointmentRequest/bookingHistory";
 
 import ManagerLayout from "@/pages/manager/ManagerLayout";
 import OverviewPage from "@/pages/manager/overview";
@@ -43,6 +43,7 @@ import AppointmentsPage from "@/pages/consultant/appointments";
 import CreateContentPage from "@/pages/consultant/create-content";
 import BlogQApage from "@/pages/consultant/blog-qa";
 import ViewConsultantCoursePage from "./pages/consultant/view-course-page";
+import Meeting from "@/pages/consultant/appointments/Meeting.jsx";
 
 import ErrorPage from "@/components/error";
 import AdminLayout from "@/pages/admin/AdminLayout";
@@ -78,17 +79,13 @@ function App() {
       element: <Courses />,
     },
     {
-     path: "/appointments/book",
-     element: (
-         <BookingPage />
-     ),
-   },
-   {
-     path: "/appointments/history",
-     element: (
-         <BookingHistoryPage />
-     ),
-   },
+      path: "/appointments/book",
+      element: <BookingPage />,
+    },
+    {
+      path: "/appointments/history",
+      element: <BookingHistoryPage />,
+    },
     {
       path: "/course",
       element: <Courses />,
@@ -145,6 +142,7 @@ function App() {
         { path: "create-content", element: <CreateContentPage /> },
         { path: "blog-qa", element: <BlogQApage /> },
         { path: "course/:courseId", element: <ViewConsultantCoursePage /> },
+        { path: "appointments/meeting/:id", element: <Meeting /> },
       ],
     },
     {
