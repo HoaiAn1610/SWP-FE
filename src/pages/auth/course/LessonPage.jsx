@@ -115,11 +115,15 @@ export default function LessonPage() {
       try {
         const { data } = await api.get(`/users/${userId}/quiz/submissions`);
         const all = data.filter(s => s.courseId === Number(courseId));
-        const current = all.filter(s => new Date(s.submissionDate).getTime() >= lastEnrollTime);
-        const old = all.filter(s => new Date(s.submissionDate).getTime() < lastEnrollTime);
+        const enrollTimestamp = typeof lastEnrollTime === "string"
+          ? new Date(lastEnrollTime).getTime()
+          : lastEnrollTime;
+        const current = all.filter(s => new Date(s.submissionDate).getTime() >= enrollTimestamp);
+        const old = all.filter(s => new Date(s.submissionDate).getTime() < enrollTimestamp);
         setSubmissions(current);
         setOldSubmissions(old);
-        setHasPassed(current.some(s => s.passedStatus));
+        // Check passed on all history
+        setHasPassed(all.some(s => s.passedStatus === true));
       } catch {
       } finally {
         setLoadingSubs(false);
@@ -308,12 +312,24 @@ export default function LessonPage() {
           </div>
         )}
 
-        {activeTab==='quiz'&&(
+         {activeTab==='quiz' && (
           <div className="bg-white p-6 rounded-lg shadow space-y-4">
             <h2 className="text-xl font-semibold">Quiz Attempts</h2>
-            <button onClick={handleStartQuiz} className="px-6 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">
-              {quizAttemptCount === 0 ? 'Bắt đầu Quiz' : 'Làm lại Quiz'}
-            </button>
+            {!hasPassed ? (
+              <button onClick={handleStartQuiz} className="px-6 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">
+                {quizAttemptCount === 0 ? 'Bắt đầu Quiz' : 'Làm lại Quiz'}
+              </button>
+            ) : (
+              <div className="p-4 bg-green-50 rounded-lg">
+                <p className="text-green-800 mb-2">Bạn đã hoàn thành khóa học rồi!</p>
+                <button
+                onClick={() => navigate(`/course/${courseId}/certificate`)}
+                className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+              >
+                View Certificate
+              </button>
+              </div>
+            )}
 
             {(loadingSubs||loadingQuiz)?<p>Loading quiz data…</p>:<ul className="divide-y divide-gray-200">
               {submissions.map(sub=>(
