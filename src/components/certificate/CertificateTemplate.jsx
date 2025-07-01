@@ -1,5 +1,7 @@
 import React from 'react';
 import styles from './CertificateTemplate.module.css';
+// Nếu dùng import ảnh nền:
+import bgImage from '@/assets/Certificate.png'; // nếu dùng import
 
 export default function CertificateTemplate({
   userName,
@@ -8,33 +10,21 @@ export default function CertificateTemplate({
   certNo
 }) {
   return (
-    <div id="certificate-root" className={styles.certificateRoot}>
-      <div className={styles.triangleTopLeft} />
-      <div className={styles.triangleBottomRight} />
+    <div
+      className={styles.certificateRoot}
+      style={{ backgroundImage: `url(${bgImage})` }}
+    >
+      <div className={styles.overlay} />
 
       <div className={styles.content}>
-        <h1 className={styles.title}>Certificate of Completion</h1>
-        <p className={styles.subtitle}>This is to certify that</p>
+       
         <h2 className={styles.recipientName}>{userName}</h2>
-
-        <div className={styles.divider} />
-
-        <p className={styles.courseDescription}>
-          has successfully completed the course
-        </p>
         <h3 className={styles.courseTitle}>{courseTitle}</h3>
 
-        <div className={styles.footer}>
-          <div className={styles.signatureBlock}>
-            <span className={styles.signatureLine} />
-            <span className={styles.signatureLabel}>Instructor Signature</span>
-          </div>
-          <div className={styles.seal}>SEAL</div>
-        </div>
-
-        <div className={styles.bottomInfo}>
-          <span>Certificate No: {certNo}</span>
-          <span>Date: {date}</span>
+        {/* Nếu muốn hiển thị số & ngày */}
+        <div className={styles.footerInfo}>
+          <p>Certificate No: {certNo}</p>
+          <p>Date: {date}</p>
         </div>
       </div>
     </div>
