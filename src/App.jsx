@@ -46,6 +46,7 @@ import AppointmentsPage from "@/pages/consultant/appointments";
 import CreateContentPage from "@/pages/consultant/create-content";
 import BlogQApage from "@/pages/consultant/blog-qa";
 import ViewConsultantCoursePage from "./pages/consultant/view-course-page";
+import AssignmentsPage from "./pages/consultant/consultant-assignments-page";
 import Meeting from "@/pages/consultant/appointments/Meeting.jsx";
 
 import ErrorPage from "@/components/error";
@@ -145,6 +146,7 @@ function App() {
         { path: "appointments", element: <AppointmentsPage /> },
         { path: "create-content", element: <CreateContentPage /> },
         { path: "blog-qa", element: <BlogQApage /> },
+        { path: "assignments", element: <AssignmentsPage /> },
         { path: "course/:courseId", element: <ViewConsultantCoursePage /> },
         { path: "appointments/meeting/:id", element: <Meeting /> },
       ],

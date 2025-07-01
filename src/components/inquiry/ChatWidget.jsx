@@ -11,7 +11,6 @@ export default function ChatWidget() {
   const [myInquiries, setMyInquiries] = useState([]);
   const [inquiryId, setInquiryId] = useState(null);
   const [inquiryText, setInquiryText] = useState("");
-  const [inquiryModal, setInquiryModal] = useState(false);
 
   // Chat flow
   const [messages, setMessages] = useState([]);
@@ -19,9 +18,14 @@ export default function ChatWidget() {
   const [newAttachmentFile, setNewAttachmentFile] = useState(null);
   const [attachmentUploading, setAttachmentUploading] = useState(false);
 
-  // Alert popup
+  // Alert Popup
   const [alertVisible, setAlertVisible] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
+
+  // Confirm Popup
+  const [confirmVisible, setConfirmVisible] = useState(false);
+  const [confirmMessage, setConfirmMessage] = useState("");
+  const [confirmAction, setConfirmAction] = useState(() => {});
 
   const endRef = useRef();
 
@@ -47,7 +51,7 @@ export default function ChatWidget() {
       );
       const msgs = data.map((c) => ({
         id: c.id,
-        fromUser: c.commentByID === currentUserId,
+        fromUser: c.commentType !== "System" && c.commentByID === currentUserId,
         text: c.commentText,
         attachmentURL: c.attachmentURL,
         fileName: c.fileName,
@@ -62,24 +66,34 @@ export default function ChatWidget() {
     }
   };
 
-  // Tạo inquiry mới
+  // Tạo inquiry mới + comment hệ thống
   const handleCreateInquiry = async () => {
     if (!inquiryText.trim()) return;
     try {
       const { data } = await api.post("/UserInquiry/create-inquiry", {
         subject: inquiryText.trim(),
       });
-      setInquiryId(data.id);
-      setMessages([
-        {
-          id: `init-${data.id}`,
-          fromUser: true,
-          text: data.subject,
-          createdDate: new Date().toISOString(),
-        },
-      ]);
-      setInquiryModal(false);
+      const newId = data.id;
+      setInquiryId(newId);
       setInquiryText("");
+
+      // Gửi comment hệ thống
+      await api.post("/InquiryComment/create-inquiry-comment", {
+        inquiryID: newId,
+        commentByID: currentUserId,
+        commentType: "System",
+        commentText: "Chúng tôi sẽ phản hồi bạn trong thời gian sớm nhất.",
+        attachmentURL: "",
+        fileName: "",
+        attachmentType: "",
+      });
+
+      fetchMessages(newId);
+      // Thêm Inquiry mới vào danh sách
+      setMyInquiries((prev) => [
+        ...prev,
+        { id: newId, subject: inquiryText.trim() },
+      ]);
     } catch (err) {
       console.error(err);
       setAlertMessage("Tạo inquiry thất bại.");
@@ -92,7 +106,31 @@ export default function ChatWidget() {
     setInquiryId(iq.id);
   };
 
-  // Upload file chỉ cho chat mode
+  // Mở Confirm Popup trước khi xóa
+  const confirmDeleteInquiry = (id) => {
+    setConfirmMessage("Bạn có chắc muốn xóa inquiry này?");
+    setConfirmAction(() => () => handleDeleteInquiry(id));
+    setConfirmVisible(true);
+  };
+
+  // Xóa inquiry thực tế
+  const handleDeleteInquiry = async (id) => {
+    setConfirmVisible(false);
+    try {
+      await api.delete(`/UserInquiry/delete-inquiry/${id}`);
+      setMyInquiries((prev) => prev.filter((i) => i.id !== id));
+      if (inquiryId === id) {
+        setInquiryId(null);
+        setMessages([]);
+      }
+    } catch (err) {
+      console.error(err);
+      setAlertMessage("Xóa inquiry thất bại.");
+      setAlertVisible(true);
+    }
+  };
+
+  // Upload file
   const handleFileChange = async (e) => {
     if (!inquiryId) return;
     const file = e.target.files[0];
@@ -152,6 +190,11 @@ export default function ChatWidget() {
     );
   };
 
+  // Scroll to bottom mỗi khi có tin nhắn mới
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
   return (
     <>
       {/* Toggle button */}
@@ -195,19 +238,26 @@ export default function ChatWidget() {
                 <ul className="space-y-2">
                   {myInquiries.map((iq) => (
                     <li key={iq.id}>
-                      <button
-                        onClick={() => handleSelectInquiry(iq)}
-                        className="block w-full text-left px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded"
-                      >
-                        {iq.subject}
-                      </button>
+                      <div className="flex items-center justify-between">
+                        <button
+                          onClick={() => handleSelectInquiry(iq)}
+                          className="flex-1 text-left px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded mr-2"
+                        >
+                          {iq.subject}
+                        </button>
+                        <button
+                          onClick={() => confirmDeleteInquiry(iq.id)}
+                          className="bg-red-500 text-black hover:bg-red-600 px-2 py-1 rounded"
+                        >
+                          Xóa
+                        </button>
+                      </div>
                     </li>
                   ))}
                 </ul>
               )
             ) : (
               <>
-                {" "}
                 {/* Chat messages */}
                 {messages.map((m) => (
                   <div
@@ -305,40 +355,11 @@ export default function ChatWidget() {
             </button>
           </div>
 
-          {/* Modal tạo inquiry */}
-          {inquiryModal && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-              <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
-                <h2 className="text-xl font-semibold mb-4">Hỏi Vấn Đề</h2>
-                <textarea
-                  rows={4}
-                  value={inquiryText}
-                  onChange={(e) => setInquiryText(e.target.value)}
-                  placeholder="Mô tả vấn đề…"
-                  className="w-full border rounded p-2 mb-4"
-                />
-                <div className="flex justify-end space-x-2">
-                  <button
-                    onClick={() => setInquiryModal(false)}
-                    className="px-4 py-2 border rounded hover:bg-gray-100"
-                  >
-                    Hủy
-                  </button>
-                  <button
-                    onClick={handleCreateInquiry}
-                    className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-                  >
-                    Gửi Inquiry
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* Alert Popup */}
           {alertVisible && (
             <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
               <div className="bg-white p-6 rounded-lg shadow-lg text-center max-w-xs">
+                <h3 className="mb-2 text-lg font-semibold">Alert Popup</h3>
                 <p className="mb-4 font-semibold text-indigo-800">
                   {alertMessage}
                 </p>
@@ -348,6 +369,32 @@ export default function ChatWidget() {
                 >
                   OK
                 </button>
+              </div>
+            </div>
+          )}
+
+          {/* Confirm Popup */}
+          {confirmVisible && (
+            <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
+              <div className="bg-white p-6 rounded-lg shadow-lg text-center max-w-xs">
+                <h3 className="mb-2 text-lg font-semibold">Confirm Popup</h3>
+                <p className="mb-4">{confirmMessage}</p>
+                <div className="flex justify-center space-x-4">
+                  <button
+                    onClick={() => {
+                      confirmAction();
+                    }}
+                    className="px-4 py-2 bg-red-600 text-white rounded"
+                  >
+                    Yes
+                  </button>
+                  <button
+                    onClick={() => setConfirmVisible(false)}
+                    className="px-4 py-2 bg-gray-300 text-black rounded"
+                  >
+                    No
+                  </button>
+                </div>
               </div>
             </div>
           )}

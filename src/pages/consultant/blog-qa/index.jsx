@@ -1,6 +1,5 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import ConsultantHeader from "../ConsultantHeader ";
 // Giữ nguyên Header như trên
 const Header = () => {
   const username = localStorage.getItem("name") || "Member";
@@ -28,8 +27,6 @@ const Header = () => {
 export default function BlogQAPage() {
   return (
     <div className="min-h-screen bg-gray-50">
-
-
       <div className="flex">
         {/* <aside className="w-64 bg-white shadow p-4 space-y-2">
           <Link
