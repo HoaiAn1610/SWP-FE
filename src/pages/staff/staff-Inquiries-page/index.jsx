@@ -23,9 +23,14 @@ export default function StaffInquiriesPage() {
   const [loadingConsultants, setLoadingConsultants] = useState(false);
   const [assigning, setAssigning] = useState(false);
 
-  // Alert popup state
+  // Alert Popup state
   const [alertVisible, setAlertVisible] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
+
+  // Confirm Popup state
+  const [confirmVisible, setConfirmVisible] = useState(false);
+  const [confirmMessage, setConfirmMessage] = useState("");
+  const [confirmAction, setConfirmAction] = useState(() => {});
 
   // Lưu thông tin assignment cho từng inquiry
   const [assignments, setAssignments] = useState({});
@@ -140,13 +145,6 @@ export default function StaffInquiriesPage() {
     }
   };
 
-  // Scroll xuống cuối khi comments thay đổi
-  useEffect(() => {
-    if (expandedId && chatEndRef.current) {
-      chatEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [comments, expandedId]);
-
   // 5. Upload file ngay khi chọn
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
@@ -193,6 +191,32 @@ export default function StaffInquiriesPage() {
     }
   };
 
+  // Xóa inquiry thực tế
+  const handleDeleteInquiry = async (id) => {
+    setConfirmVisible(false);
+    try {
+      await api.delete(`/UserInquiry/delete-inquiry/${id}`);
+      setInquiries((prev) => prev.filter((i) => i.id !== id));
+      if (expandedId === id) {
+        setExpandedId(null);
+        setComments([]);
+      }
+      setAlertMessage("Xóa inquiry thành công.");
+      setAlertVisible(true);
+    } catch (err) {
+      console.error(err);
+      setAlertMessage("Xóa inquiry thất bại.");
+      setAlertVisible(true);
+    }
+  };
+
+  // Mở Confirm Popup
+  const confirmDeleteInquiry = (id) => {
+    setConfirmMessage("Bạn có chắc muốn xóa inquiry này?");
+    setConfirmAction(() => () => handleDeleteInquiry(id));
+    setConfirmVisible(true);
+  };
+
   // Format date +7h
   const formatDateTime = (iso) => {
     const d = new Date(iso);
@@ -210,6 +234,13 @@ export default function StaffInquiriesPage() {
       })
     );
   };
+
+  // Scroll xuống cuối khi comments thay đổi
+  useEffect(() => {
+    if (expandedId && chatEndRef.current) {
+      chatEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [comments, expandedId]);
 
   if (loading) return <p className="p-6 text-center">Đang tải…</p>;
   if (error) return <p className="p-6 text-center text-red-500">{error}</p>;
@@ -246,29 +277,36 @@ export default function StaffInquiriesPage() {
                       </p>
                     )}
                   </div>
-
-                  {/* Chat button */}
-                  <button
-                    onClick={() => toggleChat(iq.id)}
-                    disabled={isAssigned}
-                    className={`px-3 py-1 rounded ${
-                      isAssigned
-                        ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                        : "bg-blue-600 text-white hover:bg-blue-700"
-                    }`}
-                  >
-                    {expandedId === iq.id ? "Đóng" : "Trả lời"}
-                  </button>
-
-                  {/* Assign button */}
-                  {!isAssigned && (
+                  <div className="flex space-x-2 items-center">
+                    {/* Chat button */}
                     <button
-                      onClick={() => openAssignModal(iq.id)}
-                      className="px-3 py-1 bg-purple-600 text-white rounded hover:bg-purple-700"
+                      onClick={() => toggleChat(iq.id)}
+                      disabled={isAssigned}
+                      className={`px-3 py-1 rounded ${
+                        isAssigned
+                          ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                          : "bg-blue-600 text-white hover:bg-blue-700"
+                      }`}
                     >
-                      Gán
+                      {expandedId === iq.id ? "Đóng" : "Trả lời"}
                     </button>
-                  )}
+                    {/* Assign button */}
+                    {!isAssigned && (
+                      <button
+                        onClick={() => openAssignModal(iq.id)}
+                        className="px-3 py-1 bg-purple-600 text-white rounded hover:bg-purple-700"
+                      >
+                        Gán
+                      </button>
+                    )}
+                    {/* Delete button */}
+                    <button
+                      onClick={() => confirmDeleteInquiry(iq.id)}
+                      className="px-3 py-1 bg-red-500 text-black hover:bg-red-600 rounded"
+                    >
+                      Xóa
+                    </button>
+                  </div>
                 </div>
 
                 {/* Chatbox */}
@@ -308,16 +346,6 @@ export default function StaffInquiriesPage() {
                                       className="max-w-full rounded"
                                     />
                                   )}
-                                  {c.attachmentType === "File" && (
-                                    <a
-                                      href={c.attachmentURL}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="text-white underline break-all"
-                                    >
-                                      {c.fileName}
-                                    </a>
-                                  )}
                                 </div>
                               )}
                               <p className="text-xs text-gray-400 mt-1 text-right">
@@ -332,19 +360,6 @@ export default function StaffInquiriesPage() {
 
                     {/* Input gửi */}
                     <div className="mt-4 flex items-center space-x-2">
-                      <input
-                        type="text"
-                        placeholder="Nhập tin nhắn..."
-                        className="flex-1 border rounded px-3 py-2"
-                        value={newComment}
-                        onChange={(e) => setNewComment(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" && !e.shiftKey) {
-                            e.preventDefault();
-                            handleSend();
-                          }
-                        }}
-                      />
                       <label className="cursor-pointer">
                         📎
                         <input
@@ -359,11 +374,25 @@ export default function StaffInquiriesPage() {
                           href={newAttachmentUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-white underline break-all text-sm"
+                          className="text-black underline break-all text-sm flex items-center space-x-1"
                         >
-                          {newAttachmentName}
+                          <span>🔗</span>
+                          <span>{newAttachmentName}</span>
                         </a>
                       )}
+                      <input
+                        type="text"
+                        placeholder="Nhập tin nhắn..."
+                        className="flex-1 border rounded px-3 py-2"
+                        value={newComment}
+                        onChange={(e) => setNewComment(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && !e.shiftKey) {
+                            e.preventDefault();
+                            handleSend();
+                          }
+                        }}
+                      />
                       <button
                         onClick={handleSend}
                         className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
@@ -386,6 +415,7 @@ export default function StaffInquiriesPage() {
       {alertVisible && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg text-center max-w-xs">
+            <h3 className="mb-2 text-lg font-semibold">Alert Popup</h3>
             <p className="mb-4 font-semibold text-indigo-800">{alertMessage}</p>
             <button
               onClick={() => setAlertVisible(false)}
@@ -428,6 +458,30 @@ export default function StaffInquiriesPage() {
                 className="px-4 py-2 border rounded hover:bg-gray-100"
               >
                 Hủy
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm Popup */}
+      {confirmVisible && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg text-center max-w-xs">
+            <h3 className="mb-2 text-lg font-semibold">Confirm Popup</h3>
+            <p className="mb-4">{confirmMessage}</p>
+            <div className="flex justify-center space-x-4">
+              <button
+                onClick={() => confirmAction()}
+                className="px-4 py-2 bg-red-600 text-white rounded"
+              >
+                Yes
+              </button>
+              <button
+                onClick={() => setConfirmVisible(false)}
+                className="px-4 py-2 bg-gray-300 text-black rounded"
+              >
+                No
               </button>
             </div>
           </div>
