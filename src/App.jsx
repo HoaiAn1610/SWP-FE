@@ -38,7 +38,7 @@ import StaffLayout from "@/pages/staff/StaffLayout";
 import DraftContentPage from "@/pages/staff/draft-content";
 import PublishedContentPage from "@/pages/staff/published-content";
 import ViewBlogPostsPage from "@/pages/staff/view-blog-posts";
-// import InquiryAssignmentPage from "@/pages/staff/InquiryAssignmentPage";
+import StaffInquiriesPage from "@/pages/staff/staff-Inquiries-page";
 import ViewStaffCoursePage from "./pages/staff/view-course-page";
 
 import ConsultantLayout from "@/pages/consultant/ConsultantLayout";
@@ -98,7 +98,7 @@ function App() {
       element: <LessonPage />,
     },
     { path: "/course/:courseId/quiz", element: <QuizPage /> },
-    {path: "/course/:courseId/certificate", element: <CertificatePage />},
+    { path: "/course/:courseId/certificate", element: <CertificatePage /> },
     {
       path: "/account",
       element: <PersonalInfoLayout />,
@@ -177,7 +177,7 @@ function App() {
         { path: "draft-content", element: <DraftContentPage /> },
         { path: "published-content", element: <PublishedContentPage /> },
         { path: "view-blog-posts", element: <ViewBlogPostsPage /> },
-        // { path: "inquiry-assignment", element: <InquiryAssignmentPage /> },
+        { path: "staff-inquirie", element: <StaffInquiriesPage /> },
         { path: "course/:courseId", element: <ViewStaffCoursePage /> },
       ],
     },

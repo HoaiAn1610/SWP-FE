@@ -6,7 +6,7 @@ const navItems = [
   { to: "draft-content", label: "Draft Content" },
   { to: "published-content", label: "Published Content" },
   { to: "view-blog-posts", label: "View Blog Posts" },
-  { to: "inquiry-assignment", label: "Inquiry Assignment" },
+  { to: "staff-inquirie", label: "Inquiry Assignment" },
 ];
 
 export default function StaffLayout() {
