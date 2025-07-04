@@ -7,6 +7,8 @@ import ChatWidget from "@/components/inquiry/ChatWidget.jsx";
 import Dashboard from "./components/dashboard";
 import UploadComponent from "./components/upload";
 import Courses from "./pages/auth/course";
+import ActivitiesPage from "@/pages/auth/activity/ActivitiesPage";
+import ActivityDetailPage from "@/pages/auth/activity/ActivityDetailPage";
 import Login from "./pages/auth/login";
 import ResetPasswordPage from "./pages/auth/reser-password";
 import Register from "./pages/auth/register";
@@ -85,6 +87,14 @@ function App() {
     {
       path: "/course",
       element: <Courses />,
+    },
+    {
+      path: "/activities",
+      element: <ActivitiesPage />,
+    },
+    {
+      path: "/activities/:id",
+      element: <ActivityDetailPage />,
     },
     {
       path: "/appointments/book",

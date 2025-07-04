@@ -7,6 +7,7 @@ import CourseList from "@/components/courses/CourseList";
 import CourseDetailOverlay from "@/components/courses/CourseDetailOverlay";
 import SurveySection from "@/pages/common/survey";
 import ChatWidget from "@/components/inquiry/ChatWidget.jsx";
+import FeaturedActivities from "@/components/activity/FeaturedActivities";
 import { getAllCourses } from "@/service/courseService";
 
 export default function EcommerceHome() {
@@ -68,7 +69,6 @@ export default function EcommerceHome() {
   return (
     <>
       <Header />
-
       {/* Featured Courses */}
       <section className="py-16 bg-gray-50">
         <div className="max-w-7xl mx-auto px-6">
@@ -102,7 +102,6 @@ export default function EcommerceHome() {
           )}
         </div>
       </section>
-
       {/* Overlay chi tiết mỗi course */}
       {showModal && selectedCourse && (
         <CourseDetailOverlay
@@ -111,10 +110,10 @@ export default function EcommerceHome() {
           onClose={handleCloseModal}
         />
       )}
-
+      {/* Fragment: Hiển thị 3 hoạt động sắp tới */}
+      <FeaturedActivities />
       {/* Mục Prevention ngay dưới header */}
       <SurveySection />
-
       {/* ==== Inquiry Chat Widget ==== */}
       <ChatWidget />
     </>
