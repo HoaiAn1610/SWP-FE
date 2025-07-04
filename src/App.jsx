@@ -21,6 +21,10 @@ import LessonPage from "@/pages/auth/course/LessonPage";
 import QuizPage from "@/pages/auth/course/QuizPage";
 import CertificatePage from "@/pages/auth/course/CertificatePage";
 
+import BlogPage from "@/pages/BlogPage";                 // sẽ tự tìm index.jsx
+import BlogDetail from "@/pages/BlogPage/BlogDetail.jsx";
+
+
 import PersonalInfoLayout from "@/pages/personal-information/PersonalInfoLayout";
 import MyProfilePage from "@/pages/personal-information/my-profile";
 
@@ -89,6 +93,16 @@ function App() {
       path: "/appointments/history",
       element: <BookingHistoryPage />,
     },
+ {
+    path: "/blogs",        // base path cho blog
+    children: [
+      { index: true, element: <BlogPage /> }, 
+      { path: ":postId", element: <BlogDetail /> },
+    ],
+  },
+
+  // fallback cho các route không khớp
+  { path: "*", element: <Navigate to="/blogs" replace /> },
     {
       path: "/course",
       element: <Courses />,
