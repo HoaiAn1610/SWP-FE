@@ -7,7 +7,7 @@ export default function ManagerLayout() {
   const navItems = [
     { to: "overview", label: "Tổng quan" },
     { to: "approved", label: "Duyệt bài" },
-    { to: "task-queue", label: "Hàng đợi công việc" },
+    { to: "task-queue", label: "Duyệt Blog" },
     { to: "team-schedule", label: "Lịch nhóm" },
   ];
   return (
