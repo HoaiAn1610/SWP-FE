@@ -1,3 +1,4 @@
+// src/pages/auth/activity/ActivitiesPage.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import Header from "@/components/header";
@@ -29,8 +30,12 @@ export default function ActivitiesPage() {
         const { data } = await api.get(
           "/CommunicationActivities/Get-All-Activities"
         );
+        // Chỉ lấy các hoạt động đã Published và sự kiện sắp tới
         const upcoming = data
-          .filter((a) => new Date(a.eventDate) > new Date())
+          .filter(
+            (a) =>
+              a.status === "Published" && new Date(a.eventDate) > new Date()
+          )
           .sort((a, b) => new Date(a.eventDate) - new Date(b.eventDate));
         const total = Math.ceil(upcoming.length / limit) || 1;
         setTotalPages(total);
