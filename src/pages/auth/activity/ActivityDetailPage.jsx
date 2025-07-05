@@ -18,6 +18,26 @@ export default function ActivityDetailPage() {
   const [loadingPart, setLoadingPart] = useState(true);
   const [errorPart, setErrorPart] = useState(null);
 
+  // UI alert/confirm
+  const [alertVisible, setAlertVisible] = useState(false);
+  const [alertMessage, setAlertMessage] = useState("");
+  const [confirmVisible, setConfirmVisible] = useState(false);
+  const [confirmMessage, setConfirmMessage] = useState("");
+  const [confirmAction, setConfirmAction] = useState(() => {});
+
+  const showAlert = (msg) => {
+    setAlertMessage(msg);
+    setAlertVisible(true);
+  };
+  const hideAlert = () => setAlertVisible(false);
+
+  const showConfirm = (msg, action) => {
+    setConfirmMessage(msg);
+    setConfirmAction(() => action);
+    setConfirmVisible(true);
+  };
+  const hideConfirm = () => setConfirmVisible(false);
+
   // 1) Load activity detail
   useEffect(() => {
     setLoading(true);
@@ -43,44 +63,45 @@ export default function ActivityDetailPage() {
       })
       .finally(() => setLoadingPart(false));
   };
+  useEffect(fetchParticipants, [activityId]);
 
-  useEffect(() => {
-    fetchParticipants();
-  }, [activityId]);
-
-  // Tính số đã đăng ký
   const registeredCount = participants.filter(
     (p) => p.status === "Registered"
   ).length;
-  // Tìm participation của chính user
   const myPart = participants.find((p) => p.memberId === userId);
 
-  // Handlers
-  const handleRegister = async () => {
-    try {
-      await api.post("/ActivityParticipations/register-activity", activityId);
-      fetchParticipants();
-    } catch (err) {
-      console.error(err);
-      alert(err.response?.data || "Lỗi khi đăng ký tham gia");
-    }
+  // handlers với confirm
+  const handleRegisterConfirm = () => {
+    showConfirm("Bạn có chắc chắn muốn tham gia?", async () => {
+      try {
+        await api.post("/ActivityParticipations/register-activity", activityId);
+        showAlert("Đăng ký thành công!");
+        fetchParticipants();
+      } catch (err) {
+        console.error(err);
+        showAlert(err.response?.data || "Lỗi khi đăng ký tham gia");
+      }
+    });
   };
-  const handleCancel = async () => {
-    try {
-      await api.put(`/ActivityParticipations/cancel/${activityId}`);
-      fetchParticipants();
-    } catch (err) {
-      console.error(err);
-      alert(err.response?.data || "Lỗi khi hủy tham gia");
-    }
+  const handleCancelConfirm = () => {
+    showConfirm("Bạn có chắc chắn muốn hủy tham gia?", async () => {
+      try {
+        await api.put(`/ActivityParticipations/cancel/${activityId}`);
+        showAlert("Hủy tham gia thành công!");
+        fetchParticipants();
+      } catch (err) {
+        console.error(err);
+        showAlert(err.response?.data || "Lỗi khi hủy tham gia");
+      }
+    });
   };
 
-  // UI trạng thái
+  // chọn button phù hợp
   let actionButton = null;
   if (myPart?.status === "Registered") {
     actionButton = (
       <button
-        onClick={handleCancel}
+        onClick={handleCancelConfirm}
         className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
       >
         Hủy tham gia
@@ -91,7 +112,7 @@ export default function ActivityDetailPage() {
     const label = myPart?.status === "Cancelled" ? "Tham gia lại" : "Tham gia";
     actionButton = (
       <button
-        onClick={handleRegister}
+        onClick={handleRegisterConfirm}
         disabled={full}
         className={`px-6 py-2 rounded-lg text-white transition ${
           full
@@ -181,6 +202,49 @@ export default function ActivityDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Alert Popup */}
+      {alertVisible && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
+          <div className="bg-white p-6 rounded-xl shadow-xl text-center">
+            <p className="mb-4 font-semibold text-indigo-800">{alertMessage}</p>
+            <button
+              onClick={hideAlert}
+              className="px-6 py-2 bg-indigo-600 text-white rounded-lg"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm Popup */}
+      {confirmVisible && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
+          <div className="bg-white p-6 rounded-xl shadow-xl text-center">
+            <p className="mb-4 font-semibold text-indigo-800">
+              {confirmMessage}
+            </p>
+            <div className="flex justify-center space-x-4">
+              <button
+                onClick={hideConfirm}
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={() => {
+                  confirmAction();
+                  hideConfirm();
+                }}
+                className="px-6 py-2 bg-indigo-600 text-white rounded-lg"
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
