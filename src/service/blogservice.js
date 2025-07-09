@@ -80,3 +80,37 @@ export const rejectBlogPost = async (postId, reviewComments) => {
 export const publishBlogPost = async (postId) => {
   await api.post(`/BlogPost/publish/${postId}`);
 };
+
+/**
+ * Xóa một comment theo id
+ * @param {number} id
+ * @returns {Promise<void>}
+ */
+export const deleteComment = async (id) => {
+  await api.delete(`/Comment/delete-comment/${id}`);
+};
+
+/**
+ * Cập nhật một BlogPost
+ * @param {number} blogPostId
+ * @param {{ title: string; content: string; coverImageUrl: string; tagIds: number[] }} payload
+ * @returns {Promise<Object>} blog đã cập nhật
+ */
+export const updateBlogPost = async (blogPostId, { title, content, coverImageUrl, tagIds }) => {
+  const { data } = await api.put(`/BlogPost/update-blogpost/${blogPostId}`, {
+    title,
+    content,
+    coverImageUrl,
+    tagIds
+  });
+  return data;
+};
+
+/**
+ * Xóa một BlogPost theo id
+ * @param {number} blogPostId
+ * @returns {Promise<void>}
+ */
+export const deleteBlogPost = async (blogPostId) => {
+  await api.delete(`/BlogPost/delete-blogpost/${blogPostId}`);
+};

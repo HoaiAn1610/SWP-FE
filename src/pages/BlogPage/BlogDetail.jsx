@@ -1,7 +1,6 @@
-// src/pages/blog/BlogDetail.jsx
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { fetchAllPosts, createComment, postReply } from '@/service/blogservice';
+import { fetchAllPosts } from '@/service/blogservice';
 import { fetchUserById } from '@/service/userService';
 import CommentList from '@/components/blog/CommentList';
 
@@ -33,31 +32,23 @@ export default function BlogDetail() {
       .catch(console.error);
   }, [postId]);
 
-  // Thêm comment cấp 0
-  const handleAddComment = async (postId, content) => {
-    const created = await createComment(postId, content);
+  // Thêm comment cấp 0 (nhận object comment)
+  const handleAddComment = (postId, newCommentObj) => {
     setPost(prev => ({
       ...prev,
-      comments: [...(prev.comments || []), created],
+      comments: [...(prev.comments || []), newCommentObj],
     }));
   };
 
-  // Thêm reply cho comment bất kỳ (đa cấp)
-  const handleAddReply = async (postId, parentId, content) => {
-    const created = await postReply(parentId, content);
-    const addRec = list =>
-      list.map(c => {
-        if (c.id === parentId) {
-          return { ...c, replies: [...(c.replies || []), created] };
-        }
-        if (c.replies) {
-          return { ...c, replies: addRec(c.replies) };
-        }
-        return c;
-      });
+  // Thêm reply cho comment (nhận object reply)
+  const handleAddReply = (postId, parentId, newReplyObj) => {
     setPost(prev => ({
       ...prev,
-      comments: addRec(prev.comments || []),
+      comments: (prev.comments || []).map(c =>
+        c.id !== parentId
+          ? c
+          : { ...c, replies: [...(c.replies || []), newReplyObj] }
+      ),
     }));
   };
 
