@@ -81,14 +81,6 @@ export const publishBlogPost = async (postId) => {
   await api.post(`/BlogPost/publish/${postId}`);
 };
 
-/**
- * Xóa một comment theo id
- * @param {number} id
- * @returns {Promise<void>}
- */
-export const deleteComment = async (id) => {
-  await api.delete(`/Comment/delete-comment/${id}`);
-};
 
 /**
  * Cập nhật một BlogPost

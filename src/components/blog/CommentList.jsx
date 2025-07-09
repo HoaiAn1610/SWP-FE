@@ -6,24 +6,38 @@ import api from '@/config/axios';
 export default function CommentList({
   comments = [],
   postId,
+  currentUser,
   onAddComment,
   onAddReply,
+  onDeleteComment
 }) {
+  // comment/reply state
   const [newComment, setNewComment]       = useState('');
-  const [replyTexts, setReplyTexts]       = useState({});    // { parentId: text }
-  const [openReplies, setOpenReplies]     = useState({});    // { parentId: bool }
-  const [loadedReplies, setLoadedReplies] = useState({});    // { parentId: [replyObj] }
-  const [userNames, setUserNames]         = useState({});    // { memberId: name }
+  const [replyTexts, setReplyTexts]       = useState({});
+  const [openReplies, setOpenReplies]     = useState({});
+  const [loadedReplies, setLoadedReplies] = useState({});
+  const [userNames, setUserNames]         = useState({});
   const scrollRef = useRef();
 
-  // 1) Lấy tên user
+  // Alert / Confirm state
+  const [alertVisible, setAlertVisible]     = useState(false);
+  const [alertMessage, setAlertMessage]     = useState('');
+  const [confirmVisible, setConfirmVisible] = useState(false);
+  const [confirmMessage, setConfirmMessage] = useState('');
+  const [confirmAction, setConfirmAction]   = useState(() => {});
+
+  const showConfirm = (message, action) => {
+    setConfirmMessage(message);
+    setConfirmAction(() => action);
+    setConfirmVisible(true);
+  };
+  const hideConfirm = () => setConfirmVisible(false);
+
+  // 1) Load user names
   useEffect(() => {
     const ids = new Set();
     comments.forEach(c => c.memberId && ids.add(c.memberId));
-    Object.values(loadedReplies)
-      .flat()
-      .forEach(r => r.memberId && ids.add(r.memberId));
-
+    Object.values(loadedReplies).flat().forEach(r => r.memberId && ids.add(r.memberId));
     ids.forEach(id => {
       if (!userNames[id]) {
         api.get(`/Admin/get-user/${id}`)
@@ -52,149 +66,196 @@ export default function CommentList({
     }
   };
 
-  // gửi comment gốc
+  // post new comment
   const handlePostComment = async () => {
     if (!newComment.trim()) return;
     const created = await createComment(postId, newComment);
     onAddComment(postId, created);
     setNewComment('');
-    // scroll xuống cuối
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    // gán tên You
     if (created.memberId) {
       setUserNames(u => ({ ...u, [created.memberId]: 'You' }));
     }
   };
 
-  // gửi reply
+  // post reply
   const handlePostReply = async parentId => {
     const text = (replyTexts[parentId] || '').trim();
     if (!text) return;
     const created = await postReply(parentId, text);
     onAddReply(postId, parentId, created);
-
-    // Luôn mở thread của parentId
     setOpenReplies(o => ({ ...o, [parentId]: true }));
-
-    // cập nhật ngay loadedReplies
-    setLoadedReplies(r => ({
-      ...r,
-      [parentId]: [...(r[parentId] || []), created],
-    }));
-
-    // reset textarea của parentId
+    setLoadedReplies(r => ({ ...r, [parentId]: [...(r[parentId] || []), created] }));
     setReplyTexts(r => ({ ...r, [parentId]: '' }));
-
-    // gán tên You
     if (created.memberId) {
       setUserNames(u => ({ ...u, [created.memberId]: 'You' }));
     }
   };
 
-  // đệ quy render comment + replies
+  // recursive render of thread
   const renderThread = (list, depth = 0) =>
-    list.map(c => (
-      <div key={c.id} className="space-y-3">
-        <div className="flex items-start space-x-3">
-          <div className="w-10 h-10 bg-gray-300 rounded-full flex-shrink-0" />
-          <div className="flex-1">
-            {/* comment chính */}
-            <div
-              className="bg-gray-50 rounded-xl p-4 hover:bg-gray-100 cursor-pointer transition"
-              onClick={() => toggleReplies(c.id)}
-            >
-              <div className="flex items-center justify-between mb-1">
-                <span className="font-semibold text-gray-800">
-                  {userNames[c.memberId] || `User#${c.memberId}`}
-                </span>
-                <span className="text-xs text-gray-500">
-                  {new Date(c.createdDate).toLocaleTimeString()}
-                </span>
+    list.map(c => {
+      const canDelete =
+        currentUser?.id === c.memberId ||
+        ['Staff', 'Manager'].includes(currentUser?.role);
+
+      return (
+        <div key={c.id} className="space-y-3">
+          <div className="flex items-start space-x-3">
+            <div className="w-10 h-10 bg-gray-300 rounded-full flex-shrink-0" />
+            <div className="flex-1">
+              <div
+                className="bg-gray-50 rounded-xl p-4 hover:bg-gray-100 cursor-pointer transition"
+                onClick={() => toggleReplies(c.id)}
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="font-semibold text-gray-800">
+                    {userNames[c.memberId] || `User#${c.memberId}`}
+                  </span>
+                  <span className="text-xs text-gray-500">
+                    {new Date(c.createdDate).toLocaleTimeString()}
+                  </span>
+                </div>
+                <p className="text-gray-700 whitespace-pre-wrap">{c.content}</p>
               </div>
-              <p className="text-gray-700 whitespace-pre-wrap">{c.content}</p>
-            </div>
 
-            {/* action bar */}
-            <div className="flex space-x-4 text-sm text-gray-500 mt-1 ml-2">
-              <button className="hover:text-blue-600" onClick={() => toggleReplies(c.id)}>
-                Trả lời
-              </button>
-              <button className="hover:text-blue-600">Thích</button>
-            </div>
-
-            {/* form reply nếu mở */}
-            {openReplies[c.id] && (
-              <div className="flex items-start space-x-3 mt-3 ml-12">
-                <div className="w-10 h-10 bg-gray-300 rounded-full flex-shrink-0" />
-                <textarea
-                  rows={1}
-                  placeholder="Viết phản hồi..."
-                  value={replyTexts[c.id] || ''}
-                  onChange={e => {
-                    setReplyTexts(r => ({ ...r, [c.id]: e.target.value }));
-                    autoResize(e.target);
-                  }}
-                  onInput={e => autoResize(e.target)}
-                  className="flex-1 border border-gray-300 rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none overflow-hidden"
-                />
+              <div className="flex space-x-4 text-sm text-gray-500 mt-1 ml-2">
                 <button
-                  className="bg-blue-600 text-white px-4 py-2 rounded-full hover:bg-blue-700 transition"
-                  onClick={() => handlePostReply(c.id)}
+                  className="hover:text-blue-600"
+                  onClick={() => toggleReplies(c.id)}
                 >
-                  Gửi
+                  Trả lời
                 </button>
+                <button className="hover:text-blue-600">Thích</button>
+                {canDelete && (
+                  <button
+                    onClick={() =>
+                      showConfirm(
+                        'Bạn có chắc muốn xóa bình luận này không?',
+                        () => onDeleteComment(postId, c.id)
+                      )
+                    }
+                    className="hover:text-red-600"
+                  >
+                    Xóa
+                  </button>
+                )}
               </div>
-            )}
 
-            {/* render replies con */}
-            {openReplies[c.id] && loadedReplies[c.id] && (
-              <div className="ml-12 mt-4 space-y-4">
-                {renderThread(loadedReplies[c.id], depth + 1)}
-              </div>
-            )}
+              {openReplies[c.id] && (
+                <div className="flex items-start space-x-3 mt-3 ml-12">
+                  <div className="w-10 h-10 bg-gray-300 rounded-full flex-shrink-0" />
+                  <textarea
+                    rows={1}
+                    placeholder="Viết phản hồi..."
+                    value={replyTexts[c.id] || ''}
+                    onChange={e => {
+                      setReplyTexts(r => ({ ...r, [c.id]: e.target.value }));
+                      autoResize(e.target);
+                    }}
+                    onInput={e => autoResize(e.target)}
+                    className="flex-1 border border-gray-300 rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none overflow-hidden"
+                  />
+                  <button
+                    className="bg-blue-600 text-white px-4 py-2 rounded-full hover:bg-blue-700 transition"
+                    onClick={() => handlePostReply(c.id)}
+                  >
+                    Gửi
+                  </button>
+                </div>
+              )}
+
+              {openReplies[c.id] && loadedReplies[c.id] && (
+                <div className="ml-12 mt-4 space-y-4">
+                  {renderThread(loadedReplies[c.id], depth + 1)}
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      </div>
-    ));
+      );
+    });
 
   return (
-    <div className="flex flex-col h-full">
-      {/* khung scrollable */}
-      <div
-        ref={scrollRef}
-        className="flex-1 overflow-y-auto pr-2 space-y-6"
-        style={{ maxHeight: 400 }}
-      >
-        {comments.length === 0 ? (
-          <p className="text-center text-gray-500">
-            Không có bình luận nào cho bài viết này.
-          </p>
-        ) : (
-          renderThread(comments)
-        )}
-      </div>
+    <>
+      {/* Alert */}
+      {alertVisible && (
+        <div className="fixed inset-0 flex items-center justify-center z-60">
+          <div className="bg-white p-4 rounded-lg shadow-lg max-w-xs text-center border border-indigo-200">
+            <p className="mb-4 text-indigo-800 font-semibold">{alertMessage}</p>
+            <button
+              onClick={() => setAlertVisible(false)}
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
 
-      {/* form comment gốc */}
-      <div className="flex items-start space-x-3 mt-4 pt-4 border-t">
-        <div className="w-10 h-10 bg-gray-300 rounded-full" />
-        <textarea
-          rows={1}
-          placeholder="Viết bình luận..."
-          value={newComment}
-          onChange={e => {
-            setNewComment(e.target.value);
-            autoResize(e.target);
-          }}
-          onInput={e => autoResize(e.target)}
-          className="flex-1 border border-gray-300 rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none overflow-hidden"
-        />
-        <button
-          className="bg-blue-600 text-white px-4 py-2 rounded-full hover:bg-blue-700 transition"
-          onClick={handlePostComment}
+      {/* Confirm */}
+      {confirmVisible && (
+        <div className="fixed inset-0 flex items-center justify-center z-60">
+          <div className="bg-white p-4 rounded-lg shadow-lg max-w-xs text-center border border-indigo-200">
+            <p className="mb-4 text-indigo-800 font-semibold">{confirmMessage}</p>
+            <div className="flex justify-center space-x-2">
+              <button
+                onClick={hideConfirm}
+                className="px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-md"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={() => {
+                  confirmAction();
+                  hideConfirm();
+                }}
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md"
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Main comments list */}
+      <div className="flex flex-col h-full">
+        <div
+          ref={scrollRef}
+          className="flex-1 overflow-y-auto pr-2 space-y-6"
+          style={{ maxHeight: 400 }}
         >
-          Gửi
-        </button>
+          {comments.length === 0 ? (
+            <p className="text-center text-gray-500">
+              Không có bình luận nào cho bài viết này.
+            </p>
+          ) : (
+            renderThread(comments)
+          )}
+        </div>
+
+        <div className="flex items-start space-x-3 mt-4 pt-4 border-t">
+          <div className="w-10 h-10 bg-gray-300 rounded-full" />
+          <textarea
+            rows={1}
+            placeholder="Viết bình luận..."
+            value={newComment}
+            onChange={e => {
+              setNewComment(e.target.value);
+              autoResize(e.target);
+            }}
+            onInput={e => autoResize(e.target)}
+            className="flex-1 border border-gray-300 rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none overflow-hidden"
+          />
+          <button
+            className="bg-blue-600 text-white px-4 py-2 rounded-full hover:bg-blue-700 transition"
+            onClick={handlePostComment}
+          >
+            Gửi
+          </button>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

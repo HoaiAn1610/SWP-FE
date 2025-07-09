@@ -8,7 +8,8 @@ import {
   deleteBlogPost,
   submitForApproval,
   fetchTags,
-  createTag
+  createTag,
+  deleteComment
 } from '@/service/blogservice';
 import { fetchUserById } from '@/service/userService';
 import CommentList from '@/components/blog/CommentList';
@@ -50,6 +51,16 @@ export default function ViewBlogPostsPage() {
   const [confirmAction, setConfirmAction]   = useState(() => {});
 
   const scrollRef = useRef();
+
+  const [currentUser, setCurrentUser] = useState(null);
+
+useEffect(() => {
+  const storedId = localStorage.getItem('id');
+  if (!storedId) return;
+  fetchUserById(+storedId)
+    .then(u => setCurrentUser(u))
+    .catch(console.error);
+}, []);
 
   useEffect(() => {
     (async () => {
@@ -161,6 +172,29 @@ export default function ViewBlogPostsPage() {
     setAlertMessage('Gửi duyệt thành công');
     setAlertVisible(true);
   };
+
+  const handleDeleteComment = (postId, commentId) => {
+  deleteComment(commentId)
+    .then(() => {
+      // đệ quy lọc comments để bỏ phần tử có id trùng
+      const filterRecursively = list =>
+        (list || []).reduce((acc, c) => {
+          if (c.id === commentId) return acc;
+          return [
+            ...acc,
+            { ...c, replies: filterRecursively(c.replies) }
+          ];
+        }, []);
+      setPosts(ps =>
+        ps.map(p =>
+          p.id !== postId
+            ? p
+            : { ...p, comments: filterRecursively(p.comments) }
+        )
+      );
+    })
+    .catch(console.error);
+};
 
   const filtered = posts.filter(p => {
     if (selectedTab === 'pending')   return p.status === 'Pending';
@@ -512,8 +546,10 @@ export default function ViewBlogPostsPage() {
                   <CommentList
                     comments={post.comments || []}
                     postId={post.id}
+                    currentUser={currentUser}  
                     onAddComment={() => {}}
                     onAddReply={() => {}}
+                    onDeleteComment={handleDeleteComment}
                   />
                 </div>
               )}

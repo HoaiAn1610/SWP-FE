@@ -1,22 +1,33 @@
 // src/pages/blog/BlogExplorer.jsx
 import React, { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import TagTabs from '@/components/blog/TagTabs';
 import BlogList from '@/components/blog/BlogList';
 import Header from '@/components/header';
-import { fetchTags, fetchAllPosts, fetchPostsByTag } from '@/service/blogservice';
+import {
+  fetchTags,
+  fetchAllPosts,
+  fetchPostsByTag,
+  deleteComment,
 
+} from '@/service/blogservice';
+import { fetchUserById } from '@/service/userService';
 export default function BlogExplorer() {
+const userId = localStorage.getItem('id');
   const [tabs, setTabs]                   = useState([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [posts, setPosts]                 = useState([]);
   const [loading, setLoading]             = useState(false);
+  const [currentUser, setCurrentUser]     = useState(null);
 
+  // 1) Load tags
   useEffect(() => {
     fetchTags()
       .then(data => setTabs([{ id: 0, name: 'All' }, ...data]))
       .catch(console.error);
   }, []);
 
+  // 2) Load posts theo tag
   useEffect(() => {
     if (!tabs.length) return;
     setLoading(true);
@@ -26,39 +37,41 @@ export default function BlogExplorer() {
         : fetchPostsByTag(tabs[selectedIndex].id);
 
     loader
-      .then(raw => {
-        setPosts(raw.filter(p => p.status === 'Published'));
-      })
+      .then(raw => setPosts(raw.filter(p => p.status === 'Published')))
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [tabs, selectedIndex]);
 
-  // giờ nhận "commentObj" chứ không phải "content"
-  const handleAddComment = (postId, newCommentObj) => {
-    setPosts(ps =>
-      ps.map(p =>
-        p.id === postId
-          ? { ...p, comments: [...(p.comments||[]), newCommentObj] }
-          : p
-      )
-    );
-  };
+  // 3) Fetch current user (id + role)
+  useEffect(() => {
+    if (!userId) return;
+    fetchUserById(userId)
+      .then(data => setCurrentUser(data))
+      .catch(console.error);
+  }, [userId]);
 
-  // tương tự cho reply: nhận object reply
-  const handleAddReply = (postId, parentId, newReplyObj) => {
-    setPosts(ps =>
-      ps.map(p => {
-        if (p.id !== postId) return p;
-        return {
-          ...p,
-          comments: (p.comments||[]).map(c =>
-            c.id !== parentId
-              ? c
-              : { ...c, replies: [...(c.replies||[]), newReplyObj] }
-          )
-        };
+  // 4) Xóa comment hoặc reply
+  const handleDeleteComment = (postId, commentId) => {
+    deleteComment(commentId)
+      .then(() => {
+        setPosts(ps =>
+          ps.map(p => {
+            if (p.id !== postId) return p;
+            // đệ quy lọc bỏ bất kỳ comment/reply nào có id = commentId
+            const filterRecursively = comments =>
+              (comments || []).reduce((acc, c) => {
+                if (c.id === commentId) return acc;
+                const copy = { ...c };
+                if (c.replies) {
+                  copy.replies = filterRecursively(c.replies);
+                }
+                return [...acc, copy];
+              }, []);
+            return { ...p, comments: filterRecursively(p.comments) };
+          })
+        );
       })
-    );
+      .catch(console.error);
   };
 
   return (
@@ -74,13 +87,37 @@ export default function BlogExplorer() {
           />
         </aside>
         <main className="w-3/4 p-6">
-          {loading ? (
+          {loading || !currentUser ? (
             <div className="flex justify-center py-20">Loading...</div>
           ) : (
             <BlogList
               posts={posts}
-              onAddComment={handleAddComment}
-              onAddReply={handleAddReply}
+              currentUser={currentUser}
+              onAddComment={(pid, c) =>
+                setPosts(ps =>
+                  ps.map(p =>
+                    p.id === pid
+                      ? { ...p, comments: [...(p.comments||[]), c] }
+                      : p
+                  )
+                )
+              }
+              onAddReply={(pid, parentId, r) =>
+                setPosts(ps =>
+                  ps.map(p => {
+                    if (p.id !== pid) return p;
+                    return {
+                      ...p,
+                      comments: p.comments.map(c =>
+                        c.id !== parentId
+                          ? c
+                          : { ...c, replies: [...(c.replies||[]), r] }
+                      )
+                    };
+                  })
+                )
+              }
+              onDeleteComment={handleDeleteComment}
             />
           )}
         </main>
