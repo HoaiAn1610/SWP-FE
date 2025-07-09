@@ -4,7 +4,13 @@ import { Link } from 'react-router-dom';
 import CommentList from './CommentList';
 import { fetchUserById } from '@/service/userService';
 
-export default function BlogCard({ post, onAddComment, onAddReply }) {
+export default function BlogCard({
+  post,
+  currentUser,       // thêm prop này
+  onAddComment,
+  onAddReply,
+  onDeleteComment    // thêm prop này
+}) {
   const [open, setOpen] = useState(false);
   const [authorName, setAuthorName] = useState('');
   const [publishedDate, setPublishedDate] = useState('');
@@ -49,7 +55,7 @@ export default function BlogCard({ post, onAddComment, onAddReply }) {
         )}
       </Link>
 
-      {/* Meta: author and date, above comment toggle */}
+      {/* Meta: author and date */}
       <div className="text-sm text-gray-500 mb-2">
         Đăng bởi <span className="font-medium text-gray-700">{authorName}</span> · {publishedDate}
       </div>
@@ -64,10 +70,12 @@ export default function BlogCard({ post, onAddComment, onAddReply }) {
       {open && (
         <div className="mt-4 border-t pt-4">
           <CommentList
-            comments={post.comments}
+            comments={post.comments || []}
             postId={post.id}
+            currentUser={currentUser}
             onAddComment={onAddComment}
             onAddReply={onAddReply}
+            onDeleteComment={onDeleteComment}
           />
         </div>
       )}

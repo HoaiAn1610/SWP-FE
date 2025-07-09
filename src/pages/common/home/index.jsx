@@ -31,7 +31,7 @@ export default function EcommerceHome() {
 
   // 2) Lấy enrollments nếu user đã login
   useEffect(() => {
-    const userId = localStorage.getItem("id");
+    const userId = localStorage.getItem('id');
     if (!userId) return;
     api
       .get(`/CourseEnrollment/users/${userId}/enrollments`)
