@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Header from "@/components/header";
 import api from "@/config/axios";
+import CommentSection from "@/components/CommentSection";
 
 export default function ActivityDetailPage() {
   const { id } = useParams();
@@ -16,21 +17,18 @@ export default function ActivityDetailPage() {
 
   const [participants, setParticipants] = useState([]);
   const [loadingPart, setLoadingPart] = useState(true);
-  const [errorPart, setErrorPart] = useState(null);
 
-  // UI alert/confirm
+  // Alert/confirm popup state (nếu sau muốn dùng)
   const [alertVisible, setAlertVisible] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
   const [confirmVisible, setConfirmVisible] = useState(false);
   const [confirmMessage, setConfirmMessage] = useState("");
   const [confirmAction, setConfirmAction] = useState(() => {});
-
   const showAlert = (msg) => {
     setAlertMessage(msg);
     setAlertVisible(true);
   };
   const hideAlert = () => setAlertVisible(false);
-
   const showConfirm = (msg, action) => {
     setConfirmMessage(msg);
     setConfirmAction(() => action);
@@ -59,7 +57,6 @@ export default function ActivityDetailPage() {
       .then((res) => setParticipants(res.data))
       .catch((err) => {
         console.error(err);
-        setErrorPart("Lỗi khi tải số người tham gia");
       })
       .finally(() => setLoadingPart(false));
   };
@@ -168,8 +165,9 @@ export default function ActivityDetailPage() {
           ← Quay lại
         </button>
 
-        <div className="bg-white rounded-2xl shadow-lg p-6">
-          <h1 className="text-3xl font-bold mb-2">{title}</h1>
+        {/* Card trắng chứa tất cả */}
+        <div className="bg-white rounded-2xl shadow-lg p-6 space-y-6">
+          <h1 className="text-3xl font-bold">{title}</h1>
           <span
             className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${getStatusClass(
               status
@@ -178,7 +176,7 @@ export default function ActivityDetailPage() {
             {status}
           </span>
 
-          <div className="mt-4 space-y-2 text-gray-700">
+          <div className="space-y-2 text-gray-700">
             <p>
               <strong>Thời gian:</strong> {formattedEvent}
             </p>
@@ -186,7 +184,7 @@ export default function ActivityDetailPage() {
               <strong>Địa điểm:</strong> {location}
             </p>
             <p>
-              <strong>Sức chứa:</strong> {capacity} &mdash;{" "}
+              <strong>Sức chứa:</strong> {capacity} —{" "}
               {loadingPart ? "Đang tải…" : `Đã đăng ký: ${registeredCount}`}
             </p>
             <p>
@@ -194,11 +192,17 @@ export default function ActivityDetailPage() {
             </p>
           </div>
 
-          <div className="mt-6 flex items-center space-x-4">{actionButton}</div>
+          <div className="flex items-center space-x-4">{actionButton}</div>
 
-          <div className="mt-6">
+          <div>
             <h2 className="text-xl font-semibold mb-2">Mô tả</h2>
             <p className="text-gray-600 whitespace-pre-line">{description}</p>
+          </div>
+
+          {/* PHẦN BÌNH LUẬN NẰM TRONG CARD */}
+          <div>
+            <h2 className="text-2xl font-semibold mb-4">Bình luận</h2>
+            <CommentSection entity="activity" entityId={activityId} />
           </div>
         </div>
       </div>
