@@ -380,12 +380,7 @@ useEffect(() => {
                       leaveTo="opacity-0 translate-y-1"
                     >
                       <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg p-4 max-h-60 overflow-y-auto">
-                        <button
-                          className="absolute top-2 right-2 p-1 text-gray-500 hover:text-gray-800 focus:outline-none"
-                          onClick={() => setTagPanelOpen(false)}
-                        >
-                          ✕
-                        </button>
+                     
                         <div className="grid grid-cols-2 gap-2">
                           {availableTags.map(tag => {
                             const sel = selectedTagIds.includes(tag.id);
@@ -408,6 +403,14 @@ useEffect(() => {
                             );
                           })}
                         </div>
+                        <div className="mt-4 text-right">
+                          <button
+                            onClick={() => setTagPanelOpen(false)}
+                            className="px-5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
+                          >
+                            Đồng ý
+                          </button>
+                        </div>
                         <div className="mt-4 border-t pt-3">
                           <input
                             type="text"
@@ -423,14 +426,7 @@ useEffect(() => {
                             Add Tag
                           </button>
                         </div>
-                        <div className="mt-4 text-right">
-                          <button
-                            onClick={() => setTagPanelOpen(false)}
-                            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
-                          >
-                            Đồng ý
-                          </button>
-                        </div>
+                        
                       </div>
                     </Transition>
                   </div>
