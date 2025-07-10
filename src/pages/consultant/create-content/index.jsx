@@ -92,13 +92,11 @@ export default function CreateContentPage() {
 
   // --- Category options ---
   const categoryOptions = [
-    "Sức khỏe",
-    "Giáo dục",
-    "Gia đình",
-    "Cộng đồng",
-    "Chính sách & pháp luật",
-    "Hỗ trợ & điều trị",
-    "Truyền thông & nâng cao nhận thức",
+    "Lạm dụng thuốc kê đơn",
+    "Ma túy bất hợp pháp & Giải trí",
+    "Chất tổng hợp & Hóa chất gia dụng",
+    "Rượu & Chất có cồn",
+    "Nhận thức & Phòng ngừa",
   ];
 
   // --- Reload courses ---
@@ -285,13 +283,10 @@ export default function CreateContentPage() {
       level: q.level,
       category: q.category,
     });
-    console.log(q);
     setEditModalVisible(true);
   };
   const updateQuestion = () => {
     const { questionText, level, category } = editQuestionData;
-
-    // Nếu không thay đổi gì, thông báo
     if (
       questionText === originalQuestion.questionText &&
       level === originalQuestion.level &&
@@ -301,14 +296,7 @@ export default function CreateContentPage() {
       setAlertVisible(true);
       return;
     }
-
-    // Luôn gửi đủ cả 3 trường, dù chỉ đổi 1
-    const dto = {
-      questionText: questionText,
-      level: level,
-      category: category,
-    };
-
+    const dto = { questionText, level, category };
     api
       .put(`Question/update-question/${editQuestionId}`, dto)
       .then(() => {
@@ -667,12 +655,14 @@ export default function CreateContentPage() {
                         >
                           Xem
                         </button>
-                        <button
-                          onClick={() => confirmSubmitToManager(c.id)}
-                          className="px-3 py-1 bg-yellow-500 text-white rounded"
-                        >
-                          Gửi lên Manager
-                        </button>
+                        {c.workflowState === "Draft" && (
+                          <button
+                            onClick={() => confirmSubmitToManager(c.id)}
+                            className="px-3 py-1 bg-yellow-500 text-white rounded"
+                          >
+                            Gửi lên Manager
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))}
