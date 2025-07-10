@@ -23,13 +23,13 @@ export default function Header() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Kiểm tra login + load username, role
+  // Kiểm tra đăng nhập + load tên và vai trò
   useEffect(() => {
     const id = localStorage.getItem("id");
     if (id) {
       setIsLoggedIn(true);
       const storedName = localStorage.getItem("name");
-      setUsername(storedName?.trim() ? storedName : "Member");
+      setUsername(storedName?.trim() ? storedName : "Thành viên");
       setRole(localStorage.getItem("role") || "");
     }
   }, []);
@@ -39,7 +39,7 @@ export default function Header() {
     window.location.href = "/login";
   };
 
-  // Link dashboard theo role
+  // Xác định đường dẫn trang điều khiển theo vai trò
   const dashboardLink = () => {
     switch (role.toLowerCase()) {
       case "admin":
@@ -55,7 +55,7 @@ export default function Header() {
     }
   };
 
-  // Cuộn mượt xuống phần assessment
+  // Cuộn mượt xuống phần khảo sát
   const handleGetStarted = () => {
     const section = document.getElementById("survey");
     if (section) {
@@ -80,22 +80,22 @@ export default function Header() {
 
           <nav className="hidden md:flex space-x-6">
             <Link to="/" className="text-gray-600 hover:text-blue-600">
-              Home
+              Trang chủ
             </Link>
             <Link to="/course" className="text-gray-600 hover:text-blue-600">
-              Courses
+              Khóa học
             </Link>
             <Link
               to="/appointments/book"
               className="text-gray-600 hover:text-blue-600"
             >
-              Appointment
+              Đặt lịch
             </Link>
             <Link
               to="/activities"
               className="text-gray-600 hover:text-blue-600"
             >
-              Community activities
+              Hoạt động cộng đồng
             </Link>
             <Link to="/blog" className="text-gray-600 hover:text-blue-600">
               Blog
@@ -104,19 +104,19 @@ export default function Header() {
         </div>
 
         <div className="flex items-center space-x-4">
-          {/* Get Started */}
+          {/* Bắt đầu */}
           <button
             onClick={handleGetStarted}
             className="hidden md:inline-block bg-gradient-to-r from-indigo-500 to-blue-400 text-white px-5 py-2 rounded-full hover:opacity-90 transition"
           >
-            Get Started
+            Bắt đầu
           </button>
 
           <div className="hidden md:flex items-center bg-gray-100 rounded-full px-4 py-2">
             <FiSearch className="text-gray-500" />
             <input
               type="text"
-              placeholder="Search..."
+              placeholder="Tìm kiếm..."
               className="bg-transparent outline-none ml-2 text-sm"
             />
           </div>
@@ -136,19 +136,20 @@ export default function Header() {
               {isDropdownOpen && (
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded shadow border">
                   <div className="px-4 py-2 font-semibold text-gray-800">
-                    Hello, {username}
+                    Xin chào, {username}
                   </div>
                   {dashboardLink() && (
                     <>
                       <div className="border-t" />
                       <div className="px-4 py-2 text-xs text-gray-500 uppercase">
-                        My Pages
+                        Trang của tôi
                       </div>
                       <Link
                         to={dashboardLink()}
                         className="block px-4 py-2 hover:bg-gray-100 text-gray-700"
                       >
-                        {role.charAt(0).toUpperCase() + role.slice(1)} Dashboard
+                        {role.charAt(0).toUpperCase() + role.slice(1)} Bảng điều
+                        khiển
                       </Link>
                     </>
                   )}
@@ -157,13 +158,13 @@ export default function Header() {
                     to="/account/MyProfilePage"
                     className="block px-4 py-2 hover:bg-gray-100 text-gray-700"
                   >
-                    My Profile
+                    Hồ sơ của tôi
                   </Link>
                   <button
                     onClick={handleLogout}
                     className="w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-700"
                   >
-                    Logout
+                    Đăng xuất
                   </button>
                 </div>
               )}
@@ -173,7 +174,7 @@ export default function Header() {
               to="/login"
               className="bg-blue-600 text-white px-5 py-2 rounded-full hover:bg-blue-700 text-sm font-semibold transition"
             >
-              Login
+              Đăng nhập
             </Link>
           )}
         </div>
