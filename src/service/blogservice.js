@@ -106,3 +106,12 @@ export const updateBlogPost = async (blogPostId, { title, content, coverImageUrl
 export const deleteBlogPost = async (blogPostId) => {
   await api.delete(`/BlogPost/delete-blogpost/${blogPostId}`);
 };
+
+/**
+ * Xóa một comment (hoặc reply)
+ * @param {number} id
+ * @returns {Promise<void>}
+ */
+export const deleteComment = async (id) => {
+  await api.delete(`/Comment/delete-comment/${id}`);
+};
