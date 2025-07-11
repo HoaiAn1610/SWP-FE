@@ -51,7 +51,7 @@ export default function BlogCard({
         )}
         <p className="text-gray-700 mt-3">{preview}</p>
         {post.content.length > 200 && (
-          <span className="text-blue-600 hover:underline text-sm">Read more</span>
+          <span className="text-blue-600 hover:underline text-sm">Xem thêm</span>
         )}
       </Link>
 
@@ -64,7 +64,7 @@ export default function BlogCard({
         className="text-sm text-gray-600 hover:text-blue-600 mb-2"
         onClick={() => setOpen(v => !v)}
       >
-        {open ? 'Hide comments' : `Comments (${post.comments?.length || 0})`}
+        {open ? 'Ẩn bình luận' : `Bình luận (${post.comments?.length || 0})`}
       </button>
 
       {open && (

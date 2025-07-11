@@ -77,11 +77,11 @@ export default function EcommerceHome() {
       <section className="py-16 bg-gray-50">
         <div className="max-w-7xl mx-auto px-6">
           <h2 className="text-3xl font-bold text-center mb-6">
-            Featured Courses
+            Khóa học nổi bật
           </h2>
 
           {loading ? (
-            <p className="text-center py-10">Loading courses…</p>
+            <p className="text-center py-10">Đang tải khóa học...</p>
           ) : (error || courses.length === 0) ? (
             <p className="text-center py-10 text-gray-500">
               Không có khóa học nào.
@@ -108,7 +108,7 @@ export default function EcommerceHome() {
                       transition
                     "
                   >
-                    View All Courses
+                    Xem tất cả khóa học
                   </Link>
                 </div>
               )}

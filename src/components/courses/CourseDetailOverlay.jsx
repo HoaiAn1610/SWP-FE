@@ -6,24 +6,42 @@ export default function CourseDetailOverlay({ course, status, onClose }) {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // State
   const [materials, setMaterials] = useState([]);
   const [loadingMaterials, setLoadingMaterials] = useState(false);
   const [errorMaterials, setErrorMaterials] = useState(null);
   const [processing, setProcessing] = useState(false);
 
-  // alert/confirm popup states
+  // Alert/Confirm states
   const [alertVisible, setAlertVisible] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
   const [confirmVisible, setConfirmVisible] = useState(false);
   const [confirmMessage, setConfirmMessage] = useState("");
   const [confirmAction, setConfirmAction] = useState(() => {});
 
-  // show alert popup
+  // Chuyển low/medium/high sang Dễ/Trung bình/Khó
+  const levelMap = {
+    low: "Dễ",
+    medium: "Trung bình",
+    high: "Khó"
+  };
+  const levelKey = course.level ? course.level.toString().toLowerCase() : "";
+  const levelText = levelMap[levelKey] || course.level;
+
+  // Hiển thị nhãn cho các trạng thái
+  const statusMap = {
+    enrolled: "Đã tham gia",
+    completed: "Hoàn thành"
+  };
+  const statusKey = status ? status.toString().toLowerCase() : "";
+  const statusText = statusMap[statusKey] || status;
+
+  // Hiển thị thông báo cảnh báo
   const showAlert = (msg) => {
     setAlertMessage(msg);
     setAlertVisible(true);
   };
-  // show confirm popup with action
+  // Hiển thị xác nhận với hành động
   const showConfirm = (msg, action) => {
     setConfirmMessage(msg);
     setConfirmAction(() => action);
@@ -31,7 +49,7 @@ export default function CourseDetailOverlay({ course, status, onClose }) {
   };
   const hideConfirm = () => setConfirmVisible(false);
 
-  // 1) Load materials
+  // 1) Tải tài liệu khóa học
   useEffect(() => {
     if (!course) return;
     setLoadingMaterials(true);
@@ -51,11 +69,11 @@ export default function CourseDetailOverlay({ course, status, onClose }) {
   const userId = localStorage.getItem("id");
   const { pathname } = location;
 
-  // 2) Handle action button
+  // 2) Xử lý nút hành động
   const handleAction = async () => {
     if (!userId) {
       showConfirm(
-        "Bạn chưa đăng nhập. Bạn có muốn chuyển đến trang Đăng nhập?",
+        "Bạn chưa đăng nhập. Chuyển đến trang Đăng nhập?",
         () => {
           onClose();
           const backUrl = `${pathname}?openOverlay=${course.id}`;
@@ -64,12 +82,7 @@ export default function CourseDetailOverlay({ course, status, onClose }) {
       );
       return;
     }
-    if (status === "Enrolled") {
-      onClose();
-      navigate(`/course/${course.id}/lesson`);
-      return;
-    }
-    if (status === "Completed") {
+    if (statusKey === "enrolled" || statusKey === "completed") {
       onClose();
       navigate(`/course/${course.id}/lesson`);
       return;
@@ -98,10 +111,10 @@ export default function CourseDetailOverlay({ course, status, onClose }) {
     }
   };
 
-  // determine button label
-  let buttonLabel = "Start Course";
-  if (status === "Enrolled") buttonLabel = "Continue Course";
-  else if (status === "Completed") buttonLabel = "Review Course";
+  // Nhãn nút
+  let buttonLabel = "Bắt đầu khóa học";
+  if (statusKey === "enrolled") buttonLabel = "Tiếp tục khóa học";
+  else if (statusKey === "completed") buttonLabel = "Xem lại khóa học";
 
   return (
     <>
@@ -133,22 +146,22 @@ export default function CourseDetailOverlay({ course, status, onClose }) {
             <div className="flex flex-wrap gap-4 text-sm text-gray-700 mt-2">
               {course.level && (
                 <span className="px-2 py-1 bg-indigo-100 text-indigo-800 rounded-full">
-                  Level: {course.level}
+                  Mức độ: {levelText}
                 </span>
               )}
               {course.category && (
                 <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full">
-                  Category: {course.category}
+                  Danh mục: {course.category}
                 </span>
               )}
               {course.duration && (
                 <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded-full">
-                  Duration: {course.duration} phút
+                  Thời lượng: {course.duration} phút
                 </span>
               )}
             </div>
             <div className="mt-4">
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">Course Materials</h3>
+              <h3 className="text-lg font-semibold text-gray-800 mb-2">Tài liệu khóa học</h3>
               {loadingMaterials && <p className="text-gray-500">Đang tải tài liệu...</p>}
               {!loadingMaterials && !errorMaterials && (
                 <ul className="space-y-2">
@@ -182,7 +195,7 @@ export default function CourseDetailOverlay({ course, status, onClose }) {
         </div>
       </div>
 
-      {/* Alert Popup */}
+      {/* Popup cảnh báo */}
       {alertVisible && (
         <div className="fixed inset-0 flex items-center justify-center z-60 bg-opacity-50 backdrop-blur-sm">
           <div className="bg-white p-4 rounded-lg shadow-lg max-w-xs text-center border border-indigo-200">
@@ -190,25 +203,31 @@ export default function CourseDetailOverlay({ course, status, onClose }) {
             <button
               onClick={() => setAlertVisible(false)}
               className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md"
-            >OK</button>
+            >
+              Đóng
+            </button>
           </div>
         </div>
       )}
 
-      {/* Confirm Popup */}
+      {/* Popup xác nhận */}
       {confirmVisible && (
-        <div className="fixed inset-0 flex items-center justify-center z-60  bg-opacity-50 backdrop-blur-sm">
+        <div className="fixed inset-0 flex items-center justify-center z-60 bg-opacity-50 backdrop-blur-sm">
           <div className="bg-white p-4 rounded-lg shadow-lg max-w-xs text-center border border-indigo-200">
             <p className="mb-4 text-indigo-800 font-semibold">{confirmMessage}</p>
             <div className="flex justify-center space-x-2">
               <button
                 onClick={() => setConfirmVisible(false)}
                 className="px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-md"
-              >Hủy</button>
+              >
+                Hủy
+              </button>
               <button
                 onClick={() => { confirmAction(); hideConfirm(); }}
                 className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md"
-              >OK</button>
+              >
+                Đồng ý
+              </button>
             </div>
           </div>
         </div>

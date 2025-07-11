@@ -115,13 +115,13 @@ export default function BookingPage() {
 
       <div className="max-w-4xl mx-auto py-8 px-4 space-y-8">
         <h1 className="text-3xl font-bold text-indigo-700 border-b-2 border-indigo-200 pb-2">
-          Book a Counseling Session
+          Đặt Lịch Hẹn Với Chuyên Gia
         </h1>
 
         {/* Danh sách consultant */}
         <div className="space-y-4">
           {loadingCons ? (
-            <p className="text-gray-600">Đang tải chuyên gia…</p>
+            <p className="text-gray-600">Đang tải danh sách chuyên gia…</p>
           ) : (
             <ul className="space-y-3">
               {consultants.map(c => (
@@ -229,7 +229,7 @@ export default function BookingPage() {
               onClick={() => setAlertVisible(false)}
               className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md"
             >
-              OK
+              Đồng Ý
             </button>
           </div>
         </div>
@@ -251,7 +251,7 @@ export default function BookingPage() {
                 onClick={() => { confirmAction(); hideConfirm(); }}
                 className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md"
               >
-                OK
+                Đồng Ý
               </button>
             </div>
           </div>
