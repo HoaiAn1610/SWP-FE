@@ -88,7 +88,7 @@ const userId = localStorage.getItem('id');
         </aside>
         <main className="w-3/4 p-6">
           {loading || !currentUser ? (
-            <div className="flex justify-center py-20">Loading...</div>
+            <div className="flex justify-center py-20">Đang tải...</div>
           ) : (
             <BlogList
               posts={posts}

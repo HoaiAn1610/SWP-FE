@@ -17,10 +17,19 @@ import { uploadFile } from '@/utils/upload';
 import { Transition } from '@headlessui/react';
 
 export default function ViewBlogPostsPage() {
+  // Bảng chuyển đổi status từ tiếng Anh --> tiếng Việt
+  const statusLabels = {
+    Pending:   'Chờ duyệt',
+    Submitted: 'Đã gửi duyệt',
+    Approved:  'Đã phê duyệt',
+    Rejected:  'Đã từ chối',
+    Published: 'Đã xuất bản'
+  };
+
   const statusTabs = [
-    { key: 'pending',   label: 'Pending'   },
-    { key: 'reviewed',  label: 'Reviewed'  },
-    { key: 'published', label: 'Published' },
+    { key: 'pending',   label: 'Chờ duyệt'     },
+    { key: 'reviewed',  label: 'Đã xử lý'      },
+    { key: 'published', label: 'Đã xuất bản'   },
   ];
   const [selectedTab, setSelectedTab]       = useState('pending');
   const [posts, setPosts]                   = useState([]);
@@ -54,20 +63,20 @@ export default function ViewBlogPostsPage() {
 
   const [currentUser, setCurrentUser] = useState(null);
 
-useEffect(() => {
-  const storedId = localStorage.getItem('id');
-  if (!storedId) return;
-  fetchUserById(+storedId)
-    .then(u => setCurrentUser(u))
-    .catch(console.error);
-}, []);
+  useEffect(() => {
+    const storedId = localStorage.getItem('id');
+    if (!storedId) return;
+    fetchUserById(+storedId)
+      .then(u => setCurrentUser(u))
+      .catch(console.error);
+  }, []);
 
   useEffect(() => {
     (async () => {
       const data = await fetchAllPosts();
       const enriched = await Promise.all(
         data.map(async p => {
-          let author = 'Unknown';
+          let author = 'Ẳn danh';
           try {
             const u = await fetchUserById(p.createdById);
             author = u.name;
@@ -98,7 +107,7 @@ useEffect(() => {
       setAvailableTags(ts => [...ts, created]);
       setSelectedTagIds(ids => [...ids, created.id]);
       setNewTagName('');
-      setAlertMessage('Thêm tag thành công');
+      setAlertMessage('Thêm thẻ thành công');
       setAlertVisible(true);
     } catch (err) {
       console.error(err);
@@ -140,24 +149,24 @@ useEffect(() => {
           p.id === editingPostId ? { ...p, ...payload } : p
         )
       );
-      setAlertMessage('Cập nhật bài blog thành công');
+      setAlertMessage('Cập nhật bài viết thành công');
     } else {
       const created = await createBlogPost(payload);
       const author = (
         await fetchUserById(created.createdById).catch(() => ({ name: 'Unknown' }))
       ).name;
       setPosts(ps => [{ ...created, authorName: author }, ...ps]);
-      setAlertMessage('Tạo bài blog thành công');
+      setAlertMessage('Tạo bài viết thành công');
     }
     setAlertVisible(true);
     setShowModal(false);
   };
 
   const handleDelete = postId => {
-    showConfirm('Bạn có chắc muốn xóa bài này không?', async () => {
+    showConfirm('Bạn có chắc chắn muốn xóa bài viết này không?', async () => {
       await deleteBlogPost(postId);
       setPosts(ps => ps.filter(p => p.id !== postId));
-      setAlertMessage('Xóa bài blog thành công');
+      setAlertMessage('Xóa bài viết thành công');
       setAlertVisible(true);
     });
   };
@@ -174,27 +183,26 @@ useEffect(() => {
   };
 
   const handleDeleteComment = (postId, commentId) => {
-  deleteComment(commentId)
-    .then(() => {
-      // đệ quy lọc comments để bỏ phần tử có id trùng
-      const filterRecursively = list =>
-        (list || []).reduce((acc, c) => {
-          if (c.id === commentId) return acc;
-          return [
-            ...acc,
-            { ...c, replies: filterRecursively(c.replies) }
-          ];
-        }, []);
-      setPosts(ps =>
-        ps.map(p =>
-          p.id !== postId
-            ? p
-            : { ...p, comments: filterRecursively(p.comments) }
-        )
-      );
-    })
-    .catch(console.error);
-};
+    deleteComment(commentId)
+      .then(() => {
+        const filterRecursively = list =>
+          (list || []).reduce((acc, c) => {
+            if (c.id === commentId) return acc;
+            return [
+              ...acc,
+              { ...c, replies: filterRecursively(c.replies) }
+            ];
+          }, []);
+        setPosts(ps =>
+          ps.map(p =>
+            p.id !== postId
+              ? p
+              : { ...p, comments: filterRecursively(p.comments) }
+          )
+        );
+      })
+      .catch(console.error);
+  };
 
   const filtered = posts.filter(p => {
     if (selectedTab === 'pending')   return p.status === 'Pending';
@@ -239,7 +247,7 @@ useEffect(() => {
                 }}
                 className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md"
               >
-                OK
+                Đồng ý
               </button>
             </div>
           </div>
@@ -249,12 +257,12 @@ useEffect(() => {
       <div className="p-6 bg-gray-50 min-h-screen">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">Blog Posts & Comments</h1>
+          <h1 className="text-2xl font-bold">Bài viết & Bình luận</h1>
           <button
             onClick={openCreateModal}
             className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg shadow"
           >
-            New Blog
+            Tạo bài viết mới
           </button>
         </div>
 
@@ -296,32 +304,32 @@ useEffect(() => {
                   ✕
                 </button>
                 <h2 className="text-xl font-semibold mb-4">
-                  {isEditing ? 'Edit Blog' : 'Create New Blog'}
+                  {isEditing ? 'Chỉnh sửa bài viết' : 'Tạo bài viết mới'}
                 </h2>
                 <div className="space-y-4">
                   <input
                     type="text"
-                    placeholder="Title"
+                    placeholder="Tiêu đề"
                     value={newTitle}
                     onChange={e => setNewTitle(e.target.value)}
                     className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-400"
                   />
                   <input
                     type="text"
-                    placeholder="Cover Image URL"
+                    placeholder="URL ảnh bìa"
                     value={newCover}
                     onChange={e => setNewCover(e.target.value)}
                     className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-400"
                   />
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Or choose an image
+                      Hoặc chọn ảnh
                     </label>
                     <label
                       className="w-full inline-flex items-center justify-center px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg cursor-pointer
                                  hover:bg-gray-200 transition focus:outline-none focus:ring-2 focus:ring-blue-400"
                     >
-                      <span className="text-gray-700">Choose file</span>
+                      <span className="text-gray-700">Chọn tệp</span>
                       <input
                         type="file"
                         accept="image/*"
@@ -337,12 +345,12 @@ useEffect(() => {
                       />
                     </label>
                     {uploading && (
-                      <p className="text-xs text-gray-500 mt-1">Uploading...</p>
+                      <p className="text-xs text-gray-500 mt-1">Đang tải lên...</p>
                     )}
                   </div>
                   <textarea
                     rows={4}
-                    placeholder="Content"
+                    placeholder="Nội dung"
                     value={newContent}
                     onChange={e => setNewContent(e.target.value)}
                     className="w-full border border-gray-300 rounded-lg px-4 py-2 resize-none focus:ring-2 focus:ring-blue-400"
@@ -367,7 +375,7 @@ useEffect(() => {
                               </span>
                             ))}
                         </div>
-                      ) : 'Choose tags...'}
+                      ) : 'Chọn thẻ...'}
                     </button>
                     <Transition
                       as={Fragment}
@@ -380,7 +388,6 @@ useEffect(() => {
                       leaveTo="opacity-0 translate-y-1"
                     >
                       <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg p-4 max-h-60 overflow-y-auto">
-                     
                         <div className="grid grid-cols-2 gap-2">
                           {availableTags.map(tag => {
                             const sel = selectedTagIds.includes(tag.id);
@@ -414,7 +421,7 @@ useEffect(() => {
                         <div className="mt-4 border-t pt-3">
                           <input
                             type="text"
-                            placeholder="Add new tag"
+                            placeholder="Thêm thẻ mới"
                             value={newTagName}
                             onChange={e => setNewTagName(e.target.value)}
                             className="w-full border border-gray-300 rounded-lg px-3 py-2 mb-2 focus:ring-2 focus:ring-green-400"
@@ -423,10 +430,9 @@ useEffect(() => {
                             onClick={handleAddNewTag}
                             className="w-full px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg"
                           >
-                            Add Tag
+                            Thêm thẻ
                           </button>
                         </div>
-                        
                       </div>
                     </Transition>
                   </div>
@@ -437,13 +443,13 @@ useEffect(() => {
                       onClick={() => setShowModal(false)}
                       className="px-4 py-2 bg-gray-300 hover:bg-gray-400 rounded-lg"
                     >
-                      Cancel
+                      Hủy
                     </button>
                     <button
                       onClick={handleSave}
                       className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
                     >
-                      {isEditing ? 'Save' : 'Create'}
+                      {isEditing ? 'Lưu' : 'Tạo'}
                     </button>
                   </div>
                 </div>
@@ -470,20 +476,20 @@ useEffect(() => {
                 <div className="flex-1">
                   <div className="flex flex-wrap items-center space-x-2 mb-2">
                     <span className="inline-block bg-purple-100 text-purple-800 text-xs font-medium px-2 py-1 rounded-full">
-                      Blog Post
+                      Bài viết
                     </span>
                     <span className="text-xs text-gray-500">
-                      {new Date(post.createdDate).toLocaleDateString()}
+                      {new Date(post.createdDate).toLocaleDateString('vi-VN')}
                     </span>
                     <span className="inline-block text-xs font-medium px-2 py-1 rounded-full bg-gray-100 text-gray-800">
-                      {post.status}
+                      {statusLabels[post.status] || post.status}
                     </span>
                   </div>
                   <h2 className="text-xl font-semibold text-gray-800">
                     {post.title}
                   </h2>
                   <p className="text-sm text-gray-600 mt-1">
-                    By <span className="font-medium">{post.authorName}</span>
+                    Đăng bởi: <span className="font-medium">{post.authorName}</span>
                   </p>
                 </div>
                 <div className="mt-4 md:mt-0 flex space-x-2">
@@ -491,20 +497,20 @@ useEffect(() => {
                     onClick={() => openEditModal(post)}
                     className="px-3 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg"
                   >
-                    Edit
+                    Chỉnh sửa
                   </button>
                   <button
                     onClick={() => handleDelete(post.id)}
                     className="px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg"
                   >
-                    Delete
+                    Xóa
                   </button>
                   {selectedTab === 'pending' && (
                     <button
                       onClick={() => handleSendForApproval(post.id)}
                       className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg"
                     >
-                      Send to Approval
+                      Gửi duyệt
                     </button>
                   )}
                   {selectedTab === 'published' && (
@@ -515,22 +521,22 @@ useEffect(() => {
                       className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg"
                     >
                       {expandedPostId === post.id
-                        ? 'Hide Comments'
-                        : `Manage Comments (${post.comments?.length || 0})`}
+                        ? 'Ẩn bình luận'
+                        : `Quản lý bình luận (${post.comments?.length || 0})`}
                     </button>
                   )}
                   <Link
                     to={`/blogs/${post.id}`}
                     className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg"
                   >
-                    View Details
+                    Xem chi tiết
                   </Link>
                 </div>
               </div>
 
               {selectedTab === 'reviewed' && post.status === 'Rejected' && (
                 <div className="bg-red-50 border border-red-200 p-4 rounded mb-4">
-                  <h3 className="font-semibold text-red-800 mb-2">Review Comments</h3>
+                  <h3 className="font-semibold text-red-800 mb-2">Lý do từ chối</h3>
                   <p className="text-red-700 whitespace-pre-wrap">
                     {post.reviewComments}
                   </p>

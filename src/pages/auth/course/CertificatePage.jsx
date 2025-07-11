@@ -47,7 +47,7 @@ export default function CertificatePage() {
       .get(`/Certificate/member/${memberId}`)
       .then(res => {
         const found = res.data.find(c => c.courseId === Number(courseId));
-        if (!found) throw new Error("Chứng chỉ cho khóa học này chưa có.");
+        if (!found) throw new Error("Bạn chưa có chứng chỉ cho khóa học này!");
         setCertMeta(found);
       })
       .catch(err => setError(err.message || "Lỗi lấy metadata chứng chỉ"))
@@ -106,7 +106,7 @@ export default function CertificatePage() {
 
       <div className="max-w-3xl mx-auto py-8 px-4 space-y-6">
         <h1 className="text-3xl font-semibold text-center">
-          Your Certificate
+          Chứng chỉ khóa học: {courseTitle || `Khóa học ${courseId}`}
         </h1>
 
         <div ref={certRef} className="flex justify-center">
@@ -124,7 +124,7 @@ export default function CertificatePage() {
               onClick={generateBlobUrl}
               className="mt-4 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
             >
-              Generate Certificate Link
+              Tạo chứng chỉ PDF
             </button>
           </div>
         )}
@@ -145,7 +145,7 @@ export default function CertificatePage() {
                 download={`certificate-${courseId}.pdf`}
                 className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
               >
-                Download Certificate
+                Tải xuống chứng chỉ PDF
               </a>
             </div>
           </div>

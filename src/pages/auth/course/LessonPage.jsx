@@ -148,7 +148,7 @@ export default function LessonPage() {
 
   // Load quiz questions when on quiz tab
   useEffect(() => {
-    if (activeTab !== "quiz" || !isLoggedIn) return;
+    if (activeTab !== "Bài kiểm Tra" || !isLoggedIn) return;
     (async () => {
       setLoadingQuiz(true);
       try {
@@ -193,8 +193,10 @@ export default function LessonPage() {
   const handleStartQuiz = () => navigate(`/course/${courseId}/quiz`);
 
   // Tab switch logic using quizAttemptCount
-  const handleTabClick = (tab) => {
-    if (tab === "quiz") {
+
+  const handleTabClick = tab => {
+    if (tab === "Bài kiểm Tra") {
+
       // If 3 attempts used without passing, ask to reset
       if (quizAttemptCount === 3 && !hasPassed) {
         showConfirm(
@@ -251,7 +253,7 @@ export default function LessonPage() {
         })
       );
       setHasScrolledDocs(false);
-      setActiveTab("docs");
+      setActiveTab("Tài Liệu");
     } catch {
       showAlert("Không tải được tài liệu.");
     }
@@ -321,7 +323,9 @@ export default function LessonPage() {
 
         {/* Tabs */}
         <div className="flex space-x-4 border-b pb-2">
-          {["video", "docs", "quiz"].map((tab) => (
+
+          {['video', 'Tài Liệu', 'Bài kiểm Tra'].map(tab => (
+
             <button
               key={tab}
               onClick={() => handleTabClick(tab)}
@@ -339,54 +343,55 @@ export default function LessonPage() {
         {/* Panels */}
         {activeTab === "video" && (
           <div className="bg-white p-6 rounded-lg shadow">
-            <h2 className="text-xl font-medium mb-4">Lesson Overview</h2>
-            <p className="text-gray-700 whitespace-pre-wrap">
-              {courseInfo.content}
-            </p>
+
+            <h2 className="text-xl font-medium mb-4">Tổng Quan Khóa Học</h2>
+            <p className="text-gray-700 ">{courseInfo.content}</p>
           </div>
         )}
 
-        {activeTab === "docs" && (
-          <div className="bg-white p-6 rounded-lg shadow space-y-4">
-            {docs.length === 0 ? (
-              <p className="text-gray-500">Chưa có tài liệu.</p>
-            ) : (
-              docs.map((doc) => (
-                <div key={doc.id} className="border-b pb-4">
-                  <h3 className="font-semibold text-gray-800">{doc.title}</h3>
-                  <p className="text-gray-600 mb-2">{doc.description}</p>
-                  <button
-                    onClick={() => handleViewDocument(doc)}
-                    className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
-                  >
-                    View Document
-                  </button>
-                </div>
-              ))
-            )}
-            {docFile && (
-              <div className="mt-6">
-                <button
-                  onClick={() => setDocFile(null)}
-                  className="mb-4 text-gray-500 hover:text-gray-800"
-                >
-                  ✕ Đóng tài liệu
-                </button>
-                <div
-                  ref={scrollContainerRef}
-                  onScroll={onDocScroll}
-                  className="max-h-[60vh] overflow-auto border p-2"
-                >
-                  <DocxViewer file={docFile} />
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+        {activeTab === 'Tài Liệu' && (
+  <div className="bg-white p-6 rounded-lg shadow space-y-4">
+    {docs.length === 0 ? (
+      <p className="text-gray-500">Chưa có tài liệu.</p>
+    ) : (
+      docs.map(doc => (
+        <div key={doc.id} className="border-b pb-4">
+          <h3 className="font-semibold text-gray-800">{doc.title}</h3>
+          <p className="text-gray-600 mb-2">{doc.description}</p>
+          <button
+            onClick={() => handleViewDocument(doc)}
+            className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+          >
+            Xem Tài Liệu
+          </button>
+        </div>
+      ))
+    )}
 
-        {activeTab === "quiz" && (
+    {docFile && (
+      <div className="mt-6">
+        <button
+          onClick={() => setDocFile(null)}
+          className="mb-4 text-gray-500 hover:text-gray-800"
+        >
+          ✕ Đóng tài liệu
+        </button>
+        <div
+          ref={scrollContainerRef}
+          onScroll={onDocScroll}
+          className="max-h-[60vh] overflow-auto border p-2 whitespace-pre-wrap"
+        >
+          <DocxViewer file={docFile} />
+        </div>
+      </div>
+    )}
+  </div>
+)}
+
+         {activeTab==='Bài kiểm Tra' && (
+
           <div className="bg-white p-6 rounded-lg shadow space-y-4">
-            <h2 className="text-xl font-semibold">Quiz Attempts</h2>
+            <h2 className="text-xl font-semibold">Bài Kiểm Tra</h2>
             {!hasPassed ? (
               <button
                 onClick={handleStartQuiz}
@@ -396,88 +401,69 @@ export default function LessonPage() {
               </button>
             ) : (
               <div className="p-4 bg-green-50 rounded-lg">
-                <p className="text-green-800 mb-2">
-                  Bạn đã hoàn thành khóa học rồi!
-                </p>
+
+                <p className="text-green-800 mb-2">Bạn đã hoàn thành khóa học!</p>
                 <button
-                  onClick={() => navigate(`/course/${courseId}/certificate`)}
-                  className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
-                >
-                  View Certificate
-                </button>
+                onClick={() => navigate(`/course/${courseId}/certificate`)}
+                className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+              >
+                Xem Chứng Chỉ
+              </button>
               </div>
             )}
 
-            {loadingSubs || loadingQuiz ? (
-              <p>Loading quiz data…</p>
-            ) : (
-              <ul className="divide-y divide-gray-200">
-                {submissions.map((sub) => (
-                  <li
-                    key={sub.id}
-                    className="py-3 flex justify-between items-center hover:bg-gray-50 cursor-pointer"
-                    onClick={() => viewDetail(sub)}
-                  >
-                    <div>
-                      <p className="font-medium">
-                        {new Date(sub.submissionDate).toLocaleString()}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        Score: {sub.score} / {quizQuestions.length}
-                      </p>
-                    </div>
-                    <span
-                      className={`px-2 py-1 rounded-full text-sm ${
-                        sub.passedStatus
-                          ? "bg-green-100 text-green-800"
-                          : "bg-red-100 text-red-800"
-                      }`}
-                    >
-                      {sub.passedStatus ? "Passed" : "Failed"}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
+            {(loadingSubs||loadingQuiz)?<p>Đang tải dữ liệu...</p>:<ul className="divide-y divide-gray-200">
+              {submissions.map(sub=>(
+                <li key={sub.id} className="py-3 flex justify-between items-center hover:bg-gray-50 cursor-pointer" onClick={()=>viewDetail(sub)}>
+                  <div>
+                    <p className="font-medium">{new Date(sub.submissionDate).toLocaleString()}</p>
+                    <p className="text-sm text-gray-600">Điểm {sub.score} / {quizQuestions.length}</p>
+                  </div>
+                  <span className={`px-2 py-1 rounded-full text-sm ${sub.passedStatus?'bg-green-100 text-green-800':'bg-red-100 text-red-800'}`}>{sub.passedStatus?'Passed':'Failed'}</span>
+                </li>
+              ))}
+            </ul>}
 
-            {oldSubmissions.length > 0 && (
-              <div className="mt-6">
-                <h3 className="text-lg font-medium">Lịch sử Quiz cũ</h3>
-                <ul className="divide-y divide-gray-200 mt-2">
-                  {oldSubmissions.map((sub) => (
-                    <li
-                      key={sub.id}
-                      onClick={() => viewDetail(sub)}
-                      className="py-2 flex justify-between items-center hover:bg-gray-50 cursor-pointer"
-                    >
-                      <div>
-                        <p className="font-medium">
-                          {new Date(sub.submissionDate).toLocaleString()}
-                        </p>
-                        <p className="text-sm text-gray-600">
-                          Score: {sub.score} / {quizQuestions.length}
-                        </p>
-                      </div>
-                      <span
-                        className={`px-2 py-1 rounded-full text-sm ${
-                          sub.passedStatus
-                            ? "bg-green-100 text-green-800"
-                            : "bg-red-100 text-red-800"
-                        }`}
-                      >
-                        {sub.passedStatus ? "Passed" : "Failed"}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+{oldSubmissions.length > 0 && (
+  <div className="mt-6">
+    <h3 className="text-lg font-medium">Lịch sử</h3>
+    <ul className="divide-y divide-gray-200 mt-2">
+      {oldSubmissions.map(sub => (
+        <li
+          key={sub.id}
+          onClick={() => viewDetail(sub)}
+          className="py-2 flex justify-between items-center hover:bg-gray-50 cursor-pointer"
+        >
+          <div>
+            <p className="font-medium">
+              {new Date(sub.submissionDate).toLocaleString()}
+            </p>
+            <p className="text-sm text-gray-600">
+              Điểm: {sub.score} / {quizQuestions.length}
+            </p>
+          </div>
+          <span
+            className={`px-2 py-1 rounded-full text-sm ${
+              sub.passedStatus
+                ? 'bg-green-100 text-green-800'
+                : 'bg-red-100 text-red-800'
+            }`}
+          >
+            {sub.passedStatus ? 'Passed' : 'Failed'}
+          </span>
+        </li>
+      ))}
+    </ul>
+  </div>
+)}
+
           </div>
         )}
       </div>
 
       {/* Detail overlay */}
       {showDetail && (
+
         <div
           className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50"
           onClick={() => setShowDetail(false)}
@@ -493,6 +479,7 @@ export default function LessonPage() {
               ✕
             </button>
             <h2 className="text-2xl font-semibold mb-4">Chi tiết lần làm</h2>
+
             {loadingDetail ? (
               <p>Đang tải chi tiết…</p>
             ) : detailedQuestions.length === 0 ? (
@@ -543,12 +530,9 @@ export default function LessonPage() {
         <div className="fixed inset-0 flex items-center justify-center z-60">
           <div className="bg-white p-4 rounded-lg shadow-lg max-w-xs text-center border border-indigo-200">
             <p className="mb-4 text-indigo-800 font-semibold">{alertMessage}</p>
-            <button
-              onClick={() => setAlertVisible(false)}
-              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md"
-            >
-              OK
-            </button>
+
+            <button onClick={() => setAlertVisible(false)} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md">ĐỒng Ý</button>
+
           </div>
         </div>
       )}
@@ -561,6 +545,7 @@ export default function LessonPage() {
               {confirmMessage}
             </p>
             <div className="flex justify-center space-x-2">
+
               <button
                 onClick={hideConfirm}
                 className="px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-md"
@@ -576,6 +561,7 @@ export default function LessonPage() {
               >
                 OK
               </button>
+
             </div>
           </div>
         </div>
