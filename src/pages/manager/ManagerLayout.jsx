@@ -8,7 +8,7 @@ export default function ManagerLayout() {
     { to: "overview", label: "Tổng quan" },
     { to: "approved", label: "Duyệt bài" },
     { to: "task-queue", label: "Duyệt Blog" },
-    { to: "team-schedule", label: "Lịch nhóm" },
+    { to: "team-schedule", label: "Duyệt Hoạt động" },
   ];
   return (
     <>

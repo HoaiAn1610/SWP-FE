@@ -38,7 +38,7 @@ export default function EcommerceHome() {
 
   // 2) Lấy enrollments nếu user đã login
   useEffect(() => {
-    const userId = localStorage.getItem('id');
+    const userId = localStorage.getItem("id");
     if (!userId) return;
     api
       .get(`/CourseEnrollment/users/${userId}/enrollments`)
@@ -82,7 +82,7 @@ export default function EcommerceHome() {
 
           {loading ? (
             <p className="text-center py-10">Đang tải khóa học...</p>
-          ) : (error || courses.length === 0) ? (
+          ) : error || courses.length === 0 ? (
             <p className="text-center py-10 text-gray-500">
               Không có khóa học nào.
             </p>
@@ -127,8 +127,8 @@ export default function EcommerceHome() {
       )}
 
       {/* Featured Blogs Section */}
-      <FeaturedBlogs/>
-      
+      <FeaturedBlogs />
+
       {/* Fragment: Hiển thị 3 hoạt động sắp tới */}
       <FeaturedActivities />
 

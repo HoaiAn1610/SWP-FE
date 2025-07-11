@@ -65,7 +65,7 @@ export default function CreateContentPage() {
     category: "",
   });
 
-  // --- Edit Question modal (partial update) ---
+  // --- Edit Question modal ---
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editQuestionId, setEditQuestionId] = useState(null);
   const [editQuestionData, setEditQuestionData] = useState({
@@ -81,8 +81,9 @@ export default function CreateContentPage() {
 
   // --- Option modals ---
   const [addOptionModalVisible, setAddOptionModalVisible] = useState(false);
-  const [newOption, setNewOption] = useState({ optionText: "", scoreValue: 0 });
-
+  const [newOptions, setNewOptions] = useState([
+    { optionText: "", scoreValue: 0 },
+  ]);
   const [editOptionModalVisible, setEditOptionModalVisible] = useState(false);
   const [editOption, setEditOption] = useState({
     optionId: null,
@@ -274,7 +275,7 @@ export default function CreateContentPage() {
       });
   };
 
-  // --- Edit Question handlers (partial update) ---
+  // --- Edit Question handlers ---
   const openEditModal = (q) => {
     setEditQuestionId(q.id);
     setOriginalQuestion(q);
@@ -327,30 +328,52 @@ export default function CreateContentPage() {
       });
   };
 
-  // --- View Question + options handlers ---
-  const openViewModal = (q) => {
-    setViewQuestion(q);
-    setViewModalVisible(true);
+  // --- View Question handlers (luôn fetch fresh trước khi mở) ---
+  const openViewModal = async (q) => {
+    try {
+      // Load lại tất cả câu hỏi để có option mới nhất
+      const { data } = await api.get("Question/get-all-questions");
+      setQuestions(data);
+      const fresh = data.find((item) => item.id === q.id);
+      setViewQuestion(fresh);
+      setViewModalVisible(true);
+    } catch {
+      setAlertMessage("Không tải được chi tiết câu hỏi.");
+      setAlertVisible(true);
+    }
   };
-  const handleAddOption = () => {
-    if (!newOption.optionText) {
-      setAlertMessage("Điền nội dung đáp án.");
+
+  // --- Thêm nhiều options và làm mới viewQuestion ---
+  const handleAddOptions = async () => {
+    const payload = newOptions.filter((opt) => opt.optionText.trim() !== "");
+    if (payload.length === 0) {
+      setAlertMessage("Vui lòng nhập ít nhất một đáp án.");
       setAlertVisible(true);
       return;
     }
-    api
-      .post(`/api/Question/${viewQuestion.id}/add-options`, [newOption])
-      .then(({ data }) => {
-        setAlertMessage("Thêm đáp án thành công!");
-        setAlertVisible(true);
-        setAddOptionModalVisible(false);
-        setViewQuestion((vq) => ({ ...vq, options: [...vq.options, ...data] }));
-      })
-      .catch(() => {
-        setAlertMessage("Thêm đáp án thất bại.");
-        setAlertVisible(true);
-      });
+    try {
+      await api.post(`Question/${viewQuestion.id}/add-options`, payload);
+      setAlertMessage("Thêm đáp án thành công!");
+      setAlertVisible(true);
+      setAddOptionModalVisible(false);
+      // Refresh toàn bộ questions và viewQuestion
+      const { data: allQ } = await api.get("Question/get-all-questions");
+      setQuestions(allQ);
+      const fresh = allQ.find((item) => item.id === viewQuestion.id);
+      setViewQuestion(fresh);
+      setNewOptions([{ optionText: "", scoreValue: 0 }]);
+    } catch {
+      setAlertMessage("Thêm đáp án thất bại.");
+      setAlertVisible(true);
+    }
   };
+
+  // --- Xóa một dòng option tạm trước khi lưu ---
+  const removeOption = (index) => {
+    setNewOptions((opts) => opts.filter((_, i) => i !== index));
+  };
+
+  // --- Edit Option handlers ---
   const openEditOptionModal = (opt) => {
     setEditOption({
       optionId: opt.id,
@@ -370,6 +393,7 @@ export default function CreateContentPage() {
         setAlertMessage("Cập nhật đáp án thành công!");
         setAlertVisible(true);
         setEditOptionModalVisible(false);
+        // Cập nhật ngay trong viewQuestion
         setViewQuestion((vq) => ({
           ...vq,
           options: vq.options.map((o) =>
@@ -383,7 +407,7 @@ export default function CreateContentPage() {
       });
   };
 
-  // --- Course filters ---
+  // --- Course filters & rendering ---
   const statusOptions = Array.from(
     new Set(courses.map((c) => c.status).filter(Boolean))
   );
@@ -703,7 +727,7 @@ export default function CreateContentPage() {
                       <td className="px-4 py-2">{idx + 1}</td>
                       <td className="px-4 py-2">{q.questionText}</td>
                       <td className="px-4 py-2">{q.level}</td>
-                      <td className="px-4 py-2 space-x-2">
+                      <td className="px-4 py-2 flex items-center space-x-2">
                         <button
                           onClick={() => openViewModal(q)}
                           className="px-3 py-1 bg-blue-500 text-white rounded"
@@ -889,7 +913,7 @@ export default function CreateContentPage() {
           </div>
         )}
 
-        {/* Modal Xem chi tiết + Thêm/Sửa đáp án */}
+        {/* Modal Chi tiết + Thêm/Sửa đáp án */}
         {viewModalVisible && viewQuestion && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
             <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4 overflow-hidden">
@@ -951,43 +975,73 @@ export default function CreateContentPage() {
         {addOptionModalVisible && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
             <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 overflow-hidden">
-              <div className="px-6 py-4 border-b">
+              {/* Header */}
+              <div className="px-6 py-4 border-b flex justify-between items-center">
                 <h2 className="text-xl font-semibold text-gray-800">
                   Thêm đáp án
                 </h2>
-              </div>
-              <div className="p-6 space-y-4">
-                <input
-                  type="text"
-                  placeholder="Nội dung đáp án"
-                  value={newOption.optionText}
-                  onChange={(e) =>
-                    setNewOption((o) => ({ ...o, optionText: e.target.value }))
+                <button
+                  type="button"
+                  onClick={() =>
+                    setNewOptions([
+                      ...newOptions,
+                      { optionText: "", scoreValue: 0 },
+                    ])
                   }
-                  className="w-full border rounded px-3 py-2"
-                />
-                <input
-                  type="number"
-                  placeholder="Score value"
-                  value={newOption.scoreValue}
-                  onChange={(e) =>
-                    setNewOption((o) => ({
-                      ...o,
-                      scoreValue: Number(e.target.value),
-                    }))
-                  }
-                  className="w-full border rounded px-3 py-2"
-                />
+                  className="px-3 py-1 bg-blue-500 text-white rounded"
+                >
+                  Thêm đáp án nữa
+                </button>
               </div>
+              {/* Body */}
+              <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+                {newOptions.map((opt, idx) => (
+                  <div key={idx} className="flex items-center space-x-2">
+                    <input
+                      type="text"
+                      placeholder="Nội dung đáp án"
+                      value={opt.optionText}
+                      onChange={(e) => {
+                        const list = [...newOptions];
+                        list[idx].optionText = e.target.value;
+                        setNewOptions(list);
+                      }}
+                      className="flex-1 border rounded px-3 py-2"
+                    />
+                    <input
+                      type="number"
+                      placeholder="Score"
+                      value={opt.scoreValue}
+                      onChange={(e) => {
+                        const list = [...newOptions];
+                        list[idx].scoreValue = Number(e.target.value);
+                        setNewOptions(list);
+                      }}
+                      className="w-16 border rounded px-2 py-2"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeOption(idx)}
+                      className="px-2 py-1 bg-red-500 text-white rounded"
+                    >
+                      Xóa
+                    </button>
+                  </div>
+                ))}
+              </div>
+              {/* Footer */}
               <div className="px-6 py-4 border-t flex justify-end space-x-2">
                 <button
-                  onClick={() => setAddOptionModalVisible(false)}
+                  onClick={() => {
+                    setAddOptionModalVisible(false);
+                    setNewOptions([{ optionText: "", scoreValue: 0 }]);
+                  }}
                   className="px-4 py-2 border rounded hover:bg-gray-100"
                 >
                   Hủy
                 </button>
                 <button
-                  onClick={handleAddOption}
+                  onClick={handleAddOptions}
                   className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
                 >
                   Lưu đáp án

@@ -47,7 +47,7 @@ export default function FeaturedActivities() {
               transition
             "
           >
-            View All Activities
+            Xem tất cả hoạt động
           </Link>
         </div>
       </div>

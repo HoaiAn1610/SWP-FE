@@ -45,7 +45,7 @@ export default function StaffInquiriesPage() {
         setInquiries(data);
       } catch (err) {
         console.error(err);
-        setError("Không tải được danh sách inquiry.");
+        setError("Không tải được danh sách yêu cầu.");
       } finally {
         setLoading(false);
       }
@@ -249,7 +249,7 @@ export default function StaffInquiriesPage() {
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-5xl mx-auto bg-white shadow rounded-lg overflow-hidden">
         <div className="px-6 py-4 border-b">
-          <h1 className="text-2xl font-semibold">Danh sách Inquiry</h1>
+          <h1 className="text-2xl font-semibold">Danh sách Yêu Cầu</h1>
         </div>
         <div className="divide-y">
           {inquiries.map((iq) => {
@@ -406,7 +406,7 @@ export default function StaffInquiriesPage() {
             );
           })}
           {inquiries.length === 0 && (
-            <p className="p-6 text-gray-500">Chưa có inquiry nào.</p>
+            <p className="p-6 text-gray-500">Chưa có yêu cầu nào.</p>
           )}
         </div>
       </div>

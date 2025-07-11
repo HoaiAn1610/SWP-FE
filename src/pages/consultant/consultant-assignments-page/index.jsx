@@ -153,11 +153,11 @@ export default function ConsultantAssignmentsPage() {
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-5xl mx-auto bg-white shadow rounded-lg overflow-hidden">
         <div className="px-6 py-4 border-b">
-          <h1 className="text-2xl font-semibold">Các Inquiry được gán</h1>
+          <h1 className="text-2xl font-semibold">Các Yêu Cầu được gán</h1>
         </div>
 
         {assignments.length === 0 ? (
-          <p className="p-6 text-gray-500">Hiện chưa có assignment nào.</p>
+          <p className="p-6 text-gray-500">Hiện chưa có yêu cầu nào.</p>
         ) : (
           assignments.map((a) => (
             <div key={a.id} className="border-b px-6 py-4 space-y-4">
