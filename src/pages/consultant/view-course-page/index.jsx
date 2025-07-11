@@ -14,13 +14,13 @@ export default function ViewConsultantCoursePage() {
   const [loading, setLoading] = useState(true);
   const [course, setCourse] = useState(null);
   const [materials, setMaterials] = useState([]);
-  const [docHtml, setDocHtml] = useState({}); // for .docx → HTML
+  const [docHtml, setDocHtml] = useState({}); // dùng để convert .docx → HTML
 
   // alert popup
   const [alertVisible, setAlertVisible] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
 
-  // --- edit course ---
+  // --- chỉnh sửa khóa học ---
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({
     title: "",
@@ -31,11 +31,12 @@ export default function ViewConsultantCoursePage() {
     level: "",
     duration: 0,
     passingScore: 0,
+    workflowState: "",
   });
   const [uploadingImage, setUploadingImage] = useState(false);
   const imageRef = useRef(null);
 
-  // --- edit material ---
+  // --- chỉnh sửa tài liệu ---
   const [editingMaterialId, setEditingMaterialId] = useState(null);
   const [materialEditData, setMaterialEditData] = useState({
     type: "",
@@ -70,7 +71,7 @@ export default function ViewConsultantCoursePage() {
     })();
   }, [courseId, navigate]);
 
-  // convert any .docx → HTML
+  // convert .docx → HTML
   useEffect(() => {
     materials
       .filter((m) => m.type === "Document")
@@ -89,12 +90,12 @@ export default function ViewConsultantCoursePage() {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen">
-        <span className="text-gray-500">Loading…</span>
+        <span className="text-gray-500">Đang tải…</span>
       </div>
     );
   }
 
-  // ——— Course Handlers ———
+  // ——— Handlers Khóa học ———
   const startEditing = () => {
     setEditData({
       id: course.id,
@@ -131,7 +132,6 @@ export default function ViewConsultantCoursePage() {
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     try {
-      console.log(editData);
       await api.put(`Course/update-course/${courseId}`, editData);
       setCourse((c) => ({ ...c, ...editData }));
       setIsEditing(false);
@@ -143,7 +143,7 @@ export default function ViewConsultantCoursePage() {
     }
   };
 
-  // ——— Material Handlers ———
+  // ——— Handlers Tài liệu ———
   const startMaterialEdit = (mat) => {
     setEditingMaterialId(mat.id);
     setMaterialEditData({
@@ -185,10 +185,10 @@ export default function ViewConsultantCoursePage() {
         )
       );
       setEditingMaterialId(null);
-      setAlertMessage("Cập nhật material thành công!");
+      setAlertMessage("Cập nhật tài liệu thành công!");
       setAlertVisible(true);
     } catch {
-      setAlertMessage("Cập nhật material thất bại.");
+      setAlertMessage("Cập nhật tài liệu thất bại.");
       setAlertVisible(true);
     }
   };
@@ -199,7 +199,7 @@ export default function ViewConsultantCoursePage() {
         {/* Header */}
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold text-gray-800">
-            {isEditing ? "Edit Course" : course.title}
+            {isEditing ? "Chỉnh sửa khóa học" : course.title}
           </h1>
           <div className="space-x-2">
             {isEditing ? (
@@ -207,35 +207,35 @@ export default function ViewConsultantCoursePage() {
                 onClick={() => setIsEditing(false)}
                 className="px-4 py-2 bg-gray-300 rounded-md"
               >
-                Cancel
+                Hủy
               </button>
             ) : (
               <button
                 onClick={startEditing}
                 className="px-4 py-2 bg-yellow-500 text-white rounded-md"
               >
-                Edit
+                Chỉnh sửa
               </button>
             )}
             <button
               onClick={() => navigate(-1)}
               className="px-4 py-2 bg-gray-300 rounded-md"
             >
-              Back
+              Quay lại
             </button>
           </div>
         </div>
 
-        {/* Edit Course Form */}
+        {/* Form chỉnh sửa */}
         {isEditing && (
           <form
             onSubmit={handleEditSubmit}
             className="bg-white p-6 rounded-lg shadow space-y-6"
           >
-            {/* Title + Image */}
+            {/* Tiêu đề + Hình ảnh */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block font-medium mb-1">Title</label>
+                <label className="block font-medium mb-1">Tiêu đề</label>
                 <input
                   name="title"
                   value={editData.title}
@@ -245,7 +245,7 @@ export default function ViewConsultantCoursePage() {
                 />
               </div>
               <div>
-                <label className="block font-medium mb-1">Image</label>
+                <label className="block font-medium mb-1">Hình ảnh</label>
                 <div className="flex items-center space-x-4">
                   <button
                     type="button"
@@ -253,7 +253,7 @@ export default function ViewConsultantCoursePage() {
                     disabled={uploadingImage}
                     className="px-4 py-2 bg-blue-600 text-white rounded"
                   >
-                    {uploadingImage ? "Uploading…" : "Select Image…"}
+                    {uploadingImage ? "Đang tải…" : "Chọn hình…"}
                   </button>
                   {editData.image && (
                     <a
@@ -262,7 +262,7 @@ export default function ViewConsultantCoursePage() {
                       rel="noopener noreferrer"
                       className="underline text-indigo-600"
                     >
-                      View Image
+                      Xem hình
                     </a>
                   )}
                 </div>
@@ -276,10 +276,10 @@ export default function ViewConsultantCoursePage() {
               </div>
             </div>
 
-            {/* Description & Content */}
+            {/* Mô tả & Nội dung */}
             <div className="space-y-4">
               <div>
-                <label className="block font-medium mb-1">Description</label>
+                <label className="block font-medium mb-1">Mô tả</label>
                 <textarea
                   name="description"
                   rows={2}
@@ -289,7 +289,7 @@ export default function ViewConsultantCoursePage() {
                 />
               </div>
               <div>
-                <label className="block font-medium mb-1">Content</label>
+                <label className="block font-medium mb-1">Nội dung</label>
                 <textarea
                   name="content"
                   rows={4}
@@ -300,19 +300,35 @@ export default function ViewConsultantCoursePage() {
               </div>
             </div>
 
-            {/* Category, Level, Duration, PassingScore */}
+            {/* Nhóm chủ đề, Mức độ, Thời lượng, Điểm đạt */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <div>
-                <label className="block font-medium mb-1">Category</label>
-                <input
+                <label className="block font-medium mb-1">Nhóm chủ đề</label>
+                <select
                   name="category"
                   value={editData.category}
                   onChange={handleEditChange}
                   className="w-full border rounded px-3 py-2"
-                />
+                  required
+                >
+                  <option value="">-- Chọn nhóm --</option>
+                  <option value="Lạm dụng thuốc kê đơn">
+                    Lạm dụng thuốc kê đơn
+                  </option>
+                  <option value="Ma túy bất hợp pháp & Giải trí">
+                    Ma túy bất hợp pháp & Giải trí
+                  </option>
+                  <option value="Chất tổng hợp & Hóa chất gia dụng">
+                    Chất tổng hợp & Hóa chất gia dụng
+                  </option>
+                  <option value="Rượu & Chất có cồn">Rượu & Chất có cồn</option>
+                  <option value="Nhận thức & Phòng ngừa">
+                    Nhận thức & Phòng ngừa
+                  </option>
+                </select>
               </div>
               <div>
-                <label className="block font-medium mb-1">Level</label>
+                <label className="block font-medium mb-1">Mức độ</label>
                 <select
                   name="level"
                   value={editData.level}
@@ -320,14 +336,16 @@ export default function ViewConsultantCoursePage() {
                   className="w-full border rounded px-3 py-2"
                   required
                 >
-                  <option value="">-- Select --</option>
-                  <option value="Low">Low</option>
-                  <option value="Medium">Medium</option>
-                  <option value="High">High</option>
+                  <option value="">-- Chọn --</option>
+                  <option value="Low">Thấp</option>
+                  <option value="Medium">Trung bình</option>
+                  <option value="High">Cao</option>
                 </select>
               </div>
               <div>
-                <label className="block font-medium mb-1">Duration (min)</label>
+                <label className="block font-medium mb-1">
+                  Thời lượng (phút)
+                </label>
                 <input
                   name="duration"
                   type="number"
@@ -337,7 +355,7 @@ export default function ViewConsultantCoursePage() {
                 />
               </div>
               <div>
-                <label className="block font-medium mb-1">Passing Score</label>
+                <label className="block font-medium mb-1">Điểm đạt</label>
                 <input
                   name="passingScore"
                   type="number"
@@ -353,55 +371,55 @@ export default function ViewConsultantCoursePage() {
                 type="submit"
                 className="px-6 py-2 bg-green-600 text-white rounded"
               >
-                Save Changes
+                Lưu thay đổi
               </button>
             </div>
           </form>
         )}
 
-        {/* View Course Details */}
+        {/* Xem chi tiết khóa học */}
         {!isEditing && (
           <section className="bg-white p-6 rounded-lg shadow space-y-3">
             <div>
-              <strong>Title:</strong> {course.title}
+              <strong>Tiêu đề:</strong> {course.title}
             </div>
             <div>
-              <strong>Image:</strong>
+              <strong>Hình ảnh:</strong>
               <img
                 src={course.image}
                 alt={course.title}
                 className="mt-2 max-w-full rounded border"
               />
             </div>
-            <div>
-              <strong>Description:</strong> {course.description}
+            <div className="whitespace-pre-wrap">
+              <strong>Mô tả:</strong> {course.description}
+            </div>
+            <div className="whitespace-pre-wrap">
+              <strong>Nội dung:</strong> {course.content}
             </div>
             <div>
-              <strong>Content:</strong> {course.content}
+              <strong>Nhóm chủ đề:</strong> {course.category}
             </div>
             <div>
-              <strong>Category:</strong> {course.category}
+              <strong>Mức độ:</strong> {course.level}
             </div>
             <div>
-              <strong>Level:</strong> {course.level}
+              <strong>Thời lượng:</strong> {course.duration} phút
             </div>
             <div>
-              <strong>Duration:</strong> {course.duration} phút
+              <strong>Điểm đạt:</strong> {course.passingScore}
             </div>
             <div>
-              <strong>Passing Score:</strong> {course.passingScore}
-            </div>
-            <div>
-              <strong>Status:</strong> {course.status}
+              <strong>Trạng thái:</strong> {course.status}
             </div>
           </section>
         )}
 
-        {/* Materials */}
+        {/* Tài liệu */}
         <section className="space-y-6">
-          <h2 className="text-xl font-semibold">Materials</h2>
+          <h2 className="text-xl font-semibold">Tài liệu</h2>
           {materials.length === 0 ? (
-            <p className="text-gray-500">No materials yet.</p>
+            <p className="text-gray-500">Chưa có tài liệu nào.</p>
           ) : (
             materials.map((m) =>
               editingMaterialId === m.id ? (
@@ -412,7 +430,7 @@ export default function ViewConsultantCoursePage() {
                 >
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block font-medium mb-1">Type</label>
+                      <label className="block font-medium mb-1">Loại</label>
                       <select
                         name="type"
                         value={materialEditData.type}
@@ -420,13 +438,13 @@ export default function ViewConsultantCoursePage() {
                         className="w-full border rounded px-3 py-2"
                         required
                       >
-                        <option value="">-- Select --</option>
+                        <option value="">-- Chọn --</option>
                         <option value="Video">Video</option>
-                        <option value="Document">Document</option>
+                        <option value="Document">Tài liệu</option>
                       </select>
                     </div>
                     <div>
-                      <label className="block font-medium mb-1">Title</label>
+                      <label className="block font-medium mb-1">Tiêu đề</label>
                       <input
                         name="title"
                         value={materialEditData.title}
@@ -438,7 +456,9 @@ export default function ViewConsultantCoursePage() {
                   </div>
 
                   <div>
-                    <label className="block font-medium mb-1">File URL</label>
+                    <label className="block font-medium mb-1">
+                      Đường dẫn tập tin
+                    </label>
                     <div className="flex items-center space-x-4">
                       <button
                         type="button"
@@ -446,7 +466,7 @@ export default function ViewConsultantCoursePage() {
                         disabled={uploadingMaterialFile}
                         className="px-4 py-2 bg-blue-600 text-white rounded"
                       >
-                        {uploadingMaterialFile ? "Uploading…" : "Select File…"}
+                        {uploadingMaterialFile ? "Đang tải…" : "Chọn tập tin…"}
                       </button>
                       {materialEditData.url && (
                         <a
@@ -455,7 +475,7 @@ export default function ViewConsultantCoursePage() {
                           rel="noopener noreferrer"
                           className="underline text-indigo-600 break-all"
                         >
-                          View File
+                          Xem tập tin
                         </a>
                       )}
                     </div>
@@ -469,9 +489,7 @@ export default function ViewConsultantCoursePage() {
                   </div>
 
                   <div>
-                    <label className="block font-medium mb-1">
-                      Description
-                    </label>
+                    <label className="block font-medium mb-1">Mô tả</label>
                     <textarea
                       name="description"
                       rows={2}
@@ -482,7 +500,7 @@ export default function ViewConsultantCoursePage() {
                   </div>
 
                   <div>
-                    <label className="block font-medium mb-1">Sort Order</label>
+                    <label className="block font-medium mb-1">Thứ tự</label>
                     <input
                       name="sortOrder"
                       type="number"
@@ -497,14 +515,14 @@ export default function ViewConsultantCoursePage() {
                       type="submit"
                       className="px-4 py-2 bg-green-600 text-white rounded"
                     >
-                      Save
+                      Lưu
                     </button>
                     <button
                       type="button"
                       onClick={() => setEditingMaterialId(null)}
                       className="px-4 py-2 bg-gray-300 rounded"
                     >
-                      Cancel
+                      Hủy
                     </button>
                   </div>
                 </form>
@@ -514,10 +532,11 @@ export default function ViewConsultantCoursePage() {
                   className="bg-white p-6 rounded-lg shadow space-y-3"
                 >
                   <div>
-                    <strong>{m.title}</strong> ({m.type})
+                    <strong>{m.title}</strong> (
+                    {m.type === "Document" ? "Tài liệu" : m.type})
                   </div>
 
-                  {/* render by type */}
+                  {/* hiển thị theo loại */}
                   {m.type === "Video" ? (
                     <video
                       controls
@@ -534,7 +553,7 @@ export default function ViewConsultantCoursePage() {
                     <div
                       className="prose max-w-none mb-4 overflow-x-auto"
                       dangerouslySetInnerHTML={{
-                        __html: docHtml[m.id] || "<p>Loading document…</p>",
+                        __html: docHtml[m.id] || "<p>Đang tải tài liệu…</p>",
                       }}
                     />
                   ) : (
@@ -544,15 +563,15 @@ export default function ViewConsultantCoursePage() {
                       rel="noopener noreferrer"
                       className="underline text-blue-600 mb-4 block"
                     >
-                      Download File
+                      Tải tệp
                     </a>
                   )}
 
                   <div>
-                    <strong>Description:</strong> {m.description}
+                    <strong>Mô tả:</strong> {m.description}
                   </div>
                   <div>
-                    <strong>Sort Order:</strong> {m.sortOrder}
+                    <strong>Thứ tự:</strong> {m.sortOrder}
                   </div>
 
                   <div className="text-right">
@@ -560,7 +579,7 @@ export default function ViewConsultantCoursePage() {
                       onClick={() => startMaterialEdit(m)}
                       className="px-4 py-2 bg-yellow-500 text-white rounded"
                     >
-                      Edit
+                      Chỉnh sửa
                     </button>
                   </div>
                 </div>
