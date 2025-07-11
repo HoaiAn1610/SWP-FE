@@ -1,6 +1,5 @@
-// src/pages/blog/BlogDetail.jsx
 import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import {
   fetchAllPosts,
   createComment,
@@ -12,10 +11,11 @@ import CommentList from '@/components/blog/CommentList';
 
 export default function BlogDetail() {
   const { postId } = useParams();
-  const [post, setPost]             = useState(null);
+  const navigate = useNavigate();
+  const [post, setPost] = useState(null);
   const [authorName, setAuthorName] = useState('');
   const [publishedDate, setPublishedDate] = useState('');
-  const [currentUser, setCurrentUser]     = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
 
   // Lấy currentUser từ localStorage + fetch role
   useEffect(() => {
@@ -49,12 +49,12 @@ export default function BlogDetail() {
       .catch(console.error);
   }, [postId]);
 
-  // Thêm comment cấp 0
+  // Thêm comment cấp 0 (mới lên đầu)
   const handleAddComment = async (postId, content) => {
     const created = await createComment(postId, content);
     setPost(prev => ({
       ...prev,
-      comments: [...(prev.comments || []), created]
+      comments: [created, ...(prev.comments || [])]
     }));
   };
 
@@ -81,7 +81,6 @@ export default function BlogDetail() {
   const handleDeleteComment = (postId, commentId) => {
     deleteComment(commentId)
       .then(() => {
-        // Lọc đệ quy để bỏ comment/reply có id trùng
         const filterRecursively = list =>
           (list || []).reduce((acc, c) => {
             if (c.id === commentId) return acc;
@@ -102,17 +101,30 @@ export default function BlogDetail() {
   };
 
   if (!post) {
-    return <div className="p-6 text-center text-gray-600">Loading...</div>;
+    return <div className="p-6 text-center text-gray-600">Đang tải...</div>;
   }
 
   return (
     <div className="max-w-3xl mx-auto p-6 bg-white rounded-lg shadow-md">
       {/* Back button */}
-      <div className="mb-6">
-        <Link to="/blogs" className="inline-block text-blue-600 hover:underline text-sm">
-          ← Quay về danh sách blog
-        </Link>
-      </div>
+<div className="mb-6">
+  <button
+    onClick={() => navigate(-1)}
+    className="
+      inline-block
+      px-4 py-2
+      bg-blue-500 text-white
+      text-sm font-medium
+      rounded-md shadow
+      hover:bg-blue-600
+      focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-75
+      transition-colors duration-200
+    "
+  >
+    ← Quay về trang trước
+  </button>
+</div>
+
 
       {/* Title */}
       <h1 className="text-4xl font-bold text-gray-800 mb-4">{post.title}</h1>
@@ -135,8 +147,14 @@ export default function BlogDetail() {
         />
       )}
 
-      {/* Content */}
-      <div className="prose prose-lg text-gray-800 mb-8">{post.content}</div>
+
+       {/* Content */}
+ <div
+   className="prose prose-lg text-gray-800 mb-8 whitespace-pre-wrap"
+   /* đảm bảo các newline (\n) được hiển thị thành xuống dòng */
+ >
+   {post.content}
+ </div>
 
       {/* Comments */}
       <section>

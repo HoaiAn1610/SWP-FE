@@ -1,12 +1,13 @@
+// src/pages/consultant/ConsultantLayout.jsx
 import React from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import Header from "@/components/header";
 
 const navItems = [
-  { to: "draft-content", label: "Draft Content" },
-  { to: "published-content", label: "Published Content" },
-  { to: "view-blog-posts", label: "View Blog Posts" },
-  { to: "staff-inquirie", label: "Inquiry Assignment" },
+  { to: "draft-content", label: "Nội Dung Nháp" },
+  { to: "published-content", label: "Nội Dung Đã Xuất Bản" },
+  { to: "view-blog-posts", label: "Xem Bài Viết Blog" },
+  { to: "staff-inquirie", label: "Phân Công Yêu Cầu" },
 ];
 
 export default function StaffLayout() {
@@ -14,10 +15,10 @@ export default function StaffLayout() {
     <>
       <Header />
       <div className="flex min-h-screen">
-        {/* Sidebar */}
+        {/* Thanh bên */}
         <aside className="w-64 bg-white border-r shadow-sm">
           <div className="p-6">
-            <h2 className="text-xl font-bold mb-8">Content Management</h2>
+            <h2 className="text-xl font-bold mb-8">Quản Lý Nội Dung</h2>
             <nav className="space-y-2">
               {navItems.map(({ to, label }) => (
                 <NavLink
@@ -39,7 +40,7 @@ export default function StaffLayout() {
           </div>
         </aside>
 
-        {/* Main content */}
+        {/* Nội dung chính */}
         <main className="flex-1 bg-gray-50 p-8">
           <Outlet />
         </main>

@@ -117,7 +117,7 @@ export default function AdminPage() {
                 <div>
                   <h3 className="text-lg font-semibold">{u.name}</h3>
                   <p className="text-sm text-gray-500">{u.email}</p>
-                  <p className="mt-1"><span className="font-medium">Role:</span> {u.role}</p>
+                  <p className="mt-1"><span className="font-medium">Vai trò:</span> {u.role}</p>
                 </div>
                 <div className="mt-4 space-x-2 flex">
                   <button

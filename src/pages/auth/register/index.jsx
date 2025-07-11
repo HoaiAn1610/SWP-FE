@@ -16,14 +16,15 @@ const RegisterPage = () => {
     email: "",
     password: "",
     ageGroup: "",
+    terms: false,
   });
   const [isLoading, setIsLoading] = useState(false);
 
-  // state mới cho OTP modal
+  // trạng thái modal OTP
   const [showOtpModal, setShowOtpModal] = useState(false);
   const [otpCode, setOtpCode] = useState("");
 
-  // state mới cho lỗi DOB
+  // trạng thái lỗi ngày sinh
   const [dobError, setDobError] = useState("");
 
   const navigate = useNavigate();
@@ -47,12 +48,12 @@ const RegisterPage = () => {
     e.preventDefault();
     setIsLoading(true);
 
-    // === VALIDATE DOB TRƯỚC ===
+    // === KIỂM TRA DOB ===
     if (formData.dob) {
       const today = new Date();
       const dobDate = new Date(formData.dob);
       let age = today.getFullYear() - dobDate.getFullYear();
-      // điều chỉnh nếu chưa tới ngày sinh trong năm nay
+      // điều chỉnh nếu chưa tới sinh nhật năm nay
       if (
         today <
         new Date(
@@ -76,10 +77,9 @@ const RegisterPage = () => {
       toast.success("Mã xác thực đã được gửi về email của bạn!");
       setShowOtpModal(true);
     } catch (err) {
-      console.error("Registration error response:", err.response);
-      console.error("Server validation payload:", err.response?.data);
+      console.error("Lỗi đăng ký:", err.response);
       const errors = err.response?.data?.errors;
-      // hiển thị lỗi từ server, ưu tiên Dob nếu có
+      // hiển thị lỗi từ server, ưu tiên lỗi DOB
       if (errors) {
         if (errors.Dob) {
           toast.error(errors.Dob.join(", "));
@@ -109,12 +109,12 @@ const RegisterPage = () => {
       const { data } = await api.post("Auth/confirm-email", {
         OobCode: otpCode,
       });
-      console.log("ConfirmEmail response:", data);
+      console.log("Xác thực email:", data);
       toast.success("Email đã được xác thực thành công!");
       setShowOtpModal(false);
       navigate("/login");
     } catch (err) {
-      console.error("Confirm OTP error:", err.response);
+      console.error("Lỗi xác thực OTP:", err.response);
       const message =
         err.response?.data ||
         err.response?.data?.message ||
@@ -129,57 +129,57 @@ const RegisterPage = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-600 to-blue-500 p-4">
       <div className="max-w-md w-full bg-white rounded-2xl shadow-lg overflow-hidden">
-        {/* Header với logo & title */}
+        {/* Header với logo & tiêu đề */}
         <div className="px-8 py-6 text-center">
           <div className="flex items-center justify-center mb-4">
             <img src={logo} alt="PreventionHub" className="h-12 w-12 mb-2" />
           </div>
           <h2 className="text-3xl font-bold text-gray-900 mb-2">
-            Create Your Account
+            Tạo Tài Khoản
           </h2>
           <p className="text-gray-500">
-            Join thousands of students making informed choices
+            Tham gia hàng nghìn người dùng đưa ra quyết định thông minh
           </p>
         </div>
 
-        {/* Tab nav */}
+        {/* Điều hướng Login/Register */}
         <div className="px-8">
           <div className="flex bg-gray-100 rounded-full overflow-hidden mb-6">
             <button
               onClick={() => navigate("/login")}
               className="flex-1 py-2 text-gray-600 hover:text-gray-800"
             >
-              Login
+              Đăng Nhập
             </button>
             <button className="flex-1 py-2 bg-white text-gray-900 font-semibold">
-              Register
+              Đăng Ký
             </button>
           </div>
         </div>
 
         {/* Form đăng ký */}
         <form onSubmit={handleSubmit} className="px-8 space-y-5 pb-6">
-          {/* Full Name */}
+          {/* Họ và tên */}
           <div>
             <label htmlFor="name" className="block text-gray-700 mb-1">
-              Full Name
+              Họ và Tên
             </label>
             <input
               id="name"
               name="name"
               type="text"
               required
-              placeholder="Enter your full name"
+              placeholder="Nhập họ và tên"
               value={formData.name}
               onChange={handleInputChange}
               className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-400"
             />
           </div>
 
-          {/* Date of Birth */}
+          {/* Ngày sinh */}
           <div>
             <label htmlFor="dob" className="block text-gray-700 mb-1">
-              Date of Birth
+              Ngày Sinh
             </label>
             <input
               id="dob"
@@ -195,17 +195,17 @@ const RegisterPage = () => {
             )}
           </div>
 
-          {/* Phone */}
+          {/* Số điện thoại */}
           <div>
             <label htmlFor="phone" className="block text-gray-700 mb-1">
-              Phone
+              Số Điện Thoại
             </label>
             <input
               id="phone"
               name="phone"
               type="tel"
               required
-              placeholder="Enter your phone number"
+              placeholder="Nhập số điện thoại"
               value={formData.phone}
               onChange={handleInputChange}
               className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-400"
@@ -215,41 +215,41 @@ const RegisterPage = () => {
           {/* Email */}
           <div>
             <label htmlFor="email" className="block text-gray-700 mb-1">
-              Email Address
+              Địa Chỉ Email
             </label>
             <input
               id="email"
               name="email"
               type="email"
               required
-              placeholder="Enter your email address"
+              placeholder="Nhập email"
               value={formData.email}
               onChange={handleInputChange}
               className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-400"
             />
           </div>
 
-          {/* Password */}
-          <div className="relative">
+          {/* Mật khẩu */}
+          <div>
             <label htmlFor="password" className="block text-gray-700 mb-1">
-              Password
+              Mật Khẩu
             </label>
             <input
               id="password"
               name="password"
               type="password"
               required
-              placeholder="Create a strong password"
+              placeholder="Tạo mật khẩu"
               value={formData.password}
               onChange={handleInputChange}
               className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-400"
             />
           </div>
 
-          {/* Age Group */}
+          {/* Nhóm tuổi */}
           <div>
             <label htmlFor="ageGroup" className="block text-gray-700 mb-1">
-              Age Group
+              Nhóm Tuổi
             </label>
             <select
               id="ageGroup"
@@ -260,16 +260,16 @@ const RegisterPage = () => {
               className="w-full border border-gray-300 rounded-lg px-4 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-purple-400"
             >
               <option value="" disabled>
-                -- Select your role --
+                -- Chọn nhóm tuổi --
               </option>
-              <option value="Student">Student</option>
-              <option value="University">University</option>
-              <option value="Parent">Parent</option>
-              <option value="Teacher">Teacher</option>
+              <option value="Học sinh">Học sinh</option>
+              <option value="Sinh viên">Sinh viên</option>
+              <option value="Phụ huynh">Phụ huynh</option>
+              <option value="Giáo viên">Giáo viên</option>
             </select>
           </div>
 
-          {/* Terms */}
+          {/* Điều khoản */}
           <div className="flex items-center">
             <input
               id="terms"
@@ -280,31 +280,31 @@ const RegisterPage = () => {
               className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
             />
             <label htmlFor="terms" className="ml-2 text-gray-600 text-sm">
-              I agree to the{" "}
+              Tôi đồng ý với{" "}
               <a href="#" className="text-purple-600 hover:underline">
-                Terms of Service
+                Điều khoản dịch vụ
               </a>{" "}
-              and{" "}
+              và{" "}
               <a href="#" className="text-purple-600 hover:underline">
-                Privacy Policy
+                Chính sách bảo mật
               </a>
             </label>
           </div>
 
-          {/* Submit */}
+          {/* Nút tạo tài khoản */}
           <button
             type="submit"
             disabled={isLoading}
             className="w-full py-3 bg-gradient-to-br from-purple-600 to-blue-500 text-white font-semibold rounded-lg disabled:opacity-50 transition-opacity"
           >
-            {isLoading ? "Creating Account..." : "Create Account"}
+            {isLoading ? "Đang tạo tài khoản..." : "Tạo tài khoản"}
           </button>
         </form>
 
-        {/* Or continue with */}
+        {/* Hoặc tiếp tục với */}
         <div className="px-8 pb-6">
-          <p className="text-center text-gray-500 mb-4">Or continue with</p>
-          <div className="flex space-x-4">
+          <p className="text-center text-gray-500 mb-4">Hoặc tiếp tục với</p>
+          <div className="flex justify-center">
             <GoogleLogin
               onSuccess={async (credentialResponse) => {
                 setIsLoading(true);
@@ -318,7 +318,7 @@ const RegisterPage = () => {
                   localStorage.setItem("email", email);
                   localStorage.setItem("role", role);
 
-                  toast.success("Đăng nhập với Google thành công!");
+                  toast.success("Đăng nhập Google thành công!");
                   navigate(role === "ADMIN" ? "/dashboard" : "/");
                 } catch (err) {
                   console.error(err);
@@ -328,25 +328,25 @@ const RegisterPage = () => {
                 }
               }}
               onError={() => {
-                toast.error("Google Sign-In thất bại.");
+                toast.error("Đăng nhập Google thất bại.");
               }}
               useOneTap={false}
             />
           </div>
           <p className="text-center text-gray-600 mt-4">
-            Already have an account?{" "}
+            Đã có tài khoản?{" "}
             <Link to="/login" className="text-purple-600 hover:underline">
-              Sign in
+              Đăng nhập
             </Link>
           </p>
           <p className="text-center text-gray-400 text-xs mt-3">
-            By continuing, you agree to our commitment to youth safety and
-            prevention education
+            Tiếp tục, bạn đồng ý với cam kết về bảo mật thanh thiếu niên và giáo
+            dục phòng ngừa của chúng tôi
           </p>
         </div>
       </div>
 
-      {/* Modal OTP */}
+      {/* Modal nhập OTP */}
       {showOtpModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-sm">

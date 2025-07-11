@@ -4,10 +4,10 @@ import { NavLink, Outlet } from "react-router-dom";
 import Header from "@/components/header";
 
 const navItems = [
-  { to: "appointments", label: "Appointments" },
-  { to: "create-content", label: "Create Content" },
-  { to: "blog-qa", label: "Blog Q&A" },
-  { to: "assignments", label: "assignments" },
+  { to: "appointments", label: "Cuộc Hẹn" },
+  { to: "create-content", label: "Tạo Nội Dung" },
+  { to: "blog-qa", label: "Hỏi & Đáp Blog" },
+  { to: "assignments", label: "Yêu cầu" },
 ];
 
 export default function ConsultantLayout() {
@@ -15,10 +15,10 @@ export default function ConsultantLayout() {
     <>
       <Header />
       <div className="flex min-h-screen">
-        {/* Sidebar */}
+        {/* Thanh bên */}
         <aside className="w-64 bg-white border-r shadow-sm">
           <div className="p-6">
-            <h2 className="text-xl font-bold mb-8">Consultant Panel</h2>
+            <h2 className="text-xl font-bold mb-8">Bảng Điều Khiển Tư Vấn</h2>
             <nav className="space-y-2">
               {navItems.map(({ to, label }) => (
                 <NavLink
@@ -40,7 +40,7 @@ export default function ConsultantLayout() {
           </div>
         </aside>
 
-        {/* Main content */}
+        {/* Nội dung chính */}
         <main className="flex-1 bg-gray-50 p-8">
           <Outlet />
         </main>

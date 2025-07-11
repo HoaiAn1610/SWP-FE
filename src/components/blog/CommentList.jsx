@@ -11,6 +11,14 @@ export default function CommentList({
   onAddReply,
   onDeleteComment
 }) {
+  // ─── Local state for comments ─────────────────────────────────────────────
+  const [commentList, setCommentList] = useState(comments);
+
+  // Sync when parent passes new props
+  useEffect(() => {
+    setCommentList(comments);
+  }, [comments]);
+
   // comment/reply state
   const [newComment, setNewComment]       = useState('');
   const [replyTexts, setReplyTexts]       = useState({});
@@ -36,7 +44,7 @@ export default function CommentList({
   // 1) Load user names
   useEffect(() => {
     const ids = new Set();
-    comments.forEach(c => c.memberId && ids.add(c.memberId));
+    commentList.forEach(c => c.memberId && ids.add(c.memberId));
     Object.values(loadedReplies).flat().forEach(r => r.memberId && ids.add(r.memberId));
     ids.forEach(id => {
       if (!userNames[id]) {
@@ -45,7 +53,7 @@ export default function CommentList({
           .catch(() => setUserNames(u => ({ ...u, [id]: `User#${id}` })));
       }
     });
-  }, [comments, loadedReplies, userNames]);
+  }, [commentList, loadedReplies, userNames]);
 
   // auto-resize textarea
   const autoResize = el => {
@@ -70,9 +78,15 @@ export default function CommentList({
   const handlePostComment = async () => {
     if (!newComment.trim()) return;
     const created = await createComment(postId, newComment);
+    // Báo parent nếu cần
     onAddComment(postId, created);
+    // Thêm vào local state để render ngay
+    setCommentList(prev => [...prev, created]);
     setNewComment('');
-    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    // auto-scroll xuống cuối
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
     if (created.memberId) {
       setUserNames(u => ({ ...u, [created.memberId]: 'You' }));
     }
@@ -126,7 +140,7 @@ export default function CommentList({
                 >
                   Trả lời
                 </button>
-                <button className="hover:text-blue-600">Thích</button>
+                
                 {canDelete && (
                   <button
                     onClick={() =>
@@ -226,12 +240,12 @@ export default function CommentList({
           className="flex-1 overflow-y-auto pr-2 space-y-6"
           style={{ maxHeight: 400 }}
         >
-          {comments.length === 0 ? (
+          {commentList.length === 0 ? (
             <p className="text-center text-gray-500">
               Không có bình luận nào cho bài viết này.
             </p>
           ) : (
-            renderThread(comments)
+            renderThread(commentList)
           )}
         </div>
 

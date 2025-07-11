@@ -220,9 +220,79 @@ export default function CommunicationActivitiesPage() {
           <div className="bg-white p-6 rounded-2xl shadow border-gray-200 border">
             <form
               onSubmit={handleCreate}
-              className="grid grid-cols-1 md:grid-cols-2 gap-6"
+              className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-6"
             >
-              {/* ... tất cả các input giống cũ ... */}
+              <div className="col-span-2 md:col-span-1 space-y-2">
+                <label className="block text-sm font-medium">Tiêu đề</label>
+                <input
+                  type="text"
+                  name="title"
+                  value={newActivity.title}
+                  onChange={handleNewChange}
+                  className="w-full px-4 py-2 border rounded-lg border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                  placeholder="Nhập tiêu đề"
+                  required
+                />
+              </div>
+              <div className="col-span-2 md:col-span-1 space-y-2">
+                <label className="block text-sm font-medium">
+                  Ngày sự kiện
+                </label>
+                <input
+                  type="date"
+                  name="eventDate"
+                  value={newActivity.eventDate}
+                  onChange={handleNewChange}
+                  min={today}
+                  className="w-full px-4 py-2 border rounded-lg border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                  required
+                />
+              </div>
+              <div className="col-span-2 md:col-span-1 space-y-2">
+                <label className="block text-sm font-medium">Địa điểm</label>
+                <input
+                  type="text"
+                  name="location"
+                  value={newActivity.location}
+                  onChange={handleNewChange}
+                  className="w-full px-4 py-2 border rounded-lg border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                  placeholder="Nhập địa điểm"
+                  required
+                />
+              </div>
+              <div className="col-span-2 md:col-span-1 space-y-2">
+                <label className="block text-sm font-medium">Sức chứa</label>
+                <input
+                  type="number"
+                  name="capacity"
+                  value={newActivity.capacity}
+                  onChange={handleNewChange}
+                  min="1"
+                  className="w-full px-4 py-2 border rounded-lg border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                  placeholder="Số lượng"
+                  required
+                />
+              </div>
+              <div className="col-span-2 space-y-2">
+                <label className="block text-sm font-medium">Mô tả</label>
+                <textarea
+                  name="description"
+                  value={newActivity.description}
+                  onChange={handleNewChange}
+                  className="w-full px-4 py-2 border rounded-lg border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                  rows="3"
+                  placeholder="Mô tả chi tiết"
+                  required
+                />
+              </div>
+              <div className="col-span-2 text-right">
+                <button
+                  type="submit"
+                  className="inline-flex items-center px-6 py-2 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700 transition"
+                >
+                  <CheckCircle size={18} className="mr-2" /> Thêm hoạt động
+                </button>
+              </div>
             </form>
           </div>
         )}

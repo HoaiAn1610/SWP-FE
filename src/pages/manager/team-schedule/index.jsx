@@ -23,7 +23,7 @@ export default function TeamSchedulePage() {
   const fetchActivities = async () => {
     try {
       const res = await api.get("/CommunicationActivities/Get-All-Activities");
-      // sort by eventDate asc
+      // sắp xếp theo ngày sự kiện tăng dần
       setActivities(
         res.data.sort((a, b) => new Date(a.eventDate) - new Date(b.eventDate))
       );
@@ -45,7 +45,7 @@ export default function TeamSchedulePage() {
   };
   const hideConfirm = () => setConfirmVisible(false);
 
-  // Approve
+  // Duyệt
   const handleApproveClick = (id) => {
     showConfirm("Bạn có chắc chắn muốn duyệt hoạt động này?", async () => {
       try {
@@ -58,12 +58,12 @@ export default function TeamSchedulePage() {
     });
   };
 
-  // Start reject flow
+  // Bắt đầu quá trình từ chối
   const handleRejectClick = (id) => {
     setRejectingId(id);
     setRejectReason("");
   };
-  // Submit reject
+  // Gửi lý do từ chối
   const handleRejectSubmit = async (id) => {
     if (!rejectReason.trim()) {
       showAlert("Bạn phải nhập lý do từ chối");
@@ -86,7 +86,7 @@ export default function TeamSchedulePage() {
     setRejectReason("");
   };
 
-  // Publish
+  // Công bố
   const handlePublishClick = (id) => {
     showConfirm("Bạn có chắc chắn muốn công bố hoạt động này?", async () => {
       try {
@@ -99,15 +99,15 @@ export default function TeamSchedulePage() {
     });
   };
 
-  // filter tabs
+  // Lọc theo tab
   const submitted = activities.filter((a) => a.status === "Submitted");
   const approved = activities.filter((a) => a.status === "Approved");
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Team Schedule</h1>
+      <h1 className="text-3xl font-bold">Duyệt Hoạt động</h1>
 
-      {/* Tabs */}
+      {/* Các tab */}
       <div className="flex space-x-4">
         <button
           onClick={() => setActiveTab("submitted")}
@@ -117,7 +117,7 @@ export default function TeamSchedulePage() {
               : "bg-gray-200 text-gray-700"
           }`}
         >
-          Submitted
+          Đã gửi
         </button>
         <button
           onClick={() => setActiveTab("approved")}
@@ -127,11 +127,11 @@ export default function TeamSchedulePage() {
               : "bg-gray-200 text-gray-700"
           }`}
         >
-          Approved
+          Đã duyệt
         </button>
       </div>
 
-      {/* Content */}
+      {/* Nội dung chính */}
       <div className="space-y-4">
         {activeTab === "submitted" &&
           (submitted.length ? submitted : []).map((act) => (
@@ -152,14 +152,14 @@ export default function TeamSchedulePage() {
                     className="flex items-center px-3 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
                   >
                     <CheckCircle className="mr-1" />
-                    Approve
+                    Duyệt
                   </button>
                   <button
                     onClick={() => handleRejectClick(act.id)}
                     className="flex items-center px-3 py-1 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
                   >
                     <XCircle className="mr-1" />
-                    Reject
+                    Từ chối
                   </button>
                 </div>
               </div>
@@ -177,13 +177,13 @@ export default function TeamSchedulePage() {
                       onClick={() => handleRejectSubmit(act.id)}
                       className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
                     >
-                      Submit Reject
+                      Gửi từ chối
                     </button>
                     <button
                       onClick={handleRejectCancel}
                       className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
                     >
-                      Cancel
+                      Hủy
                     </button>
                   </div>
                 </div>
@@ -208,13 +208,13 @@ export default function TeamSchedulePage() {
                 className="flex items-center px-3 py-1 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
               >
                 <Send className="mr-1" />
-                Publish
+                Công bố
               </button>
             </div>
           ))}
       </div>
 
-      {/* Alert Popup */}
+      {/* Popup cảnh báo */}
       {alertVisible && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
           <div className="bg-white p-6 rounded-xl shadow-xl text-center">
@@ -229,7 +229,7 @@ export default function TeamSchedulePage() {
         </div>
       )}
 
-      {/* Confirm Popup */}
+      {/* Popup xác nhận */}
       {confirmVisible && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
           <div className="bg-white p-6 rounded-xl shadow-xl text-center">

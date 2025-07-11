@@ -16,7 +16,7 @@ export default function MyProfilePage() {
     profileData: "",
   });
 
-  // 1) Lấy user về
+  // 1) Lấy thông tin user
   useEffect(() => {
     api
       .get("/UserManagement/aboutMe")
@@ -36,11 +36,13 @@ export default function MyProfilePage() {
       .finally(() => setLoading(false));
   }, []);
 
+  // Xử lý thay đổi form
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((f) => ({ ...f, [name]: value }));
   };
 
+  // Lưu thông tin đã chỉnh sửa
   const handleSave = async () => {
     try {
       await api.put("/UserManagement/update-info", {
@@ -50,56 +52,56 @@ export default function MyProfilePage() {
         Phone: form.phone,
         Email: form.email,
         password: user.password,
-        role: user.role, // Giữ nguyên role
+        role: user.role, // Giữ nguyên vai trò
         AgeGroup: form.ageGroup,
         ProfileData: form.profileData,
         emailVerified: user.emailVerified,
         createdDate: user.createdDate, // Giữ nguyên ngày tạo
       });
-      // cập nhật lại user và tắt edit
       console.log("Cập nhật thành công", form);
       setUser({ ...user, ...form });
       setEditing(false);
       alert("Cập nhật thành công!");
     } catch {
       alert("Cập nhật thất bại");
-      console.log("Cập nhật thành công", form);
+      console.log("Cập nhật thất bại", form);
     }
   };
 
-  if (loading) return <div className="p-8">Loading…</div>;
-  if (!user) return <div className="p-8 text-red-500">User not found</div>;
+  if (loading) return <div className="p-8">Đang tải…</div>;
+  if (!user)
+    return <div className="p-8 text-red-500">Không tìm thấy người dùng</div>;
 
   return (
     <div className="max-w-xl mx-auto bg-white p-6 rounded shadow">
-      <h1 className="text-2xl font-semibold mb-4">My Profile</h1>
+      <h1 className="text-2xl font-semibold mb-4">Hồ sơ của tôi</h1>
 
       {!editing ? (
-        // ----- VIEW MODE -----
+        // ----- CHẾ ĐỘ XEM -----
         <div className="space-y-3">
           <div>
-            <strong>Name:</strong> {user.name}
+            <strong>Tên:</strong> {user.name}
           </div>
           <div>
-            <strong>DOB:</strong> {user.dob}
+            <strong>Ngày sinh:</strong> {user.dob}
           </div>
           <div>
-            <strong>Phone:</strong> {user.phone}
+            <strong>Số điện thoại:</strong> {user.phone}
           </div>
           <div>
             <strong>Email:</strong> {user.email}
           </div>
           <div>
-            <strong>Age Group:</strong> {user.ageGroup}
+            <strong>Nhóm tuổi:</strong> {user.ageGroup}
           </div>
           <div>
-            <strong>Profile Data:</strong> {user.profileData}
+            <strong>Thông tin hồ sơ:</strong> {user.profileData}
           </div>
           <div>
-            <strong>Role:</strong> {user.role}
+            <strong>Vai trò:</strong> {user.role}
           </div>
           <div>
-            <strong>Created:</strong>{" "}
+            <strong>Ngày tạo:</strong>{" "}
             {new Date(user.createdDate).toLocaleString()}
           </div>
 
@@ -107,14 +109,14 @@ export default function MyProfilePage() {
             onClick={() => setEditing(true)}
             className="mt-4 px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600"
           >
-            Edit
+            Chỉnh sửa
           </button>
         </div>
       ) : (
-        // ----- EDIT MODE -----
+        // ----- CHẾ ĐỘ CHỈNH SỬA -----
         <div className="space-y-4">
           <div>
-            <label className="block font-medium">Name</label>
+            <label className="block font-medium">Tên</label>
             <input
               name="name"
               value={form.name}
@@ -123,7 +125,7 @@ export default function MyProfilePage() {
             />
           </div>
           <div>
-            <label className="block font-medium">DOB</label>
+            <label className="block font-medium">Ngày sinh</label>
             <input
               type="date"
               name="dob"
@@ -133,7 +135,7 @@ export default function MyProfilePage() {
             />
           </div>
           <div>
-            <label className="block font-medium">Phone</label>
+            <label className="block font-medium">Số điện thoại</label>
             <input
               name="phone"
               value={form.phone}
@@ -152,7 +154,7 @@ export default function MyProfilePage() {
             />
           </div>
           <div>
-            <label className="block font-medium">Age Group</label>
+            <label className="block font-medium">Nhóm tuổi</label>
             <input
               name="ageGroup"
               value={form.ageGroup}
@@ -161,7 +163,7 @@ export default function MyProfilePage() {
             />
           </div>
           <div>
-            <label className="block font-medium">Profile Data</label>
+            <label className="block font-medium">Thông tin hồ sơ</label>
             <textarea
               name="profileData"
               value={form.profileData}
@@ -176,13 +178,13 @@ export default function MyProfilePage() {
               onClick={() => setEditing(false)}
               className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
             >
-              Cancel
+              Hủy
             </button>
             <button
               onClick={handleSave}
               className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
             >
-              Save
+              Lưu
             </button>
           </div>
         </div>

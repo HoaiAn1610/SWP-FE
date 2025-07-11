@@ -22,13 +22,13 @@ export default function ActivityCard({ activity, onSelect }) {
     <div className="bg-white rounded-2xl shadow-lg overflow-hidden flex flex-col h-full">
       <div className="p-6 flex-1 flex flex-col">
         <div className="flex items-center space-x-2 mb-3">
-          <span
+          {/* <span
             className={`inline-block ${getStatusClass(
               status
             )} rounded-full px-2 py-1 text-xs font-medium`}
           >
             {status}
-          </span>
+          </span> */}
         </div>
         <h3 className="text-lg font-bold text-gray-800 mb-2">{title}</h3>
         <p className="text-sm text-gray-600 flex-1">

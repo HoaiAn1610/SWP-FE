@@ -10,33 +10,33 @@ export default function PersonalInfoLayout() {
       <Header />
 
       <div className="flex flex-1">
-        {/* 2. Sidebar */}
+        {/* 2. Thanh bên */}
         <aside className="w-64 bg-white border-r p-6 space-y-4">
-          <h2 className="text-xl font-semibold">My Account</h2>
+          <h2 className="text-xl font-semibold">Tài khoản của tôi</h2>
           <nav className="space-y-2">
             <Link
               to="my-profile"
               className="block px-3 py-2 rounded hover:bg-gray-100"
             >
-              My Profile
+              Hồ sơ của tôi
             </Link>
             <Link
               to="settings"
               className="block px-3 py-2 rounded hover:bg-gray-100"
             >
-              Settings
+              Cài đặt
             </Link>
             <Link
               to="security"
               className="block px-3 py-2 rounded hover:bg-gray-100"
             >
-              Security
+              Bảo mật
             </Link>
             {/* ... thêm các mục khác nếu cần */}
           </nav>
         </aside>
 
-        {/* 3. Nội dung con */}
+        {/* 3. Nội dung chính */}
         <main className="flex-1 p-8 bg-gray-50">
           <Outlet />
         </main>
