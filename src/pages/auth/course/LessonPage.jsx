@@ -196,10 +196,6 @@ export default function LessonPage() {
 
   const handleTabClick = (tab) => {
     if (tab === "Bài kiểm Tra") {
-
-  const handleTabClick = tab => {
-    if (tab === "Bài kiểm Tra") {
-
       // If 3 attempts used without passing, ask to reset
       if (quizAttemptCount === 3 && !hasPassed) {
         showConfirm(
@@ -327,9 +323,6 @@ export default function LessonPage() {
         {/* Tabs */}
         <div className="flex space-x-4 border-b pb-2">
           {["video", "Tài Liệu", "Bài kiểm Tra"].map((tab) => (
-
-          {['video', 'Tài Liệu', 'Bài kiểm Tra'].map(tab => (
-
             <button
               key={tab}
               onClick={() => handleTabClick(tab)}
@@ -347,9 +340,6 @@ export default function LessonPage() {
         {/* Panels */}
         {activeTab === "video" && (
           <div className="bg-white p-6 rounded-lg shadow">
-            <h2 className="text-xl font-medium mb-4">Tổng Quan Khóa Học</h2>
-            <p className="text-gray-700 ">{courseInfo.content}</p>
-
             <h2 className="text-xl font-medium mb-4">Tổng Quan Khóa Học</h2>
             <p className="text-gray-700 ">{courseInfo.content}</p>
           </div>
@@ -393,48 +383,8 @@ export default function LessonPage() {
             )}
           </div>
         )}
-        {activeTab === 'Tài Liệu' && (
-  <div className="bg-white p-6 rounded-lg shadow space-y-4">
-    {docs.length === 0 ? (
-      <p className="text-gray-500">Chưa có tài liệu.</p>
-    ) : (
-      docs.map(doc => (
-        <div key={doc.id} className="border-b pb-4">
-          <h3 className="font-semibold text-gray-800">{doc.title}</h3>
-          <p className="text-gray-600 mb-2">{doc.description}</p>
-          <button
-            onClick={() => handleViewDocument(doc)}
-            className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
-          >
-            Xem Tài Liệu
-          </button>
-        </div>
-      ))
-    )}
-
-    {docFile && (
-      <div className="mt-6">
-        <button
-          onClick={() => setDocFile(null)}
-          className="mb-4 text-gray-500 hover:text-gray-800"
-        >
-          ✕ Đóng tài liệu
-        </button>
-        <div
-          ref={scrollContainerRef}
-          onScroll={onDocScroll}
-          className="max-h-[60vh] overflow-auto border p-2 whitespace-pre-wrap"
-        >
-          <DocxViewer file={docFile} />
-        </div>
-      </div>
-    )}
-  </div>
-)}
 
         {activeTab === "Bài kiểm Tra" && (
-         {activeTab==='Bài kiểm Tra' && (
-
           <div className="bg-white p-6 rounded-lg shadow space-y-4">
             <h2 className="text-xl font-semibold">Bài Kiểm Tra</h2>
             {!hasPassed ? (
@@ -449,19 +399,12 @@ export default function LessonPage() {
                 <p className="text-green-800 mb-2">
                   Bạn đã hoàn thành khóa học!
                 </p>
-
-                <p className="text-green-800 mb-2">Bạn đã hoàn thành khóa học!</p>
                 <button
                   onClick={() => navigate(`/course/${courseId}/certificate`)}
                   className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
                 >
                   Xem Chứng Chỉ
                 </button>
-                onClick={() => navigate(`/course/${courseId}/certificate`)}
-                className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
-              >
-                Xem Chứng Chỉ
-              </button>
               </div>
             )}
 
@@ -496,17 +439,6 @@ export default function LessonPage() {
                 ))}
               </ul>
             )}
-            {(loadingSubs||loadingQuiz)?<p>Đang tải dữ liệu...</p>:<ul className="divide-y divide-gray-200">
-              {submissions.map(sub=>(
-                <li key={sub.id} className="py-3 flex justify-between items-center hover:bg-gray-50 cursor-pointer" onClick={()=>viewDetail(sub)}>
-                  <div>
-                    <p className="font-medium">{new Date(sub.submissionDate).toLocaleString()}</p>
-                    <p className="text-sm text-gray-600">Điểm {sub.score} / {quizQuestions.length}</p>
-                  </div>
-                  <span className={`px-2 py-1 rounded-full text-sm ${sub.passedStatus?'bg-green-100 text-green-800':'bg-red-100 text-red-800'}`}>{sub.passedStatus?'Passed':'Failed'}</span>
-                </li>
-              ))}
-            </ul>}
 
             {oldSubmissions.length > 0 && (
               <div className="mt-6">
@@ -540,46 +472,12 @@ export default function LessonPage() {
                 </ul>
               </div>
             )}
-{oldSubmissions.length > 0 && (
-  <div className="mt-6">
-    <h3 className="text-lg font-medium">Lịch sử</h3>
-    <ul className="divide-y divide-gray-200 mt-2">
-      {oldSubmissions.map(sub => (
-        <li
-          key={sub.id}
-          onClick={() => viewDetail(sub)}
-          className="py-2 flex justify-between items-center hover:bg-gray-50 cursor-pointer"
-        >
-          <div>
-            <p className="font-medium">
-              {new Date(sub.submissionDate).toLocaleString()}
-            </p>
-            <p className="text-sm text-gray-600">
-              Điểm: {sub.score} / {quizQuestions.length}
-            </p>
-          </div>
-          <span
-            className={`px-2 py-1 rounded-full text-sm ${
-              sub.passedStatus
-                ? 'bg-green-100 text-green-800'
-                : 'bg-red-100 text-red-800'
-            }`}
-          >
-            {sub.passedStatus ? 'Passed' : 'Failed'}
-          </span>
-        </li>
-      ))}
-    </ul>
-  </div>
-)}
-
           </div>
         )}
       </div>
 
       {/* Detail overlay */}
       {showDetail && (
-
         <div
           className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50"
           onClick={() => setShowDetail(false)}
@@ -653,9 +551,6 @@ export default function LessonPage() {
             >
               ĐỒng Ý
             </button>
-
-            <button onClick={() => setAlertVisible(false)} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md">ĐỒng Ý</button>
-
           </div>
         </div>
       )}
@@ -668,7 +563,6 @@ export default function LessonPage() {
               {confirmMessage}
             </p>
             <div className="flex justify-center space-x-2">
-
               <button
                 onClick={hideConfirm}
                 className="px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-md"
@@ -682,9 +576,8 @@ export default function LessonPage() {
                 }}
                 className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md"
               >
-                Đồng Ý
+                OK
               </button>
-
             </div>
           </div>
         </div>
