@@ -34,9 +34,9 @@ export default function AssistSurveyPage() {
   const [showModal, setShowModal] = useState(false);
 
   // Helper tính risk
-  const computeRiskLevel = score => {
-    if (score <= 4)   return "Low";
-    if (score <= 27)  return "Medium";
+  const computeRiskLevel = (score) => {
+    if (score <= 4) return "Low";
+    if (score <= 27) return "Medium";
     return "High";
   };
 
@@ -45,17 +45,21 @@ export default function AssistSurveyPage() {
     async function load() {
       try {
         setLoading(true);
-        const res = await api.get(`/surveys/5/submissions/get-questions`);
+        const res = await api.get(`/surveys/1/submissions/get-questions`);
         const map = new Map();
-        res.data.forEach(q => {
+        res.data.forEach((q) => {
           if (!map.has(q.substanceId)) {
-            map.set(q.substanceId, { id: q.substanceId, name: q.substanceName, questions: [] });
+            map.set(q.substanceId, {
+              id: q.substanceId,
+              name: q.substanceName,
+              questions: [],
+            });
           }
           map.get(q.substanceId).questions.push(q);
         });
-        const arr = Array.from(map.values()).map(g => ({
+        const arr = Array.from(map.values()).map((g) => ({
           ...g,
-          questions: g.questions.sort((a, b) => a.sequence - b.sequence)
+          questions: g.questions.sort((a, b) => a.sequence - b.sequence),
         }));
         setGroups(arr);
       } catch (e) {
@@ -72,7 +76,7 @@ export default function AssistSurveyPage() {
     if (!groups.length) return;
     const group = groups[subIndex];
     if (group && qIndex >= group.questions.length) {
-      setSubIndex(i => i + 1);
+      setSubIndex((i) => i + 1);
       setQIndex(0);
     }
   }, [qIndex, groups, subIndex]);
@@ -86,10 +90,14 @@ export default function AssistSurveyPage() {
     const riskLevel = computeRiskLevel(totalScore);
     const recommendation = (() => {
       switch (riskLevel) {
-        case "Low":   return "Bạn có mức rủi ro thấp. Tham khảo các khóa cơ bản về phòng ngừa và nâng cao sức khỏe.";
-        case "Medium":return "Bạn có mức rủi ro trung bình. Mời tham gia khoá tư vấn trực tuyến hoặc workshop giảm sử dụng.";
-        case "High":  return "Bạn có mức rủi ro cao. Vui lòng đặt lịch tư vấn cá nhân ngay với chuyên gia.";
-        default:       return "";
+        case "Low":
+          return "Bạn có mức rủi ro thấp. Tham khảo các khóa cơ bản về phòng ngừa và nâng cao sức khỏe.";
+        case "Medium":
+          return "Bạn có mức rủi ro trung bình. Mời tham gia khoá tư vấn trực tuyến hoặc workshop giảm sử dụng.";
+        case "High":
+          return "Bạn có mức rủi ro cao. Vui lòng đặt lịch tư vấn cá nhân ngay với chuyên gia.";
+        default:
+          return "";
       }
     })();
 
@@ -97,8 +105,11 @@ export default function AssistSurveyPage() {
       // Gửi lên server nếu đã login
       (async () => {
         try {
-          const payload = answers.map(a => ({ questionId: a.questionId, optionId: a.optionId }));
-          const res = await api.post(`/surveys/5/submissions/submit`, payload);
+          const payload = answers.map((a) => ({
+            questionId: a.questionId,
+            optionId: a.optionId,
+          }));
+          const res = await api.post(`/surveys/1/submissions/submit`, payload);
           setSubmissionId(res.data.id);
         } catch (e) {
           setError(e.response?.data?.message || e.message);
@@ -106,14 +117,20 @@ export default function AssistSurveyPage() {
       })();
     } else {
       // Không gọi API, hiển thị kết quả tạm
-      setSubmissionDetail({ score: totalScore, riskLevel, recommendation, answers });
+      setSubmissionDetail({
+        score: totalScore,
+        riskLevel,
+        recommendation,
+        answers,
+      });
     }
   }, [subIndex, groups, answers, surveyId, isLoggedIn]);
 
   // Fetch submission detail từ server nếu login
   useEffect(() => {
     if (!submissionId || !isLoggedIn) return;
-    api.get(`/surveys/5/submissions/${submissionId}`)
+    api
+      .get(`/surveys/1/submissions/${submissionId}`)
       .then(({ data }) => setSubmissionDetail(data))
       .catch(console.error);
   }, [submissionId, surveyId, isLoggedIn]);
@@ -124,38 +141,53 @@ export default function AssistSurveyPage() {
     const lvl = submissionDetail.riskLevel.toLowerCase();
     if (lvl === "high") return;
     getCoursesByLevel(lvl)
-      .then(c => setSuggestedCourses(c.slice(0, 3)))
+      .then((c) => setSuggestedCourses(c.slice(0, 3)))
       .catch(console.error);
   }, [submissionDetail, isLoggedIn]);
 
   // Handle answer selection (lưu thêm scoreValue)
-  const handleAnswer = opt => {
+  const handleAnswer = (opt) => {
     const group = groups[subIndex];
     const current = group.questions[qIndex];
-    setAnswers(a => [...a, { questionId: current.id, optionId: opt.id, scoreValue: opt.scoreValue }]);
+    setAnswers((a) => [
+      ...a,
+      { questionId: current.id, optionId: opt.id, scoreValue: opt.scoreValue },
+    ]);
     if (current.sequence === 1 && opt.scoreValue === 0) {
-      setSubIndex(i => i + 1);
+      setSubIndex((i) => i + 1);
       setQIndex(0);
     } else {
-      setQIndex(i => i + 1);
+      setQIndex((i) => i + 1);
     }
   };
 
   // Render loading / error
   if (loading) return <p className="text-center py-10">Đang tải khảo sát…</p>;
-  if (error)   return <p className="text-center text-red-500 py-10">{error}</p>;
+  if (error) return <p className="text-center text-red-500 py-10">{error}</p>;
 
   // Khi có submissionDetail (từ server hoặc local)
   if (submissionDetail) {
-    const { score, riskLevel, recommendation, answers: ansList } = submissionDetail;
+    const {
+      score,
+      riskLevel,
+      recommendation,
+      answers: ansList,
+    } = submissionDetail;
     // build flat map of questions
     const flatMap = {};
-    groups.forEach(g => g.questions.forEach(q => flatMap[q.id] = { ...q, substanceName: g.name }));
+    groups.forEach((g) =>
+      g.questions.forEach(
+        (q) => (flatMap[q.id] = { ...q, substanceName: g.name })
+      )
+    );
     // group answers by substance
     const groupedAns = ansList.reduce((acc, a) => {
       const q = flatMap[a.questionId];
       if (!acc[q.substanceName]) acc[q.substanceName] = [];
-      acc[q.substanceName].push({ questionText: q.questionText, optionText: q.options.find(o => o.id === a.optionId)?.optionText });
+      acc[q.substanceName].push({
+        questionText: q.questionText,
+        optionText: q.options.find((o) => o.id === a.optionId)?.optionText,
+      });
       return acc;
     }, {});
 
@@ -165,21 +197,35 @@ export default function AssistSurveyPage() {
         <div className="max-w-5xl mx-auto py-8 px-4 space-y-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="bg-white p-6 rounded-lg shadow">
-              <h1 className="text-3xl font-semibold text-indigo-700 mb-4">Kết quả khảo sát</h1>
+              <h1 className="text-3xl font-semibold text-indigo-700 mb-4">
+                Kết quả khảo sát
+              </h1>
               <dl className="space-y-3">
-                <div className="flex justify-between"><dt>Score:</dt><dd>{score}</dd></div>
-                <div className="flex justify-between"><dt>Risk Level:</dt><dd>{riskLevel}</dd></div>
+                <div className="flex justify-between">
+                  <dt>Score:</dt>
+                  <dd>{score}</dd>
+                </div>
+                <div className="flex justify-between">
+                  <dt>Risk Level:</dt>
+                  <dd>{riskLevel}</dd>
+                </div>
               </dl>
             </div>
             {isLoggedIn ? (
               <div className="bg-white p-6 rounded-lg shadow">
-                <h2 className="text-3xl font-semibold text-indigo-700 mb-4">Recommendation</h2>
+                <h2 className="text-3xl font-semibold text-indigo-700 mb-4">
+                  Recommendation
+                </h2>
                 <p className="text-gray-700">{recommendation}</p>
               </div>
             ) : (
               <div className="bg-white p-6 rounded-lg shadow">
-                <h2 className="text-3xl font-semibold text-indigo-700 mb-4">Recommendation</h2>
-                <p className="text-gray-700">Vui lòng đăng nhập để xem đề xuất</p>
+                <h2 className="text-3xl font-semibold text-indigo-700 mb-4">
+                  Recommendation
+                </h2>
+                <p className="text-gray-700">
+                  Vui lòng đăng nhập để xem đề xuất
+                </p>
               </div>
             )}
           </div>
@@ -187,12 +233,17 @@ export default function AssistSurveyPage() {
           {/* Gợi ý khoá học (chỉ khi login và Low/Medium) */}
           {isLoggedIn && (riskLevel === "Low" || riskLevel === "Medium") && (
             <div className="bg-white p-6 rounded-lg shadow">
-              <h2 className="text-2xl font-semibold text-indigo-700 mb-4">Gợi ý khoá học</h2>
+              <h2 className="text-2xl font-semibold text-indigo-700 mb-4">
+                Gợi ý khoá học
+              </h2>
               <CourseList
                 courses={suggestedCourses}
                 enrolledCourseIds={[]}
                 statusMap={{}}
-                onSelect={course => { setSelectedCourse(course); setShowModal(true); }}
+                onSelect={(course) => {
+                  setSelectedCourse(course);
+                  setShowModal(true);
+                }}
               />
             </div>
           )}
@@ -213,7 +264,9 @@ export default function AssistSurveyPage() {
                 to="/appointments/book"
                 className="inline-block mt-4 px-8 py-3 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition"
               >
-                {riskLevel === "High" ? "Đặt lịch Tư vấn Ngay" : "Xem Lịch Tư vấn"}
+                {riskLevel === "High"
+                  ? "Đặt lịch Tư vấn Ngay"
+                  : "Xem Lịch Tư vấn"}
               </Link>
             </div>
           )}
@@ -221,26 +274,32 @@ export default function AssistSurveyPage() {
           {/* Nút xem/ẩn chi tiết giữa trang */}
           <div className="flex justify-center my-8">
             <button
-              onClick={() => setShowDetail(d => !d)}
+              onClick={() => setShowDetail((d) => !d)}
               className="px-5 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition shadow"
             >
               {showDetail ? "Ẩn chi tiết bài làm" : "Xem chi tiết bài làm"}
             </button>
           </div>
 
-          {showDetail && Object.entries(groupedAns).map(([subName, items]) => (
-            <div key={subName} className="bg-white p-6 rounded-lg shadow-lg">
-              <h2 className="text-2xl font-semibold mb-4">{subName}</h2>
-              <ul className="space-y-4">
-                {items.map((it, idx) => (
-                  <li key={idx} className="border-l-4 border-indigo-500 bg-gray-50 p-4 rounded">
-                    <p className="font-medium">{it.questionText}</p>
-                    <p className="mt-1 text-indigo-600">Lựa chọn của bạn: {it.optionText}</p>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+          {showDetail &&
+            Object.entries(groupedAns).map(([subName, items]) => (
+              <div key={subName} className="bg-white p-6 rounded-lg shadow-lg">
+                <h2 className="text-2xl font-semibold mb-4">{subName}</h2>
+                <ul className="space-y-4">
+                  {items.map((it, idx) => (
+                    <li
+                      key={idx}
+                      className="border-l-4 border-indigo-500 bg-gray-50 p-4 rounded"
+                    >
+                      <p className="font-medium">{it.questionText}</p>
+                      <p className="mt-1 text-indigo-600">
+                        Lựa chọn của bạn: {it.optionText}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
         </div>
       </div>
     );
@@ -261,10 +320,12 @@ export default function AssistSurveyPage() {
       <Header />
       <div className="max-w-3xl mx-auto py-8 px-4">
         <div className="bg-white p-6 rounded-lg shadow-lg">
-          <h1 className="text-2xl font-semibold mb-2">{group.name} – Câu hỏi {current.sequence}</h1>
+          <h1 className="text-2xl font-semibold mb-2">
+            {group.name} – Câu hỏi {current.sequence}
+          </h1>
           <p className="text-gray-700 mb-4">{current.questionText}</p>
           <div className="space-y-3">
-            {current.options.map(opt => (
+            {current.options.map((opt) => (
               <button
                 key={opt.id}
                 onClick={() => handleAnswer(opt)}

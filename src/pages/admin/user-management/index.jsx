@@ -1,7 +1,6 @@
 // src/pages/admin/AdminPage.jsx
 import React, { useState, useEffect } from "react";
 import api from "@/config/axios";
-import Header from "@/components/header";
 
 export default function AdminPage() {
   const [users, setUsers] = useState([]);
@@ -23,7 +22,7 @@ export default function AdminPage() {
   const [roleFilter, setRoleFilter] = useState("");
   const roles = ["Member", "Staff", "Consultant", "Manager", "Admin"];
 
-  const showAlert = msg => {
+  const showAlert = (msg) => {
     setAlertMessage(msg);
     setAlertVisible(true);
   };
@@ -44,10 +43,12 @@ export default function AdminPage() {
       setLoading(false);
     }
   };
-  useEffect(() => { fetchUsers(); }, [roleFilter]);
+  useEffect(() => {
+    fetchUsers();
+  }, [roleFilter]);
 
   // Delete user
-  const handleDelete = id => {
+  const handleDelete = (id) => {
     setConfirmMessage("Bạn có chắc muốn xóa người dùng này?");
     setConfirmAction(() => async () => {
       try {
@@ -79,14 +80,14 @@ export default function AdminPage() {
     }
   };
 
-  const filteredUsers = users.filter(u =>
-    [u.name, u.email, u.role]
-      .some(f => f.toLowerCase().includes(searchTerm.toLowerCase()))
+  const filteredUsers = users.filter((u) =>
+    [u.name, u.email, u.role].some((f) =>
+      f.toLowerCase().includes(searchTerm.toLowerCase())
+    )
   );
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
-      <Header />
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Toolbar */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -94,16 +95,20 @@ export default function AdminPage() {
             type="text"
             placeholder="Tìm kiếm..."
             value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
+            onChange={(e) => setSearchTerm(e.target.value)}
             className="flex-1 border rounded px-4 py-2 focus:outline-none focus:ring"
           />
           <select
             value={roleFilter}
-            onChange={e => setRoleFilter(e.target.value)}
+            onChange={(e) => setRoleFilter(e.target.value)}
             className="border rounded px-4 py-2 focus:outline-none focus:ring"
           >
             <option value="">Tất cả vai trò</option>
-            {roles.map(r => <option key={r} value={r}>{r}</option>)}
+            {roles.map((r) => (
+              <option key={r} value={r}>
+                {r}
+              </option>
+            ))}
           </select>
         </div>
 
@@ -112,41 +117,58 @@ export default function AdminPage() {
           <p>Đang tải...</p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredUsers.map(u => (
-              <div key={u.id} className="bg-white shadow rounded-lg p-4 flex flex-col justify-between">
+            {filteredUsers.map((u) => (
+              <div
+                key={u.id}
+                className="bg-white shadow rounded-lg p-4 flex flex-col justify-between"
+              >
                 <div>
                   <h3 className="text-lg font-semibold">{u.name}</h3>
                   <p className="text-sm text-gray-500">{u.email}</p>
-                  <p className="mt-1"><span className="font-medium">Vai trò:</span> {u.role}</p>
+                  <p className="mt-1">
+                    <span className="font-medium">Vai trò:</span> {u.role}
+                  </p>
                 </div>
                 <div className="mt-4 space-x-2 flex">
                   <button
                     onClick={() => handleDelete(u.id)}
                     className="flex-1 bg-red-500 text-white rounded px-3 py-2 hover:bg-red-600"
-                  >Xóa</button>
+                  >
+                    Xóa
+                  </button>
                   {assigningUser === u.id ? (
                     <>
                       <select
                         value={assignRoleValue}
-                        onChange={e => setAssignRoleValue(e.target.value)}
+                        onChange={(e) => setAssignRoleValue(e.target.value)}
                         className="border rounded px-2 py-2"
                       >
-                        {roles.map(r => <option key={r} value={r}>{r}</option>)}
+                        {roles.map((r) => (
+                          <option key={r} value={r}>
+                            {r}
+                          </option>
+                        ))}
                       </select>
                       <button
                         onClick={confirmAssign}
                         className="bg-green-500 text-white rounded px-3 py-2 hover:bg-green-600"
-                      >OK</button>
+                      >
+                        OK
+                      </button>
                       <button
                         onClick={() => setAssigningUser(null)}
                         className="bg-gray-200 text-gray-700 rounded px-3 py-2 hover:bg-gray-300"
-                      >Hủy</button>
+                      >
+                        Hủy
+                      </button>
                     </>
                   ) : (
                     <button
                       onClick={() => startAssign(u.id, u.role)}
                       className="flex-1 bg-indigo-500 text-white rounded px-3 py-2 hover:bg-indigo-600"
-                    >Phân vai trò</button>
+                    >
+                      Phân vai trò
+                    </button>
                   )}
                 </div>
               </div>
@@ -163,7 +185,9 @@ export default function AdminPage() {
             <button
               onClick={() => setAlertVisible(false)}
               className="mt-2 bg-indigo-600 text-white rounded px-4 py-2 hover:bg-indigo-700"
-            >OK</button>
+            >
+              OK
+            </button>
           </div>
         </div>
       )}
@@ -177,11 +201,18 @@ export default function AdminPage() {
               <button
                 onClick={hideConfirm}
                 className="bg-gray-200 text-gray-700 rounded px-4 py-2 hover:bg-gray-300"
-              >Hủy</button>
+              >
+                Hủy
+              </button>
               <button
-                onClick={() => { confirmAction(); hideConfirm(); }}
+                onClick={() => {
+                  confirmAction();
+                  hideConfirm();
+                }}
                 className="bg-indigo-600 text-white rounded px-4 py-2 hover:bg-indigo-700"
-              >OK</button>
+              >
+                OK
+              </button>
             </div>
           </div>
         </div>

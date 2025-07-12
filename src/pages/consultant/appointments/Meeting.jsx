@@ -4,7 +4,7 @@ import api from "@/config/axios";
 
 // Alert & Confirm Popups
 const AlertPopup = ({ message, onClose }) => (
-  <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
+  <div className="fixed inset-0 flex items-center justify-center backdrop-blur-sm z-50">
     <div className="bg-white p-6 rounded-lg shadow-lg text-center">
       <p className="mb-4 font-semibold text-indigo-800">{message}</p>
       <button
@@ -16,8 +16,9 @@ const AlertPopup = ({ message, onClose }) => (
     </div>
   </div>
 );
+
 const ConfirmPopup = ({ message, onConfirm, onCancel }) => (
-  <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
+  <div className="fixed inset-0 flex items-center justify-center backdrop-blur-sm z-50">
     <div className="bg-white p-6 rounded-lg shadow-lg text-center">
       <p className="mb-4 font-semibold text-indigo-800">{message}</p>
       <div className="flex justify-center space-x-2">
@@ -34,6 +35,50 @@ const ConfirmPopup = ({ message, onConfirm, onCancel }) => (
     </div>
   </div>
 );
+
+// Popup nhập lý do No-Show
+const ReasonPopup = ({ message, onConfirm, onCancel }) => {
+  const [reason, setReason] = useState("");
+  const [error, setError] = useState("");
+
+  const handleConfirm = () => {
+    if (!reason.trim()) {
+      setError("Lý do không được để trống");
+      return;
+    }
+    onConfirm(reason);
+  };
+
+  return (
+    <div className="fixed inset-0 flex items-center justify-center backdrop-blur-sm z-50">
+      <div className="bg-white p-6 rounded-lg shadow-lg text-center max-w-md w-full">
+        <p className="mb-4 font-semibold text-indigo-800">{message}</p>
+        <textarea
+          rows={3}
+          className="w-full border border-gray-300 rounded p-2 mb-2"
+          placeholder="Nhập lý do..."
+          value={reason}
+          onChange={(e) => {
+            setReason(e.target.value);
+            if (error) setError("");
+          }}
+        />
+        {error && <p className="text-sm text-red-600 mb-2">{error}</p>}
+        <div className="flex justify-center space-x-2">
+          <button onClick={onCancel} className="px-4 py-2 border rounded">
+            Hủy
+          </button>
+          <button
+            onClick={handleConfirm}
+            className="px-4 py-2 bg-indigo-600 text-white rounded"
+          >
+            OK
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 // Format helpers
 const formatDateTime = (iso) => {
@@ -60,12 +105,16 @@ export default function Meeting() {
   const [loading, setLoading] = useState(true);
   const [savingNote, setSavingNote] = useState(false);
   const [updatingNote, setUpdatingNote] = useState(false);
+
   // popup state
   const [alertVisible, setAlertVisible] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
   const [confirmVisible, setConfirmVisible] = useState(false);
   const [confirmMessage, setConfirmMessage] = useState("");
   const [confirmAction, setConfirmAction] = useState(() => {});
+
+  // Reason-popup state
+  const [reasonPopupVisible, setReasonPopupVisible] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -94,20 +143,19 @@ export default function Meeting() {
     })();
   }, [id]);
 
-  // thêm
+  // Thêm ghi chú
   const handleAddNote = async () => {
     const text = newNote.trim();
     if (!text) {
       setAlertMessage("Ghi chú trống");
-      return setAlertVisible(true);
+      setAlertVisible(true);
+      return;
     }
     setSavingNote(true);
     try {
       await api.post(
         `/ConsultationNote/add-note`,
-        {
-          notes: text,
-        },
+        { notes: text },
         { params: { appointmentId: Number(id) } }
       );
       const { data } = await api.get(`/ConsultationNote/get-note`, {
@@ -123,16 +171,21 @@ export default function Meeting() {
     }
   };
 
-  // sửa
+  // Cập nhật ghi chú
   const handleUpdateNote = (noteId) => {
     const text = editingText.trim();
     if (!text) {
       setAlertMessage("Ghi chú trống");
-      return setAlertVisible(true);
+      setAlertVisible(true);
+      return;
     }
     setUpdatingNote(true);
     api
-      .put(`/ConsultationNote/update-note/${noteId}`, { notes: text })
+      .put(
+        `/ConsultationNote/update-note/${noteId}`,
+        { notes: text },
+        { params: { id: Number(id) } }
+      )
       .then(async () => {
         const { data } = await api.get(`/ConsultationNote/get-note`, {
           params: { appointmentId: Number(id) },
@@ -148,28 +201,25 @@ export default function Meeting() {
       .finally(() => setUpdatingNote(false));
   };
 
-  // NoShow
+  // Mở popup nhập lý do No-Show
   const handleNoShow = () => {
-    setConfirmMessage("Xác nhận đánh dấu khách hàng không có mặt?");
-    setConfirmAction(async () => {
-      try {
-        const reason = prompt("Nhập lý do:");
-        if (!reason) throw new Error();
-        await api.put(`/AppointmentRequest/${id}/noshow`, { reason });
-        await api.put(`/AppointmentRequest/${id}/update-status`, {
-          status: "NoShow",
-          cancelReason: reason,
-        });
-        navigate("/consultant/appointments");
-      } catch {
-        setAlertMessage("Cập nhật No-Show thất bại");
-        setAlertVisible(true);
-      }
-    });
-    setConfirmVisible(true);
+    setReasonPopupVisible(true);
   };
 
-  // Complete
+  // Xác nhận No-Show với lý do
+  const confirmNoShow = async (reason) => {
+    setReasonPopupVisible(false);
+    try {
+      await api.put(`/AppointmentRequest/${id}/noshow`, { reason });
+      navigate("/consultant/appointments");
+    } catch (e) {
+      console.error(e);
+      setAlertMessage("Cập nhật No-Show thất bại");
+      setAlertVisible(true);
+    }
+  };
+
+  // Popup Confirm để hoàn thành
   const handleComplete = () => {
     setConfirmMessage("Xác nhận hoàn thành cuộc hẹn?");
     setConfirmAction(async () => {
@@ -218,7 +268,7 @@ export default function Meeting() {
             <p className="text-sm text-gray-500">Ngày/giờ hẹn</p>
             {schedule ? (
               <p className="text-lg">
-                {formatDateTime(schedule.scheduleDate + "T00:00:00")} —{` `}
+                {formatDateTime(schedule.scheduleDate + "T00:00:00")} —{" "}
                 {formatTime(schedule.startTime)} đến{" "}
                 {formatTime(schedule.endTime)}
               </p>
@@ -393,6 +443,13 @@ export default function Meeting() {
             setConfirmVisible(false);
             confirmAction();
           }}
+        />
+      )}
+      {reasonPopupVisible && (
+        <ReasonPopup
+          message="Nhập lý do khách hàng không có mặt"
+          onCancel={() => setReasonPopupVisible(false)}
+          onConfirm={confirmNoShow}
         />
       )}
     </div>
