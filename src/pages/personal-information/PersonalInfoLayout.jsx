@@ -20,17 +20,18 @@ export default function PersonalInfoLayout() {
             >
               Hồ sơ của tôi
             </Link>
-            <Link
-              to="settings"
-              className="block px-3 py-2 rounded hover:bg-gray-100"
-            >
-              Cài đặt
-            </Link>
+
             <Link
               to="security"
               className="block px-3 py-2 rounded hover:bg-gray-100"
             >
               Bảo mật
+            </Link>
+            <Link
+              to="settings"
+              className="block px-3 py-2 rounded hover:bg-gray-100"
+            >
+              Cài đặt
             </Link>
             {/* ... thêm các mục khác nếu cần */}
           </nav>
