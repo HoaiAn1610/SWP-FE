@@ -16,6 +16,7 @@ export default function BlogDetail() {
   const [authorName, setAuthorName] = useState('');
   const [publishedDate, setPublishedDate] = useState('');
   const [currentUser, setCurrentUser] = useState(null);
+  const [showComments, setShowComments] = useState(false);
 
   // Lấy currentUser từ localStorage + fetch role
   useEffect(() => {
@@ -105,71 +106,79 @@ export default function BlogDetail() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto p-6 bg-white rounded-lg shadow-md">
-      {/* Back button */}
-<div className="mb-6">
-  <button
-    onClick={() => navigate(-1)}
-    className="
-      inline-block
-      px-4 py-2
-      bg-blue-500 text-white
-      text-sm font-medium
-      rounded-md shadow
-      hover:bg-blue-600
-      focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-75
-      transition-colors duration-200
-    "
-  >
-    ← Quay về trang trước
-  </button>
-</div>
-
-
-      {/* Title */}
-      <h1 className="text-4xl font-bold text-gray-800 mb-4">{post.title}</h1>
-
-      {/* Meta: author & date */}
-      <div className="flex items-center text-sm text-gray-500 mb-6 space-x-2">
-        <span>
-          Đăng bởi <span className="font-medium text-gray-700">{authorName}</span>
-        </span>
-        <span>·</span>
-        <span>{publishedDate}</span>
+   <div
+      className={`mx-auto p-6 bg-white rounded-lg shadow-md ${
+        showComments
+          ? 'grid grid-cols-3 gap-6 max-w-screen-xl'
+          : 'max-w-3xl'
+      }`}
+    >
+      {/* Back & Toggle */}
+      <div className="flex items-center justify-between mb-6 col-span-3">
+        <button
+          onClick={() => navigate(-1)}
+          className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+        >
+          ← Quay lại
+        </button>
+        {!showComments && (
+          <button
+            onClick={() => setShowComments(true)}
+            className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600"
+          >
+            Xem bình luận
+          </button>
+        )}
       </div>
 
-      {/* Cover image */}
-      {post.coverImageUrl && (
-        <img
-          src={post.coverImageUrl}
-          alt={post.title}
-          className="w-full h-80 object-cover rounded-md mb-6"
-        />
-      )}
-
-
-       {/* Content */}
- <div
-   className="prose prose-lg text-gray-800 mb-8 whitespace-pre-wrap"
-   /* đảm bảo các newline (\n) được hiển thị thành xuống dòng */
- >
-   {post.content}
- </div>
-
-      {/* Comments */}
-      <section>
-        <h2 className="text-2xl font-semibold text-gray-800 mb-4">Bình luận</h2>
-        <div className="bg-gray-50 p-4 rounded-lg">
-          <CommentList
-            comments={post.comments || []}
-            postId={post.id}
-            currentUser={currentUser}
-            onAddComment={handleAddComment}
-            onAddReply={handleAddReply}
-            onDeleteComment={handleDeleteComment}
-          />
+      {/* Post Content */}
+      <div className={showComments ? 'col-span-2' : ''}>
+        <h1 className="text-4xl font-bold mb-4">{post.title}</h1>
+        <div className="text-sm text-gray-500 mb-6 flex space-x-2">
+          <span>
+            Đăng bởi <span className="font-medium text-gray-700">{authorName}</span>
+          </span>
+          <span>·</span>
+          <span>{publishedDate}</span>
         </div>
-      </section>
+
+        {post.coverImageUrl && (
+          <img
+            src={post.coverImageUrl}
+            alt={post.title}
+            className="w-full h-80 object-cover rounded-md mb-6"
+          />
+        )}
+        <div className="prose prose-lg mb-8 whitespace-pre-wrap">
+          {post.content}
+        </div>
+      </div>
+
+      {/* Wrapper for hide-button + comment panel */}
+      {showComments && (
+        <div className="col-start-3 col-span-1 flex flex-col space-y-4">
+          {/* Sticky hide button */}
+          <button
+            onClick={() => setShowComments(false)}
+            className="sticky top-32 z-10 px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 "
+          >
+            Ẩn bình luận
+          </button>
+
+          {/* Comment Panel */}
+          <section className="bg-gray-50 sticky top-52 p-4 rounded-lg">
+            <h2 className="text-2xl font-semibold mb-4">Bình luận</h2>
+            <CommentList
+              comments={post.comments || []}
+              postId={post.id}
+              currentUser={currentUser}
+              onAddComment={handleAddComment}
+              onAddReply={handleAddReply}
+              onDeleteComment={handleDeleteComment}
+            />
+          </section>
+        </div>
+      )}
     </div>
   );
 }

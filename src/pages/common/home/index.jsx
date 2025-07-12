@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import api from "@/config/axios";
 import Header from "@/components/header";
+import Footer from "@/components/footer";
 import CourseList from "@/components/courses/CourseList";
 import CourseDetailOverlay from "@/components/courses/CourseDetailOverlay";
 import SurveySection from "@/pages/common/survey";
@@ -75,7 +76,7 @@ export default function EcommerceHome() {
 
       {/* Featured Courses Section */}
       <section className="py-16 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-6">
+        <div className="max-w-[90rem] mx-auto px-6">
           <h2 className="text-3xl font-bold text-center mb-6">
             Khóa học nổi bật
           </h2>
@@ -137,6 +138,9 @@ export default function EcommerceHome() {
 
       {/* ==== Inquiry Chat Widget ==== */}
       <ChatWidget />
+
+      {/* Footer */}
+      <Footer />
     </>
   );
 }

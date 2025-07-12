@@ -215,7 +215,7 @@ export default function ViewBlogPostsPage() {
     <>
       {/* Alert Popup */}
       {alertVisible && (
-        <div className="fixed inset-0 flex items-center justify-center z-60">
+        <div className="fixed inset-0 flex items-center justify-center z-60 backdrop-blur-sm">
           <div className="bg-white p-4 rounded-lg shadow-lg max-w-xs text-center border border-indigo-200">
             <p className="mb-4 text-indigo-800 font-semibold">{alertMessage}</p>
             <button
@@ -230,7 +230,7 @@ export default function ViewBlogPostsPage() {
 
       {/* Confirm */}
       {confirmVisible && (
-        <div className="fixed inset-0 flex items-center justify-center z-60">
+        <div className="fixed inset-0 flex items-center justify-center z-60 backdrop-blur-sm">
           <div className="bg-white p-4 rounded-lg shadow-lg max-w-xs text-center border border-indigo-200">
             <p className="mb-4 text-indigo-800 font-semibold">{confirmMessage}</p>
             <div className="flex justify-center space-x-2">
