@@ -90,10 +90,21 @@ export default function ConsultantSchedulePage() {
     e.preventDefault();
     setError("");
     const { scheduleDate, startTime, endTime, id } = form;
+
     if (!scheduleDate || !startTime || !endTime) {
       setError("Vui lòng điền đầy đủ thông tin.");
       return;
     }
+
+    // Kiểm tra ngày khám không được trước ngày hiện tại
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const selectedDate = new Date(scheduleDate);
+    if (selectedDate < today) {
+      setError("Ngày khám phải là ngày hiện tại hoặc tương lai.");
+      return;
+    }
+
     // Kiểm tra start < end ở local
     const startLocal = new Date(`${scheduleDate}T${startTime}:00`);
     const endLocal = new Date(`${scheduleDate}T${endTime}:00`);

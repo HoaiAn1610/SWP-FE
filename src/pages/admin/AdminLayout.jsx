@@ -12,13 +12,17 @@ import { Outlet, useNavigate, useLocation, Navigate } from "react-router-dom";
 const { Sider, Content } = Layout;
 
 const menuItems = [
-  { key: "user-management", icon: <UserOutlined />, label: "User Management" },
+  {
+    key: "user-management",
+    icon: <UserOutlined />,
+    label: "Quản lý người dùng",
+  },
   {
     key: "platform-settings",
     icon: <SettingOutlined />,
-    label: "Platform Settings",
+    label: "Cài đặt nền tảng",
   },
-  { key: "system-logs", icon: <FileTextOutlined />, label: "System Logs" },
+  { key: "system-logs", icon: <FileTextOutlined />, label: "Nhật ký hệ thống" },
 ];
 
 const AdminLayout = () => {
@@ -33,35 +37,40 @@ const AdminLayout = () => {
   };
 
   return (
-    <><Header /><Layout style={{ minHeight: "100vh" }}>
-      <Sider collapsedWidth={0}>
-        <div
-          className="logo"
-          style={{
-            height: 32,
-            margin: 16,
-            background: "rgba(255,255,255,0.3)",
-          }} />
-        <Menu
-          theme="dark"
-          mode="inline"
-          selectedKeys={[selectedKey]}
-          items={menuItems}
-          onClick={onMenuClick} />
-      </Sider>
-      <Layout>
-        <Content
-          style={{
-            margin: "24px",
-            padding: 24,
-            background: "#fff",
-            borderRadius: 8,
-          }}
-        >
-          <Outlet />
-        </Content>
+    <>
+      <Header />
+      <Layout style={{ minHeight: "100vh" }}>
+        <Sider collapsedWidth={0}>
+          <div
+            className="logo"
+            style={{
+              height: 32,
+              margin: 16,
+              background: "rgba(255,255,255,0.3)",
+            }}
+          />
+          <Menu
+            theme="dark"
+            mode="inline"
+            selectedKeys={[selectedKey]}
+            items={menuItems}
+            onClick={onMenuClick}
+          />
+        </Sider>
+        <Layout>
+          <Content
+            style={{
+              margin: "24px",
+              padding: 24,
+              background: "#fff",
+              borderRadius: 8,
+            }}
+          >
+            <Outlet />
+          </Content>
+        </Layout>
       </Layout>
-    </Layout></>
+    </>
   );
 };
 

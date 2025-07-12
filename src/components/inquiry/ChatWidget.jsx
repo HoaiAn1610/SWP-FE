@@ -33,7 +33,7 @@ export default function ChatWidget() {
   useEffect(() => {
     if (open && !inquiryId) {
       api
-        .get("/UserInquiry/myInquiries")
+        .get("/UserInquiry/Member-Inquiries")
         .then(({ data }) => setMyInquiries(data))
         .catch((err) => console.error(err));
     }
