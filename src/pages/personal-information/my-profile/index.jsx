@@ -346,7 +346,7 @@ export default function MyProfilePage() {
                           color="error"
                           onClick={doForceReset}
                         >
-                          Reset mật khẩu
+                          Tạo mật khẩu
                         </Button>
                       </Box>
                     </>
