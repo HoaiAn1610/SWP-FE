@@ -137,7 +137,7 @@ export default function CoursesPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      <div className="max-w-7xl mx-auto px-4 py-8 grid grid-cols-1 md:grid-cols-12 gap-6">
+      <div className="max-w-[90rem] mx-auto px-4 py-8 grid grid-cols-1 md:grid-cols-12 gap-6">
         <aside className="md:col-span-3">
           <div className="sticky top-24 h-[calc(100vh-6rem)] overflow-auto bg-white p-6 rounded-lg shadow">
             <FilterPanel

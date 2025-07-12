@@ -198,7 +198,7 @@ export default function CommentSection({ entity, entityId }) {
 
       {/* Alert */}
       {alertVisible && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+        <div className="fixed inset-0 flex items-center justify-center bg-opacity-50 backdrop-blur-sm">
           <div className="bg-white p-4 rounded-lg shadow-lg text-center">
             <p className="mb-4 font-semibold text-indigo-800">{alertMessage}</p>
             <button
@@ -213,7 +213,7 @@ export default function CommentSection({ entity, entityId }) {
 
       {/* Confirm */}
       {confirmVisible && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+        <div className="fixed inset-0 flex items-center justify-center bg-opacity-50 backdrop-blur-sm">
           <div className="bg-white p-4 rounded-lg shadow-lg text-center">
             <p className="mb-4 font-semibold text-indigo-800">
               {confirmMessage}

@@ -22,8 +22,8 @@ export default function CommentList({
   // comment/reply state
   const [newComment, setNewComment]       = useState('');
   const [replyTexts, setReplyTexts]       = useState({});
-  const [openReplies, setOpenReplies]     = useState({});
-  const [loadedReplies, setLoadedReplies] = useState({});
+  const [openReplies, setOpenReplies]     = useState({}); // Which comment has its reply input open
+  const [loadedReplies, setLoadedReplies] = useState({}); // Replies data for each comment
   const [userNames, setUserNames]         = useState({});
   const scrollRef = useRef();
 
@@ -61,63 +61,105 @@ export default function CommentList({
     el.style.height = el.scrollHeight + 'px';
   };
 
-  // toggle + load replies
+  // Toggle reply input & control branch display
   const toggleReplies = async parentId => {
-    setOpenReplies(o => ({ ...o, [parentId]: !o[parentId] }));
-    if (!loadedReplies[parentId]) {
-      try {
-        const { data } = await api.get(`/Comment/${parentId}/replies`);
-        setLoadedReplies(r => ({ ...r, [parentId]: Array.isArray(data) ? data : [] }));
-      } catch {
-        setLoadedReplies(r => ({ ...r, [parentId]: [] }));
+    const isOpen = !!openReplies[parentId];
+
+    if (isOpen) {
+      // Đang đóng lại nhánh này: reset cả hai state
+      setOpenReplies({});
+      setLoadedReplies({});
+    } else {
+      // Mở nhánh mới: tìm các ancestors trong loadedReplies để giữ lại, sau đó prune
+      const getParent = id =>
+        Object.keys(loadedReplies).find(key =>
+          loadedReplies[key].some(child => child.id === id)
+        );
+
+      const ancestors = [];
+      let current = parentId;
+      let parentKey;
+      // Lặp để tìm toàn bộ cha cho đến gốc
+      while ((parentKey = getParent(current))) {
+        ancestors.unshift(parentKey);
+        current = parentKey;
       }
+
+      // Giữ lại data của ancestors
+      const newLoaded = {};
+      ancestors.forEach(id => {
+        newLoaded[id] = loadedReplies[id];
+      });
+      setLoadedReplies(newLoaded);
+      setOpenReplies({ [parentId]: true });
+
+      // Load replies nếu chưa có
+      if (!loadedReplies[parentId]) {
+        try {
+          const { data } = await api.get(`/Comment/${parentId}/replies`);
+          setLoadedReplies(r => ({
+            ...r,
+            [parentId]: Array.isArray(data) ? data : []
+          }));
+        } catch {
+          setLoadedReplies(r => ({ ...r, [parentId]: [] }));
+        }
+      }
+    }
+
+    // Scroll to comment when opening
+    if (!isOpen) {
+      setTimeout(() => {
+        const el = document.getElementById(`comment-${parentId}`);
+        if (el && scrollRef.current) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 0);
     }
   };
 
-  // post new comment
+  // post new top-level comment
   const handlePostComment = async () => {
     if (!newComment.trim()) return;
     const created = await createComment(postId, newComment);
-    // Báo parent nếu cần
     onAddComment(postId, created);
-    // Thêm vào local state để render ngay
     setCommentList(prev => [...prev, created]);
     setNewComment('');
-    // auto-scroll xuống cuối
+    // scroll xuống cuối
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-    if (created.memberId) {
-      setUserNames(u => ({ ...u, [created.memberId]: 'You' }));
-    }
+    if (created.memberId) setUserNames(u => ({ ...u, [created.memberId]: 'You' }));
   };
 
-  // post reply
+  // post reply to a specific comment
   const handlePostReply = async parentId => {
     const text = (replyTexts[parentId] || '').trim();
     if (!text) return;
     const created = await postReply(parentId, text);
     onAddReply(postId, parentId, created);
-    setOpenReplies(o => ({ ...o, [parentId]: true }));
-    setLoadedReplies(r => ({ ...r, [parentId]: [...(r[parentId] || []), created] }));
+    // Giữ input mở, thêm reply mới
+    setOpenReplies({ [parentId]: true });
+    setLoadedReplies(r => ({
+      ...r,
+      [parentId]: [...(r[parentId] || []), created]
+    }));
     setReplyTexts(r => ({ ...r, [parentId]: '' }));
-    if (created.memberId) {
-      setUserNames(u => ({ ...u, [created.memberId]: 'You' }));
-    }
+    if (created.memberId) setUserNames(u => ({ ...u, [created.memberId]: 'You' }));
   };
 
-  // recursive render of thread
+  // Recursive render
   const renderThread = (list, depth = 0) =>
     list.map(c => {
       const canDelete =
         currentUser?.id === c.memberId ||
         ['Staff', 'Manager'].includes(currentUser?.role);
-
       return (
-        <div key={c.id} className="space-y-3">
+        <div key={c.id} id={`comment-${c.id}`} className="space-y-3">
           <div className="flex items-start space-x-3">
             <div className="w-10 h-10 bg-gray-300 rounded-full flex-shrink-0" />
             <div className="flex-1">
+              {/* Comment bubble */}
               <div
                 className="bg-gray-50 rounded-xl p-4 hover:bg-gray-100 cursor-pointer transition"
                 onClick={() => toggleReplies(c.id)}
@@ -132,7 +174,7 @@ export default function CommentList({
                 </div>
                 <p className="text-gray-700 whitespace-pre-wrap">{c.content}</p>
               </div>
-
+              {/* Actions */}
               <div className="flex space-x-4 text-sm text-gray-500 mt-1 ml-2">
                 <button
                   className="hover:text-blue-600"
@@ -140,7 +182,6 @@ export default function CommentList({
                 >
                   Trả lời
                 </button>
-                
                 {canDelete && (
                   <button
                     onClick={() =>
@@ -155,7 +196,7 @@ export default function CommentList({
                   </button>
                 )}
               </div>
-
+              {/* Reply input */}
               {openReplies[c.id] && (
                 <div className="flex items-start space-x-3 mt-3 ml-12">
                   <div className="w-10 h-10 bg-gray-300 rounded-full flex-shrink-0" />
@@ -178,8 +219,8 @@ export default function CommentList({
                   </button>
                 </div>
               )}
-
-              {openReplies[c.id] && loadedReplies[c.id] && (
+              {/* Show loaded replies permanently */}
+              {loadedReplies[c.id] && loadedReplies[c.id].length > 0 && (
                 <div className="ml-12 mt-4 space-y-4">
                   {renderThread(loadedReplies[c.id], depth + 1)}
                 </div>
@@ -206,7 +247,6 @@ export default function CommentList({
           </div>
         </div>
       )}
-
       {/* Confirm */}
       {confirmVisible && (
         <div className="fixed inset-0 flex items-center justify-center z-60">
@@ -232,7 +272,6 @@ export default function CommentList({
           </div>
         </div>
       )}
-
       {/* Main comments list */}
       <div className="flex flex-col h-full">
         <div
@@ -248,7 +287,6 @@ export default function CommentList({
             renderThread(commentList)
           )}
         </div>
-
         <div className="flex items-start space-x-3 mt-4 pt-4 border-t">
           <div className="w-10 h-10 bg-gray-300 rounded-full" />
           <textarea

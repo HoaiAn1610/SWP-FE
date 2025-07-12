@@ -413,7 +413,7 @@ export default function StaffInquiriesPage() {
 
       {/* Alert Popup */}
       {alertVisible && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
+        <div className="fixed inset-0 flex items-center justify-center backdrop-blur-sm z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg text-center max-w-xs">
             <h3 className="mb-2 text-lg font-semibold">Alert Popup</h3>
             <p className="mb-4 font-semibold text-indigo-800">{alertMessage}</p>
@@ -429,7 +429,7 @@ export default function StaffInquiriesPage() {
 
       {/* Modal Gán consultant */}
       {assignModalInquiryId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
+        <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm">
           <div className="bg-white rounded-lg shadow-lg w-full max-w-md mx-4 p-6">
             <h2 className="text-xl font-semibold mb-4">
               Chọn Consultant để gán

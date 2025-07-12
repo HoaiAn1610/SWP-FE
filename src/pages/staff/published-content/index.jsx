@@ -410,7 +410,7 @@ export default function CommunicationActivitiesPage() {
 
       {/* Alert Popup */}
       {alertVisible && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
+        <div className="fixed inset-0 flex items-center justify-center backdrop-blur-sm z-50">
           <div className="bg-white p-6 rounded-xl shadow-xl text-center">
             <p className="mb-4 font-semibold text-indigo-800">{alertMessage}</p>
             <button
@@ -425,7 +425,7 @@ export default function CommunicationActivitiesPage() {
 
       {/* Confirm Popup */}
       {confirmVisible && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
+        <div className="fixed inset-0 flex items-center justify-center backdrop-blur-sm z-50">
           <div className="bg-white p-6 rounded-xl shadow-xl text-center">
             <p className="mb-4 font-semibold text-indigo-800">
               {confirmMessage}

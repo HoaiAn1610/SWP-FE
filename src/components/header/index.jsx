@@ -98,7 +98,7 @@ export default function Header() {
               Hoạt động cộng đồng
             </Link>
             <Link to="/blog" className="text-gray-600 hover:text-blue-600">
-              Blog
+              Bài viết
             </Link>
           </nav>
         </div>
