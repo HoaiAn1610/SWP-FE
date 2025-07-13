@@ -49,23 +49,88 @@ export default function CommentSection({ entity, entityId }) {
       .catch(() => {});
   }, [currentUserId]);
 
-  // 1) Load comments
+  // Hàm đệ quy lấy replies cho 1 parent comment, và cộng +7h nếu là activity
+  const loadNestedReplies = async (parentId) => {
+    try {
+      const res = await api.get(`/Comment/${parentId}/replies`);
+      let list = res.data;
+
+      // Cộng +7h cho createdDate của replies khi entity === "activity"
+      if (entity === "activity") {
+        list = list.map((c) => {
+          const d = new Date(c.createdDate);
+          d.setHours(d.getHours() + 7);
+          return { ...c, createdDate: d.toISOString() };
+        });
+      }
+
+      // Với mỗi reply tiếp tục đệ quy lấy con của nó
+      const withChildren = await Promise.all(
+        list.map(async (r) => ({
+          ...r,
+          replies: await loadNestedReplies(r.id),
+        }))
+      );
+      return withChildren;
+    } catch {
+      return []; // lỗi thì coi như không có replies
+    }
+  };
+
+  // 1) Load comments + toàn bộ nested replies
   useEffect(() => {
     setLoading(true);
-    const url =
-      entity === "activity"
-        ? `/Comment/get-by-activity/${entityId}`
-        : `/Comment/get-post-comment/${entityId}`;
-    api
-      .get(url)
-      .then((res) => setComments(res.data))
-      .catch(() => setError("Lỗi tải bình luận"))
-      .finally(() => setLoading(false));
+    const fetchAll = async () => {
+      try {
+        const url =
+          entity === "activity"
+            ? `/Comment/get-by-activity/${entityId}`
+            : `/Comment/get-post-comment/${entityId}`;
+        const res = await api.get(url);
+        let data = res.data;
+
+        // chỉ +7h khi activity cho top-level
+        if (entity === "activity") {
+          data = data.map((c) => {
+            const d = new Date(c.createdDate);
+            d.setHours(d.getHours() + 7);
+            return { ...c, createdDate: d.toISOString() };
+          });
+        }
+
+        // với mỗi comment cấp 1, gọi đệ quy để lấy replies
+        const commentsWithReplies = await Promise.all(
+          data.map(async (c) => ({
+            ...c,
+            replies: await loadNestedReplies(c.id),
+          }))
+        );
+        setComments(commentsWithReplies);
+      } catch {
+        setError("Lỗi tải bình luận");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAll();
   }, [entity, entityId]);
 
-  // 2) Load name+role của các tác giả
+  // 2) Load name+role của các tác giả (cả top-level và replies)
   useEffect(() => {
-    const ids = Array.from(new Set(comments.map((c) => c.memberId)));
+    const ids = Array.from(
+      new Set(
+        comments.flatMap((c) => {
+          const all = [];
+          const dfs = (node) => {
+            all.push(node.memberId);
+            (node.replies || []).forEach(dfs);
+          };
+          dfs(c);
+          return all;
+        })
+      )
+    );
     const toFetch = ids.filter((id) => !userInfos[id]);
     if (toFetch.length === 0) return;
 
@@ -89,14 +154,18 @@ export default function CommentSection({ entity, entityId }) {
     });
   }, [comments, userInfos]);
 
-  // Format time +7h
+  // Format time hiển thị theo múi giờ Asia/Ho_Chi_Minh
   const formatTime = (dateStr) => {
     const d = new Date(dateStr);
-    d.setHours(d.getHours() + 7);
-    return d.toLocaleTimeString();
+    return d.toLocaleTimeString("vi-VN", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      timeZone: "Asia/Ho_Chi_Minh",
+    });
   };
 
-  // Thêm comment
+  // Thêm comment (không +7h khi POST)
   const addComment = async () => {
     if (!newContent.trim()) return;
     try {
@@ -109,14 +178,14 @@ export default function CommentSection({ entity, entityId }) {
           ? "/Comment/create-activity-comment"
           : "/Comment/create-blogpost-comment";
       const res = await api.post(url, dto);
-      setComments([...comments, res.data]);
+      setComments([...comments, { ...res.data, replies: [] }]);
       setNewContent("");
     } catch {
       showAlert("Lỗi khi thêm bình luận");
     }
   };
 
-  // Thêm reply
+  // Thêm reply (giữ nguyên createdDate trả về, không +7h)
   const addReply = async (parentId, text) => {
     if (!text.trim()) return;
     try {
@@ -127,9 +196,14 @@ export default function CommentSection({ entity, entityId }) {
       const insert = (list) =>
         list.map((c) => {
           if (c.id === parentId) {
-            return { ...c, replies: [...(c.replies || []), res.data] };
+            return {
+              ...c,
+              replies: [...(c.replies || []), { ...res.data, replies: [] }],
+            };
           }
-          if (c.replies) return { ...c, replies: insert(c.replies) };
+          if (c.replies) {
+            return { ...c, replies: insert(c.replies) };
+          }
           return c;
         });
       setComments(insert(comments));
@@ -147,7 +221,14 @@ export default function CommentSection({ entity, entityId }) {
     showConfirm("Bạn có chắc chắn muốn xóa bình luận này?", async () => {
       try {
         await api.delete(`/Comment/delete-comment/${id}`);
-        setComments(comments.filter((c) => c.id !== id));
+        const remove = (list) =>
+          list
+            .filter((c) => c.id !== id)
+            .map((c) => ({
+              ...c,
+              replies: remove(c.replies || []),
+            }));
+        setComments(remove(comments));
         showAlert("Xóa thành công");
       } catch {
         showAlert("Xóa thất bại");
@@ -226,9 +307,7 @@ export default function CommentSection({ entity, entityId }) {
                 Hủy
               </button>
               <button
-                onClick={() => {
-                  confirmAction();
-                }}
+                onClick={() => confirmAction()}
                 className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
               >
                 OK
@@ -256,7 +335,6 @@ function CommentItem({
 
   const author = userInfos[comment.memberId] || {};
   const authorName = author.name || `User#${comment.memberId}`;
-  const authorRole = author.role;
 
   // Quyền xóa
   const canDelete =
