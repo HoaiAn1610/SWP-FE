@@ -1,47 +1,49 @@
 // src/pages/personal-information/PersonalInfoLayout.jsx
 import React from "react";
+import { NavLink, Outlet } from "react-router-dom";
 import Header from "@/components/Header";
-import { Outlet, Link } from "react-router-dom";
+
+const navItems = [
+  { to: "myProfilePage", label: "Hồ sơ của tôi" },
+  { to: "security", label: "Bảo mật" },
+  { to: "settings", label: "Cài đặt" },
+];
 
 export default function PersonalInfoLayout() {
   return (
-    <div className="min-h-screen flex flex-col">
-      {/* 1. Header chung */}
+    <>
       <Header />
-
-      <div className="flex flex-1">
-        {/* 2. Thanh bên */}
-        <aside className="w-64 bg-white border-r p-6 space-y-4">
-          <h2 className="text-xl font-semibold">Tài khoản của tôi</h2>
-          <nav className="space-y-2">
-            <Link
-              to="my-profile"
-              className="block px-3 py-2 rounded hover:bg-gray-100"
-            >
-              Hồ sơ của tôi
-            </Link>
-
-            <Link
-              to="security"
-              className="block px-3 py-2 rounded hover:bg-gray-100"
-            >
-              Bảo mật
-            </Link>
-            <Link
-              to="settings"
-              className="block px-3 py-2 rounded hover:bg-gray-100"
-            >
-              Cài đặt
-            </Link>
-            {/* ... thêm các mục khác nếu cần */}
-          </nav>
+      <div className="flex min-h-screen">
+        {/* Thanh bên */}
+        <aside className="w-64 bg-white border-r shadow-sm">
+          <div className="p-6">
+            <h2 className="text-xl font-bold mb-8">Tài khoản của tôi</h2>
+            <nav className="space-y-2">
+              {navItems.map(({ to, label }) => (
+                <NavLink
+                  key={to}
+                  to={to}
+                  end
+                  className={({ isActive }) =>
+                    `block px-4 py-2 rounded-md font-medium transition-colors ${
+                      isActive
+                        ? "bg-indigo-600 text-white"
+                        : "text-gray-700 hover:bg-gray-100"
+                    }`
+                  }
+                >
+                  {label}
+                </NavLink>
+              ))}
+            </nav>
+          </div>
         </aside>
 
-        {/* 3. Nội dung chính */}
-        <main className="flex-1 p-8 bg-gray-50">
+        {/* Nội dung chính */}
+        <main className="flex-1 bg-gray-50 p-8">
           <Outlet />
         </main>
       </div>
-    </div>
+    </>
   );
 }
