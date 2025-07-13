@@ -165,7 +165,7 @@ export default function ConsultantSchedulePage() {
 
         {/* Modal Create/Edit */}
         {modalVisible && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm">
             <div className="bg-white rounded-lg shadow-lg w-full max-w-md overflow-hidden">
               <form onSubmit={handleSubmit} className="p-6 space-y-4">
                 <h2 className="text-xl font-semibold">

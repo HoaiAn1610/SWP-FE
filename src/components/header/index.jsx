@@ -48,7 +48,7 @@ export default function Header() {
       case "consultant":
         return "/consultant/appointments";
       case "staff":
-        return "/staff/draft-content";
+        return "/staff/published-content";
       default:
         return null;
     }

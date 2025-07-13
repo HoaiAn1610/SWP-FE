@@ -8,13 +8,12 @@ export const fetchTags = async () => {
 export const fetchAllPosts = async () => {
   const { data } = await api.get('/BlogPost/get-all-blogpost');
   // Chuẩn hóa thành mảng
-  const posts = Array.isArray(data) 
-    ? data 
-    : data 
-      ? [data] 
+  const posts = Array.isArray(data)
+    ? data
+    : data
+      ? [data]
       : [];
-  // Lọc chỉ lấy những bài đã xuất bản
-  return posts.filter(post => post.status === 'Published');
+  return posts;  // <-- Thêm dòng này
 };
 // Tạo tag mới
 export const createTag = async (name) => {

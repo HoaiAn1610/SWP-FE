@@ -42,7 +42,7 @@ const FilterPanel = ({ filters, onFilterChange, onClearFilters }) => {
   };
 
   return (
-    <div className="filter-panel">
+    <div className="filter-panel sticky top-12 bg-white z-10">
       <h5>Lọc khóa học</h5>
 
       <div className="section-title">Mức độ</div>
