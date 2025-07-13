@@ -800,7 +800,7 @@ const pagedQuestions = questions.slice(
 
         {/* Modal Tạo Câu hỏi */}
         {createModalVisible && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm">
             <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl mx-4 overflow-hidden">
               <div className="px-6 py-4 border-b">
                 <h2 className="text-xl font-semibold text-gray-800">
@@ -879,7 +879,7 @@ const pagedQuestions = questions.slice(
 
         {/* Modal Sửa Câu hỏi */}
         {editModalVisible && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm">
             <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl mx-4 overflow-hidden">
               <div className="px-6 py-4 border-b">
                 <h2 className="text-xl font-semibold text-gray-800">
@@ -958,7 +958,7 @@ const pagedQuestions = questions.slice(
 
         {/* Modal Chi tiết + Thêm/Sửa đáp án */}
         {viewModalVisible && viewQuestion && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm">
             <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4 overflow-hidden">
               <div className="px-6 py-4 border-b flex justify-between items-center">
                 <h2 className="text-xl font-semibold text-gray-800">
@@ -1016,7 +1016,7 @@ const pagedQuestions = questions.slice(
 
         {/* Modal Thêm đáp án */}
         {addOptionModalVisible && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm">
             <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 overflow-hidden">
               {/* Header */}
               <div className="px-6 py-4 border-b flex justify-between items-center">
@@ -1096,7 +1096,7 @@ const pagedQuestions = questions.slice(
 
         {/* Modal Sửa đáp án */}
         {editOptionModalVisible && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm">
             <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 overflow-hidden">
               <div className="px-6 py-4 border-b">
                 <h2 className="text-xl font-semibold text-gray-800">
@@ -1146,7 +1146,7 @@ const pagedQuestions = questions.slice(
 
         {/* Material Form Modal */}
         {materialFormVisible && (
-          <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center p-4">
+          <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center p-4">
             <form
               onSubmit={handleMaterialSubmit}
               className="bg-white rounded-lg shadow-lg p-6 w-full max-w-lg space-y-4"
@@ -1252,7 +1252,7 @@ const pagedQuestions = questions.slice(
 
         {/* Confirm Popup */}
         {confirmVisible && (
-          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
+          <div className="fixed inset-0 flex items-center justify-center backdrop-blur-sm z-50">
             <div className="bg-white p-6 rounded-lg shadow-lg text-center">
               <p className="mb-4 font-semibold text-indigo-800">
                 {confirmMessage}
@@ -1280,7 +1280,7 @@ const pagedQuestions = questions.slice(
 
         {/* Alert Popup */}
         {alertVisible && (
-          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
+          <div className="fixed inset-0 flex items-center justify-center backdrop-blur-sm z-50">
             <div className="bg-white p-6 rounded-lg shadow-lg text-center">
               <p className="mb-4 font-semibold text-indigo-800">
                 {alertMessage}

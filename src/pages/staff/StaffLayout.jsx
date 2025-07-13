@@ -4,7 +4,6 @@ import { NavLink, Outlet } from "react-router-dom";
 import Header from "@/components/header";
 
 const navItems = [
-  { to: "draft-content", label: "Nội Dung Nháp" },
   { to: "published-content", label: "Nội Dung Đã Xuất Bản" },
   { to: "view-blog-posts", label: "Xem Bài Viết Blog" },
   { to: "staff-inquirie", label: "Phân Công Yêu Cầu" },

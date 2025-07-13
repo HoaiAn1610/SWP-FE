@@ -77,8 +77,8 @@ const userId = localStorage.getItem('id');
   return (
     <div className="min-h-screen bg-gray-100">
       <Header />
-      <div className="flex">
-        <aside className="w-1/4 bg-white p-4 border-r">
+      <div className="flex ">
+        <aside className="w-1/4 bg-white p-4 border-r ">
           <TagTabs
             tabs={tabs}
             selectedIndex={selectedIndex}

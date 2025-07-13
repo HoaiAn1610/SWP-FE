@@ -45,7 +45,7 @@ export default function CrafftPage() {
     (async () => {
       try {
         setLoading(true);
-        const res = await api.get(`/surveys/2/submissions/get-questions`);
+        const res = await api.get(`/surveys/3/submissions/get-questions`);
         const map = new Map();
         res.data.forEach((q) => {
           if (!map.has(q.substanceName)) {
@@ -106,7 +106,7 @@ export default function CrafftPage() {
     }
   };
 
-  // --- Phase B next & tính điểm chỉ B ---
+   // --- Phase B next & tính điểm chỉ B ---
   const handleBNext = (opt) => {
     const qB = bQuestions[bIndex];
     const nextB = [...bAnswers, { questionId: qB.id, optionId: opt.id }];
@@ -115,8 +115,12 @@ export default function CrafftPage() {
     if (bIndex + 1 < bQuestions.length) {
       setBIndex((i) => i + 1);
     } else {
-      // tính điểm B
-      const totalScore = nextB.filter((a) => a.optionId != null).length;
+      // tính điểm B (khi chưa đăng nhập): chỉ cộng 1 điểm nếu chọn 'Có'
+      const totalScore = nextB.reduce((sum, a) => {
+        const question = bQuestions.find((q) => q.id === a.questionId);
+        const selectedOption = question?.options.find((o) => o.id === a.optionId);
+        return sum + (selectedOption?.optionText === 'Có' ? 1 : 0);
+      }, 0);
       const riskLevel =
         totalScore === 0 ? "Low" : totalScore >= 3 ? "High" : "Medium";
 
@@ -141,10 +145,13 @@ export default function CrafftPage() {
             optionId: a.optionId,
           })),
         ];
-        api
-          .post(`/surveys/2/submissions/submit`, payload)
-          .then((r) => setSubmissionResult(r.data))
-          .catch((err) => setError(err.message));
+       api
+  .post(`/surveys/3/submissions/submit`, payload)
+  .then((r) =>
+    // gộp trả lời local vào luôn, đảm bảo luôn có mảng answers
+    setSubmissionResult({ ...r.data, answers: nextB })
+  )
+  .catch((err) => setError(err.message));
       } else {
         // hiển thị tạm trên client
         setSubmissionResult(result);

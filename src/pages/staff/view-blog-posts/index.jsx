@@ -205,7 +205,7 @@ export default function ViewBlogPostsPage() {
   };
 
   const filtered = posts.filter(p => {
-    if (selectedTab === 'pending')   return p.status === 'Pending';
+    if (selectedTab === 'pending')   return ['Pending','Submitted'].includes(p.status);
     if (selectedTab === 'reviewed')  return ['Approved','Rejected'].includes(p.status);
     if (selectedTab === 'published') return p.status === 'Published';
     return false;
@@ -493,6 +493,14 @@ export default function ViewBlogPostsPage() {
                   </p>
                 </div>
                 <div className="mt-4 md:mt-0 flex space-x-2">
+                    {selectedTab === 'pending' && post.status.toLowerCase().trim() !== 'submitted'  && (
+                    <button
+                      onClick={() => handleSendForApproval(post.id)}
+                      className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg"
+                    >
+                      Gửi duyệt
+                    </button>
+                  )}
                   <button
                     onClick={() => openEditModal(post)}
                     className="px-3 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg"
@@ -505,14 +513,7 @@ export default function ViewBlogPostsPage() {
                   >
                     Xóa
                   </button>
-                  {selectedTab === 'pending' && (
-                    <button
-                      onClick={() => handleSendForApproval(post.id)}
-                      className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg"
-                    >
-                      Gửi duyệt
-                    </button>
-                  )}
+                
                   {selectedTab === 'published' && (
                     <button
                       onClick={() =>
