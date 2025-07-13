@@ -17,6 +17,7 @@ import SurveyPage from "@/pages/survey/SurveyPage";
 import SurveySection from "@/pages/survey/surveySection";
 import AssistPage from "@/pages/survey/assist";
 import CrafftPage from "@/pages/survey/Crafft";
+import SurveyHistoryPage from "@/pages/survey/SurveyHistoryPage";
 
 // import ProtectedRoute from "@/components/protected-route";
 import LessonPage from "@/pages/auth/course/LessonPage";
@@ -40,7 +41,7 @@ import TeamSchedulePage from "@/pages/manager/team-schedule";
 import ViewManagerCoursePage from "./pages/manager/view-course-page";
 
 import StaffLayout from "@/pages/staff/StaffLayout";
-import DraftContentPage from "@/pages/staff/draft-content";
+
 import PublishedContentPage from "@/pages/staff/published-content";
 import ViewBlogPostsPage from "@/pages/staff/view-blog-posts";
 import StaffInquiriesPage from "@/pages/staff/staff-Inquiries-page";
@@ -140,6 +141,7 @@ function App() {
         { index: true, element: <SurveySection /> },
         { path: "assist", element: <AssistPage /> },
         { path: "crafft", element: <CrafftPage /> },
+          { path: "history", element: <SurveyHistoryPage/>}
       ],
     },
     {
@@ -198,8 +200,8 @@ function App() {
         </ProtectedRoute>
       ),
       children: [
-        { index: true, element: <Navigate to="draft-content" replace /> },
-        { path: "draft-content", element: <DraftContentPage /> },
+        { index: true, element: <Navigate to="published-content" replace /> },
+
         { path: "published-content", element: <PublishedContentPage /> },
         { path: "view-blog-posts", element: <ViewBlogPostsPage /> },
         { path: "staff-inquirie", element: <StaffInquiriesPage /> },
