@@ -263,7 +263,7 @@ export default function ApprovedPage() {
 
       {/* Alert Popup */}
       {alertVisible && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
+        <div className="fixed inset-0 flex items-center justify-center z-60 backdrop-blur-sm">
           <div className="bg-white p-6 rounded-lg shadow-lg text-center">
             <p className="mb-4 font-semibold text-indigo-800">{alertMessage}</p>
             <button
@@ -278,7 +278,7 @@ export default function ApprovedPage() {
 
       {/* Confirm Popup */}
       {confirmVisible && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
+        <div className="fixed inset-0 flex items-center justify-center z-60 backdrop-blur-sm">
           <div className="bg-white p-6 rounded-lg shadow-lg text-center">
             <p className="mb-4 font-semibold text-indigo-800">
               {confirmMessage}
@@ -306,7 +306,7 @@ export default function ApprovedPage() {
 
       {/* Modal Nhập lý do từ chối */}
       {rejectModalVisible && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
+        <div className="fixed inset-0 flex items-center justify-center z-60 backdrop-blur-sm">
           <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
             <h3 className="text-xl mb-3">Nhập lý do từ chối</h3>
             <textarea
@@ -335,7 +335,7 @@ export default function ApprovedPage() {
 
       {/* Modal Lên lịch xuất bản */}
       {scheduleModalVisible && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
+        <div className="fixed inset-0 flex items-center justify-center z-60 backdrop-blur-sm">
           <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full">
             <h3 className="text-xl mb-3">Chọn ngày giờ xuất bản</h3>
             <input

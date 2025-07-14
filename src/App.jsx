@@ -143,7 +143,7 @@ function App() {
         { index: true, element: <SurveySection /> },
         { path: "assist", element: <AssistPage /> },
         { path: "crafft", element: <CrafftPage /> },
-          { path: "history", element: <SurveyHistoryPage/>}
+        { path: "history", element: <SurveyHistoryPage /> },
       ],
     },
     {

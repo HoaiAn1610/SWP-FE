@@ -6,7 +6,7 @@ import Header from "@/components/header";
 export default function ManagerLayout() {
   const navItems = [
     { to: "overview", label: "Tổng quan" },
-    { to: "approved", label: "Duyệt bài" },
+    { to: "approved", label: "Duyệt khóa học" },
     { to: "task-queue", label: "Duyệt Blog" },
     { to: "team-schedule", label: "Duyệt Hoạt động" },
   ];

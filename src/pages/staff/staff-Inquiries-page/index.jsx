@@ -1,4 +1,3 @@
-// src/pages/staff/StaffInquiriesPage.jsx
 import React, { useEffect, useState, useRef } from "react";
 import api from "@/config/axios";
 import { uploadFile } from "@/utils/upload";
@@ -261,6 +260,7 @@ export default function StaffInquiriesPage() {
         <div className="divide-y">
           {inquiries.map((iq) => {
             const assignment = assignments[iq.id];
+            const assigneeName = assignment?.assignedTo?.name;
             const isAssigned =
               assignment &&
               assignment.assignedById === currentStaffId &&
@@ -273,14 +273,17 @@ export default function StaffInquiriesPage() {
                       #{iq.id} – {iq.subject}
                     </p>
                     <p className="text-sm text-gray-600">
+                      Người tạo: {iq.createdBy?.name ?? "Không xác định"}
+                    </p>
+                    <p className="text-sm text-gray-600">
                       Trạng thái: {iq.status}
                     </p>
                     <p className="text-xs text-gray-500">
                       Tạo: {formatInquiryDateTime(iq.createdDate)}
                     </p>
-                    {isAssigned && (
+                    {isAssigned && assigneeName && (
                       <p className="text-sm text-green-600 mt-1">
-                        Đã gán cho {assignment.assignedTo.name}
+                        Đã gán cho {assigneeName}
                       </p>
                     )}
                   </div>
@@ -398,7 +401,7 @@ export default function StaffInquiriesPage() {
                       />
                       <button
                         onClick={handleSend}
-                        className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                        className="px-4 py-2 bg-green-600 text-white rounded hover:bg_GREEN-700"
                       >
                         Gửi
                       </button>
@@ -447,7 +450,7 @@ export default function StaffInquiriesPage() {
                     <button
                       onClick={() => handleAssign(c.id)}
                       disabled={assigning}
-                      className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
+                      className="px-3 py-1 bg-green-600 text-white rounded hover:bg_GREEN-700"
                     >
                       {assigning ? "Đang gán…" : "Gán"}
                     </button>
@@ -469,7 +472,7 @@ export default function StaffInquiriesPage() {
 
       {/* Confirm Popup */}
       {confirmVisible && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
+        <div className="fixed inset-0 flex items-center justify-center z-60 backdrop-blur-sm">
           <div className="bg-white p-6 rounded-lg shadow-lg text-center max-w-xs">
             <h3 className="mb-2 text-lg font-semibold">Xác nhận</h3>
             <p className="mb-4">{confirmMessage}</p>
