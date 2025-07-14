@@ -11,7 +11,7 @@ export default function Header() {
   const [role, setRole] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
-
+  const id = localStorage.getItem("id");
   // Đóng dropdown khi click ra ngoài
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -160,6 +160,18 @@ export default function Header() {
                   >
                     Hồ sơ của tôi
                   </Link>
+                 
+                  {role.toLowerCase() === "member" && (
+                    <>
+                      <div className="border-t my-1" />
+                      <Link
+                        to="/survey/history"
+                        className="block px-4 py-2 hover:bg-gray-100 text-gray-700"
+                      >
+                        Lịch sử khảo sát
+                      </Link>
+                    </>
+                  )}
                   <button
                     onClick={handleLogout}
                     className="w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-700"

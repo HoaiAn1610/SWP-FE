@@ -4,19 +4,21 @@ import Header from "@/components/header";
 import api from "@/config/axios";
 
 export default function BookingHistoryPage() {
-  const [history, setHistory]             = useState([]);
+  const [history, setHistory]               = useState([]);
   const [consultantsMap, setConsultantsMap] = useState({});
-  const [notesMap, setNotesMap]           = useState({});
-  const [visibleNotes, setVisibleNotes]   = useState(new Set());
-  const [loading, setLoading]             = useState(true);
-  const [error, setError]                 = useState(null);
+  const [notesMap, setNotesMap]             = useState({});
+  const [visibleNotes, setVisibleNotes]     = useState(new Set());
+  const [loading, setLoading]               = useState(true);
+  const [error, setError]                   = useState(null);
 
-  // Alert / Confirm
-  const [alertVisible, setAlertVisible]   = useState(false);
-  const [alertMessage, setAlertMessage]   = useState("");
-  const [confirmVisible, setConfirmVisible] = useState(false);
-  const [confirmMessage, setConfirmMessage] = useState("");
-  const [confirmAction, setConfirmAction] = useState(() => {});
+  // Alert
+  const [alertVisible, setAlertVisible]     = useState(false);
+  const [alertMessage, setAlertMessage]     = useState("");
+
+  // Modal hủy
+  const [cancelModalVisible, setCancelModalVisible] = useState(false);
+  const [cancelReasonInput, setCancelReasonInput]   = useState("");
+  const [cancelTargetId, setCancelTargetId]         = useState(null);
 
   useEffect(() => {
     const userId = localStorage.getItem("id");
@@ -34,46 +36,60 @@ export default function BookingHistoryPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const showConfirm = (message, action) => {
-    setConfirmMessage(message);
-    setConfirmAction(() => action);
-    setConfirmVisible(true);
-  };
-  const hideConfirm = () => setConfirmVisible(false);
-
   const showAlert = msg => {
     setAlertMessage(msg);
     setAlertVisible(true);
   };
 
-  const handleCancel = requestId => {
-    showConfirm(
-      "Bạn có chắc muốn huỷ cuộc hẹn này không?",
-      () => {
-        api.delete(`/AppointmentRequest/${requestId}`)
-          .then(() => {
-            setHistory(h => h.filter(item => item.id !== requestId));
-            showAlert("Huỷ cuộc hẹn thành công");
-          })
-          .catch(() => showAlert("Huỷ không thành công"));
-      }
-    );
+  const openCancelModal = requestId => {
+    setCancelTargetId(requestId);
+    setCancelReasonInput("");
+    setCancelModalVisible(true);
+  };
+  const closeCancelModal = () => {
+    setCancelModalVisible(false);
+    setCancelTargetId(null);
+    setCancelReasonInput("");
+  };
+
+  const confirmCancel = () => {
+    if (!cancelReasonInput.trim()) {
+      showAlert("Vui lòng nhập lý do huỷ.");
+      return;
+    }
+    api.patch(`/AppointmentRequest/${cancelTargetId}`, { reason: cancelReasonInput })
+      .then(() => {
+        setHistory(h =>
+          h.map(item =>
+            item.id === cancelTargetId
+              ? {
+                  ...item,
+                  status: "Cancelled",
+                  cancelledDate: new Date().toISOString(),
+                  cancelReason: cancelReasonInput
+                }
+              : item
+          )
+        );
+        closeCancelModal();
+        showAlert("Huỷ cuộc hẹn thành công");
+      })
+      .catch(() => {
+        showAlert("Huỷ không thành công");
+      });
   };
 
   const toggleNote = appointmentId => {
     if (visibleNotes.has(appointmentId)) {
-      // ẩn ghi chú
       setVisibleNotes(prev => {
         const copy = new Set(prev);
         copy.delete(appointmentId);
         return copy;
       });
     } else {
-      // nếu đã có ghi chú, chỉ bật hiển thị
       if (notesMap[appointmentId]) {
         setVisibleNotes(prev => new Set(prev).add(appointmentId));
       } else {
-        // fetch ghi chú
         api.get(`/ConsultationNote/get-note?appointmentId=${appointmentId}`)
           .then(({ data }) => {
             if (data.length > 0) {
@@ -119,6 +135,8 @@ export default function BookingHistoryPage() {
                     className={`px-2 py-1 rounded-full text-sm ${
                       item.status === "Pending"
                         ? "bg-yellow-100 text-yellow-800"
+                        : item.status === "Confirmed" || item.status === "Confirm"
+                        ? "bg-yellow-100 text-yellow-800"
                         : item.status === "Completed"
                         ? "bg-green-100 text-green-800"
                         : item.status === "Cancelled"
@@ -145,11 +163,10 @@ export default function BookingHistoryPage() {
                   </p>
                 )}
 
-                {/* Buttons bên trái */}
                 <div className="flex justify-start space-x-3 mt-4">
-                  {(item.status === "Pending" || item.status === "Confirm") && (
+                  {["Pending","Confirm","Confirmed"].includes(item.status) && (
                     <button
-                      onClick={() => handleCancel(item.id)}
+                      onClick={() => openCancelModal(item.id)}
                       className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition"
                     >
                       Hủy
@@ -165,7 +182,6 @@ export default function BookingHistoryPage() {
                   )}
                 </div>
 
-                {/* Hiển thị note nếu có và đang visible */}
                 {visibleNotes.has(item.id) && notesMap[item.id] && (
                   <div className="mt-4 p-4 bg-blue-50 border-l-4 border-blue-300 rounded">
                     <p className="font-medium text-blue-700">Ghi chú chuyên gia:</p>
@@ -175,6 +191,36 @@ export default function BookingHistoryPage() {
               </li>
             ))}
           </ul>
+        )}
+
+        {/* Modal nhập lý do hủy */}
+        {cancelModalVisible && (
+          <div className="fixed inset-0 flex items-center justify-center z-50 backdrop-blur-sm">
+            <div className="bg-white rounded-lg shadow-lg w-96 p-6">
+              <h2 className="text-xl font-semibold mb-4 text-red-600">Huỷ cuộc hẹn</h2>
+              <textarea
+                value={cancelReasonInput}
+                onChange={e => setCancelReasonInput(e.target.value)}
+                rows={4}
+                placeholder="Nhập lý do huỷ..."
+                className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:border-indigo-300"
+              />
+              <div className="mt-4 flex justify-end space-x-2">
+                <button
+                  onClick={closeCancelModal}
+                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
+                >
+                  Đóng
+                </button>
+                <button
+                  onClick={confirmCancel}
+                  className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+                >
+                  Xác nhận huỷ
+                </button>
+              </div>
+            </div>
+          </div>
         )}
 
         {/* Alert */}
@@ -192,31 +238,6 @@ export default function BookingHistoryPage() {
           </div>
         )}
 
-        {/* Confirm */}
-        {confirmVisible && (
-        <div className="fixed inset-0 flex items-center justify-center z-60 backdrop-blur-sm">
-          <div className="bg-white p-4 rounded-lg shadow-lg max-w-xs text-center border border-indigo-200">
-            <p className="mb-4 text-indigo-800 font-semibold">{confirmMessage}</p>
-            <div className="flex justify-center space-x-2">
-              <button
-                onClick={hideConfirm}
-                className="px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-md"
-              >
-                Huỷ
-              </button>
-              <button
-                onClick={() => {
-                  confirmAction();
-                  hideConfirm();
-                }}
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md"
-              >
-                OK
-              </button>
-            </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

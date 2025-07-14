@@ -6,7 +6,7 @@ import api from "@/config/axios";
 export default function BookingPage() {
   const navigate = useNavigate();
 
-  // Helper: format date/time with +7h offset
+  // Helper: format date/time với +7h offset
   const formatDateWithOffset = dateStr => {
     const dt = new Date(dateStr);
     dt.setHours(dt.getHours() + 7);
@@ -56,7 +56,7 @@ export default function BookingPage() {
       .finally(() => setLoadingCons(false));
   }, []);
 
-  // Chọn consultant
+  // Chọn consultant và chỉ hiển thị lịch tương lai
   const handleSelectConsultant = c => {
     if (selectedConsultant?.id === c.id) {
       setSelectedConsultant(null);
@@ -68,8 +68,18 @@ export default function BookingPage() {
     setSelectedScheduleId(null);
     setSchedules([]);
     setLoadingSched(true);
+
     api.get(`/ConsultantSchedule/${c.id}`)
-      .then(({ data }) => setSchedules(data))
+      .then(({ data }) => {
+        const now = new Date();
+        const futureSchedules = data.filter(s => {
+          const [h, m] = s.endTime.split(":").map(Number);
+          const dt = new Date(s.scheduleDate);
+          dt.setHours(h, m, 0, 0);
+          return dt > now;
+        });
+        setSchedules(futureSchedules);
+      })
       .catch(console.error)
       .finally(() => setLoadingSched(false));
   };

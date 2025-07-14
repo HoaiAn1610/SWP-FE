@@ -18,12 +18,12 @@ export default function AllSurveyHistoryPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // For modal detail
+  // Modal chi tiết
   const [showModal, setShowModal] = useState(false);
   const [detail, setDetail] = useState(null);
   const [selectedSub, setSelectedSub] = useState(null);
-  
-  // Course suggestions
+
+  // Đề xuất khóa học
   const [suggestedCourses, setSuggestedCourses] = useState([]);
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [showCourseModal, setShowCourseModal] = useState(false);
@@ -32,7 +32,11 @@ export default function AllSurveyHistoryPage() {
   const isLoggedIn = useMemo(() => !!localStorage.getItem("token"), []);
   const memberId = localStorage.getItem("id");
 
-  // Load questions and submissions
+  // Format ngày giờ: cộng 7 tiếng
+  const formatDatePlus7 = (dateStr) =>
+    new Date(new Date(dateStr).getTime() + 7 * 60 * 60 * 1000).toLocaleString('vi-VN');
+
+  // Tải câu hỏi và lịch sử
   useEffect(() => {
     async function loadData() {
       setLoading(true);
@@ -54,19 +58,13 @@ export default function AllSurveyHistoryPage() {
         ]);
 
         setAssistSubs(
-          assistRes.data.map((s) => ({
-            ...s,
-            surveyId: ASSIST_SURVEY_ID,
-            surveyName: "Assist Survey",
-          }))
+          assistRes.data
+            .map((s) => ({...s, surveyId: ASSIST_SURVEY_ID, surveyName: "Assist Survey"}))
             .sort((a, b) => new Date(b.submissionDate) - new Date(a.submissionDate))
         );
         setCrafftSubs(
-          crafftRes.data.map((s) => ({
-            ...s,
-            surveyId: CRAFFT_SURVEY_ID,
-            surveyName: "CRAFFT Survey",
-          }))
+          crafftRes.data
+            .map((s) => ({...s, surveyId: CRAFFT_SURVEY_ID, surveyName: "CRAFFT Survey"}))
             .sort((a, b) => new Date(b.submissionDate) - new Date(a.submissionDate))
         );
       } catch (e) {
@@ -77,12 +75,12 @@ export default function AllSurveyHistoryPage() {
     }
     if (memberId) loadData();
     else {
-      setError("Vui lòng đăng nhập để xem lịch sử.");
+      setError("Vui lòng đăng nhập để xem lịch sử khảo sát.");
       setLoading(false);
     }
   }, [memberId]);
 
-  // Quick lookup maps
+  // Map nhanh
   const assistMap = useMemo(
     () => Object.fromEntries(assistQuestions.map((q) => [q.id, q])),
     [assistQuestions]
@@ -92,14 +90,12 @@ export default function AllSurveyHistoryPage() {
     [crafftQuestions]
   );
 
-  // Close detail modal (click outside or button)
   const closeDetail = () => {
     setShowModal(false);
     setDetail(null);
     setSuggestedCourses([]);
   };
 
-  // Fetch full submission detail
   const openDetail = async (sub) => {
     setSelectedSub(sub);
     setShowModal(true);
@@ -108,7 +104,6 @@ export default function AllSurveyHistoryPage() {
         `/surveys/${sub.surveyId}/submissions/${sub.id}`
       );
       setDetail(data);
-      // suggestions if logged in and not CRAFFT High
       if (isLoggedIn) {
         const lvl = data.riskLevel.toLowerCase();
         if (lvl !== "high") {
@@ -127,9 +122,10 @@ export default function AllSurveyHistoryPage() {
     return <p className="text-center text-red-500 py-10">{error}</p>;
 
   const list = activeTab === "assist" ? assistSubs : crafftSubs;
-  const emptyMsg = activeTab === "assist"
-    ? "Bạn chưa làm bài Assist."
-    : "Bạn chưa làm bài CRAFFT.";
+  const emptyMsg =
+    activeTab === "assist"
+      ? "Bạn chưa làm bài Assist."
+      : "Bạn chưa làm bài CRAFFT.";
   const qMap = activeTab === "assist" ? assistMap : crafftMap;
 
   return (
@@ -148,7 +144,9 @@ export default function AllSurveyHistoryPage() {
               key={t.key}
               onClick={() => setActiveTab(t.key)}
               className={`px-4 py-2 rounded-t-lg ${
-                activeTab === t.key ? 'bg-indigo-600 text-white' : 'bg-gray-200'
+                activeTab === t.key
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-gray-200 text-gray-700'
               }`}
             >
               {t.label}
@@ -163,18 +161,23 @@ export default function AllSurveyHistoryPage() {
             {list.map((s) => (
               <li
                 key={s.id}
-                className="bg-white p-4 rounded-b-lg shadow flex justify-between items-center"
+                className="bg-white p-4 rounded-lg shadow flex justify-between items-center"
               >
                 <div>
                   <p>
-                    <span className="font-medium">Ngày:</span>{" "}
-                    {new Date(s.submissionDate).toLocaleString()}
+                    <span className="font-medium">Ngày:</span>{' '}
+                    {formatDatePlus7(s.submissionDate)}
                   </p>
                   <p>
-                    <span className="font-medium">Score:</span> {s.score}
+                    <span className="font-medium">Điểm:</span> {s.score}
                   </p>
                   <p>
-                    <span className="font-medium">Risk:</span> {s.riskLevel}
+                    <span className="font-medium">Mức độ nguy cơ:</span>{' '}
+                    {s.riskLevel === 'Low'
+                      ? 'thấp'
+                      : s.riskLevel === 'Medium'
+                      ? 'trung bình'
+                      : 'cao'}
                   </p>
                 </div>
                 <button
@@ -188,10 +191,9 @@ export default function AllSurveyHistoryPage() {
           </ul>
         )}
 
-        {/* Detail Modal */}
         {showModal && detail && (
           <div
-            className="fixed inset-0 backdrop-blur-sm flex items-center justify-center"
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center"
             onClick={closeDetail}
           >
             <div
@@ -205,21 +207,24 @@ export default function AllSurveyHistoryPage() {
                 <span className="font-medium">ID:</span> {detail.id}
               </p>
               <p className="mb-2">
-                <span className="font-medium">Ngày:</span>{" "}
-                {new Date(detail.submissionDate).toLocaleString()}
+                <span className="font-medium">Ngày:</span>{' '}
+                {formatDatePlus7(detail.submissionDate)}
               </p>
               <p className="mb-2">
-                <span className="font-medium">Score:</span> {detail.score}
+                <span className="font-medium">Điểm:</span> {detail.score}
               </p>
               <p className="mb-2">
-                <span className="font-medium">Level:</span> {detail.riskLevel}
+                <span className="font-medium">Mức độ nguy cơ:</span>{' '}
+                {detail.riskLevel === 'Low'
+                  ? 'thấp'
+                  : detail.riskLevel === 'Medium'
+                  ? 'trung bình'
+                  : 'cao'}
               </p>
               <p className="mb-4">
-                <span className="font-medium">Recommendation:</span>{" "}
-                {detail.recommendation}
+                <span className="font-medium">Đề xuất:</span> {detail.recommendation}
               </p>
 
-              {/* Answers */}
               <div className="space-y-4 mb-6">
                 {detail.answers
                   .filter((a) => a.optionId !== null)
@@ -232,7 +237,7 @@ export default function AllSurveyHistoryPage() {
                         className="border-l-4 border-indigo-500 bg-gray-50 p-4 rounded"
                       >
                         <p className="font-medium">
-                          {q?.questionText || `Q${a.questionId}`}
+                          {q?.questionText || `Câu ${a.questionId}`}
                         </p>
                         <p className="text-indigo-600 mt-1">
                           {opt?.optionText || `Option ${a.optionId}`}
@@ -242,10 +247,9 @@ export default function AllSurveyHistoryPage() {
                   })}
               </div>
 
-              {/* Course Suggestion or Booking */}
-              {isLoggedIn && detail && detail.riskLevel && (
-                <>
-                  {detail.riskLevel !== "High" && (
+              {isLoggedIn && detail && (
+                <>  
+                  {detail.riskLevel !== 'High' && (
                     <div className="bg-white p-6 rounded-lg shadow mb-4">
                       <h3 className="text-xl font-semibold mb-3">
                         Gợi ý khoá học
@@ -261,22 +265,21 @@ export default function AllSurveyHistoryPage() {
                       />
                     </div>
                   )}
-                  {(detail.riskLevel === "Medium" || detail.riskLevel === "High") && (
+                  {(detail.riskLevel === 'Medium' || detail.riskLevel === 'High') && (
                     <div className="text-center mb-4">
                       <Link
                         to="/appointments/book"
                         className="inline-block px-6 py-3 bg-indigo-600 text-white rounded-full hover:bg-indigo-700"
                       >
-                        {detail.riskLevel === "High"
-                          ? "Đặt lịch tư vấn ngay"
-                          : "Xem lịch tư vấn"}
+                        {detail.riskLevel === 'High'
+                          ? 'Đặt lịch tư vấn ngay'
+                          : 'Xem lịch tư vấn'}
                       </Link>
                     </div>
                   )}
                 </>
               )}
 
-              {/* Course detail overlay */}
               {showCourseModal && selectedCourse && (
                 <CourseDetailOverlay
                   course={selectedCourse}
