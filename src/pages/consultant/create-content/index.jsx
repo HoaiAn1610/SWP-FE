@@ -5,7 +5,6 @@ import api from "@/config/axios";
 import { uploadFile } from "@/utils/upload";
 import CustomPagination from "@/components/courses/Pagination";
 
-
 export default function CreateContentPage() {
   const navigate = useNavigate();
 
@@ -41,8 +40,6 @@ export default function CreateContentPage() {
   const [filterStatus, setFilterStatus] = useState("");
   const [filterWorkflow, setFilterWorkflow] = useState("");
   const currentUserId = localStorage.getItem("id") || "";
-
-  
 
   // --- Material form state ---
   const [materialFormVisible, setMaterialFormVisible] = useState(false);
@@ -103,8 +100,6 @@ export default function CreateContentPage() {
     "Rượu & Chất có cồn",
     "Nhận thức & Phòng ngừa",
   ];
-
-
 
   // --- Reload courses ---
   const reloadCourses = async () => {
@@ -426,23 +421,23 @@ export default function CreateContentPage() {
       filterWorkflow ? c.workflowState === filterWorkflow : true
     );
 
-      const [coursePage, setCoursePage] = useState(1);
+  const [coursePage, setCoursePage] = useState(1);
   const coursePageSize = 5; // số mục trên mỗi trang
 
   const [questionPage, setQuestionPage] = useState(1);
   const questionPageSize = 10;
 
   const totalCoursePages = Math.ceil(filteredCourses.length / coursePageSize);
-const pagedCourses = filteredCourses.slice(
-  (coursePage - 1) * coursePageSize,
-  coursePage * coursePageSize
-);
+  const pagedCourses = filteredCourses.slice(
+    (coursePage - 1) * coursePageSize,
+    coursePage * coursePageSize
+  );
 
-const totalQuestionPages = Math.ceil(questions.length / questionPageSize);
-const pagedQuestions = questions.slice(
-  (questionPage - 1) * questionPageSize,
-  questionPage * questionPageSize
-);
+  const totalQuestionPages = Math.ceil(questions.length / questionPageSize);
+  const pagedQuestions = questions.slice(
+    (questionPage - 1) * questionPageSize,
+    questionPage * questionPageSize
+  );
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -715,14 +710,14 @@ const pagedQuestions = questions.slice(
                     </div>
                   ))}
                   {totalCoursePages > 1 && (
-                  <div className="mt-4 flex justify-center">
-                    <CustomPagination
-                      currentPage={coursePage}
-                      totalPages={totalCoursePages}
-                      onPageChange={setCoursePage}
-                    />
-                  </div>
-                )}
+                    <div className="mt-4 flex justify-center">
+                      <CustomPagination
+                        currentPage={coursePage}
+                        totalPages={totalCoursePages}
+                        onPageChange={setCoursePage}
+                      />
+                    </div>
+                  )}
                 </div>
               )}
             </section>
@@ -784,17 +779,16 @@ const pagedQuestions = questions.slice(
                   ))}
                 </tbody>
               </table>
-              
             )}
             {totalQuestionPages > 1 && (
-      <div className="mt-4 flex justify-center">
-        <CustomPagination
-          currentPage={questionPage}
-          totalPages={totalQuestionPages}
-          onPageChange={setQuestionPage}
-        />
-      </div>
-    )}
+              <div className="mt-4 flex justify-center">
+                <CustomPagination
+                  currentPage={questionPage}
+                  totalPages={totalQuestionPages}
+                  onPageChange={setQuestionPage}
+                />
+              </div>
+            )}
           </>
         )}
 

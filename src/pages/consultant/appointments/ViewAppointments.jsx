@@ -36,11 +36,18 @@ export default function ViewAppointments() {
   useEffect(() => {
     (async () => {
       try {
+        // 1. Lấy danh sách cuộc hẹn
         const { data: apps } = await api.get(
           `/AppointmentRequest/consultants/${consultantId}`
         );
-        const withSched = await Promise.all(
+
+        // 2. Với mỗi a: lấy schedule và lấy user (member) để có tên
+        const withData = await Promise.all(
           apps.map(async (a) => {
+            // fetch schedule
+            let scheduleDate = null,
+              startTime = null,
+              endTime = null;
             try {
               const { data: s } = await api.get(
                 `/ConsultantSchedule/get-schedule/${a.scheduleId}`
@@ -50,23 +57,35 @@ export default function ViewAppointments() {
               startDt.setHours(startDt.getHours() + 7);
               const endDt = new Date(`${s.scheduleDate}T${s.endTime}`);
               endDt.setHours(endDt.getHours() + 7);
-              return {
-                ...a,
-                scheduleDate: s.scheduleDate,
-                startTime: startDt.toTimeString().slice(0, 8),
-                endTime: endDt.toTimeString().slice(0, 8),
-              };
+              scheduleDate = s.scheduleDate;
+              startTime = startDt.toTimeString().slice(0, 8);
+              endTime = endDt.toTimeString().slice(0, 8);
             } catch {
-              return {
-                ...a,
-                scheduleDate: null,
-                startTime: null,
-                endTime: null,
-              };
+              // nếu lỗi schedule thì bỏ qua, vẫn giữ giá trị null
             }
+
+            // fetch member để lấy name
+            let memberName = "Không rõ";
+            try {
+              const { data: u } = await api.get(
+                `/Admin/get-user/${a.memberId}`
+              );
+              memberName = u.name;
+            } catch {
+              // nếu lỗi fetch user thì giữ "Không rõ"
+            }
+
+            return {
+              ...a,
+              scheduleDate,
+              startTime,
+              endTime,
+              memberName,
+            };
           })
         );
-        setAppointments(withSched);
+
+        setAppointments(withData);
       } catch (e) {
         console.error(e);
         setAlertMessage("Lỗi khi load dữ liệu");
@@ -170,7 +189,8 @@ export default function ViewAppointments() {
               className="bg-white p-4 rounded shadow flex justify-between items-center"
             >
               <div>
-                <h3 className="font-semibold">{a.clientName}</h3>
+                {/* Dòng mới: hiển thị tên user */}
+                <h3 className="font-semibold">Cuộc hẹn của {a.memberName}</h3>
                 <p className="text-sm text-gray-600">
                   {a.scheduleDate
                     ? `${formatDate(a.scheduleDate)} • ${formatTime(

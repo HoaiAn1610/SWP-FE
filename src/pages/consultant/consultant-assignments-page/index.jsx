@@ -6,7 +6,7 @@ import { uploadFile } from "@/utils/upload";
 export default function ConsultantAssignmentsPage() {
   const consultantId = Number(localStorage.getItem("id"));
 
-  // Danh sách assignments
+  // Danh sách assignments đã enrich thêm thông tin inquiry
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -24,21 +24,38 @@ export default function ConsultantAssignmentsPage() {
 
   const chatEndRef = useRef(null);
 
-  // 1. Lấy assignments
+  // 1. Lấy assignments và enrich bằng thông tin inquiry (subject + createdBy.name)
   useEffect(() => {
     const fetchAssignments = async () => {
       try {
-        const { data } = await api.get(
+        // 1.1. Lấy assignments
+        const { data: rawAssignments } = await api.get(
           `/InquiryAssignment/get-by-assigned-to/${consultantId}`
         );
-        setAssignments(data);
+
+        // 1.2. Fetch đồng thời thông tin inquiry cho mỗi assignment
+        const enriched = await Promise.all(
+          rawAssignments.map(async (a) => {
+            const { data: inquiry } = await api.get(
+              `/UserInquiry/get-inquiry/${a.inquiryId}`
+            );
+            return {
+              ...a,
+              inquirySubject: inquiry.subject,
+              createdByName: inquiry.createdBy.name,
+            };
+          })
+        );
+
+        setAssignments(enriched);
       } catch (err) {
         console.error(err);
-        setError("Không tải được danh sách assignment.");
+        setError("Không tải được danh sách assignment hoặc thông tin inquiry.");
       } finally {
         setLoading(false);
       }
     };
+
     fetchAssignments();
   }, [consultantId]);
 
@@ -173,6 +190,14 @@ export default function ConsultantAssignmentsPage() {
                   <p className="text-sm text-gray-600">
                     Ngày gán: {formatDateTime(a.assignedDate)}
                   </p>
+                  {/* Hiển thị tên người tạo inquiry */}
+                  <p className="text-sm text-gray-600">
+                    Khách hàng: {a.createdByName}
+                  </p>
+                  {/* (Tuỳ chọn) Hiển thị subject của inquiry */}
+                  <p className="text-sm text-gray-600">
+                    Tiêu đề: {a.inquirySubject}
+                  </p>
                 </div>
                 <button
                   onClick={() => toggleChat(a.inquiryId)}
@@ -206,11 +231,6 @@ export default function ConsultantAssignmentsPage() {
                           }`}
                         >
                           <p>{c.text}</p>
-                          {/* Preview URL ngay khi chọn */}
-                          {newAttachmentFile === null && c.attachmentURL
-                            ? null
-                            : null}
-                          {/* Chính xác: chỉ preview trước khi gửi */}
                           {c.attachmentURL && (
                             <div className="mt-2">
                               {c.attachmentType === "Image" && (
