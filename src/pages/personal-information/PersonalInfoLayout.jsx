@@ -6,7 +6,7 @@ import Header from "@/components/Header";
 const navItems = [
   { to: "myProfilePage", label: "Hồ sơ của tôi" },
   { to: "security", label: "Bảo mật" },
-  { to: "settings", label: "Cài đặt" },
+
 ];
 
 export default function PersonalInfoLayout() {

@@ -5,8 +5,7 @@ import Header from "@/components/header";
 
 const navItems = [
   { to: "appointments", label: "Cuộc Hẹn" },
-  { to: "create-content", label: "Tạo Nội Dung" },
-  { to: "blog-qa", label: "Hỏi & Đáp Blog" },
+  { to: "create-content", label: "Tạo Khóa Học" },
   { to: "assignments", label: "Yêu cầu" },
 ];
 
