@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, NavLink, Link } from "react-router-dom";
 import { FiSearch, FiUser } from "react-icons/fi";
-import { Link } from "react-router-dom";
 import logo from "@/assets/logo.png";
 
 export default function Header() {
@@ -74,32 +73,74 @@ export default function Header() {
     <header className="bg-white shadow sticky top-0 z-50">
       <div className="container mx-auto px-6 py-4 flex items-center justify-between">
         <div className="flex items-center space-x-8">
-          <Link to="/">
+          <Link
+            to="/"
+            className="inline-block active:scale-95 transition-transform duration-150"
+          >
             <img src={logo} alt="Logo" className="h-10" />
           </Link>
 
           <nav className="hidden md:flex space-x-6">
-            <Link to="/" className="text-gray-600 hover:text-blue-600">
+            <NavLink
+              to="/"
+              className={({ isActive }) =>
+                `px-2 py-1 transition duration-150 ease-in-out active:scale-95 ${
+                  isActive
+                    ? "text-blue-600 underline"
+                    : "text-gray-600 hover:text-blue-600"
+                }`
+              }
+            >
               Trang chủ
-            </Link>
-            <Link to="/course" className="text-gray-600 hover:text-blue-600">
+            </NavLink>
+            <NavLink
+              to="/course"
+              className={({ isActive }) =>
+                `px-2 py-1 transition duration-150 ease-in-out active:scale-95 ${
+                  isActive
+                    ? "text-blue-600 underline"
+                    : "text-gray-600 hover:text-blue-600"
+                }`
+              }
+            >
               Khóa học
-            </Link>
-            <Link
+            </NavLink>
+            <NavLink
               to="/appointments/book"
-              className="text-gray-600 hover:text-blue-600"
+              className={({ isActive }) =>
+                `px-2 py-1 transition duration-150 ease-in-out active:scale-95 ${
+                  isActive
+                    ? "text-blue-600 underline"
+                    : "text-gray-600 hover:text-blue-600"
+                }`
+              }
             >
               Đặt lịch
-            </Link>
-            <Link
+            </NavLink>
+            <NavLink
               to="/activities"
-              className="text-gray-600 hover:text-blue-600"
+              className={({ isActive }) =>
+                `px-2 py-1 transition duration-150 ease-in-out active:scale-95 ${
+                  isActive
+                    ? "text-blue-600 underline"
+                    : "text-gray-600 hover:text-blue-600"
+                }`
+              }
             >
               Hoạt động cộng đồng
-            </Link>
-            <Link to="/blog" className="text-gray-600 hover:text-blue-600">
+            </NavLink>
+            <NavLink
+              to="/blogs"
+              className={({ isActive }) =>
+                `px-2 py-1 transition duration-150 ease-in-out active:scale-95 ${
+                  isActive
+                    ? "text-blue-600 underline"
+                    : "text-gray-600 hover:text-blue-600"
+                }`
+              }
+            >
               Bài viết
-            </Link>
+            </NavLink>
           </nav>
         </div>
 
@@ -107,25 +148,16 @@ export default function Header() {
           {/* Bắt đầu */}
           <button
             onClick={handleGetStarted}
-            className="hidden md:inline-block bg-gradient-to-r from-indigo-500 to-blue-400 text-white px-5 py-2 rounded-full hover:opacity-90 transition"
+            className="hidden md:inline-block bg-gradient-to-r from-indigo-500 to-blue-400 text-white px-5 py-2 rounded-full hover:opacity-90 active:scale-95 transition duration-150"
           >
-            Bắt đầu
+            Khảo sát
           </button>
-
-          <div className="hidden md:flex items-center bg-gray-100 rounded-full px-4 py-2">
-            <FiSearch className="text-gray-500" />
-            <input
-              type="text"
-              placeholder="Tìm kiếm..."
-              className="bg-transparent outline-none ml-2 text-sm"
-            />
-          </div>
 
           {isLoggedIn ? (
             <div className="relative" ref={dropdownRef}>
               <button
                 onClick={() => setIsDropdownOpen((o) => !o)}
-                className="flex items-center p-2 rounded-full hover:bg-gray-100 transition"
+                className="flex items-center p-2 rounded-full hover:bg-gray-100 active:scale-95 transition duration-150"
               >
                 <FiUser size={20} className="text-gray-700" />
                 <span className="ml-2 text-gray-700 font-medium hidden md:block">
@@ -146,7 +178,7 @@ export default function Header() {
                       </div>
                       <Link
                         to={dashboardLink()}
-                        className="block px-4 py-2 hover:bg-gray-100 text-gray-700"
+                        className="block px-4 py-2 hover:bg-gray-100 active:scale-95 transition duration-150 text-gray-700"
                       >
                         {role.charAt(0).toUpperCase() + role.slice(1)} Bảng điều
                         khiển
@@ -156,7 +188,7 @@ export default function Header() {
                   <div className="border-t my-1" />
                   <Link
                     to="/account/MyProfilePage"
-                    className="block px-4 py-2 hover:bg-gray-100 text-gray-700"
+                    className="block px-4 py-2 hover:bg-gray-100 active:scale-95 transition duration-150 text-gray-700"
                   >
                     Hồ sơ của tôi
                   </Link>
@@ -174,7 +206,7 @@ export default function Header() {
                   )}
                   <button
                     onClick={handleLogout}
-                    className="w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-700"
+                    className="w-full text-left px-4 py-2 hover:bg-gray-100 active:scale-95 transition duration-150 text-gray-700"
                   >
                     Đăng xuất
                   </button>
@@ -184,7 +216,7 @@ export default function Header() {
           ) : (
             <Link
               to="/login"
-              className="bg-blue-600 text-white px-5 py-2 rounded-full hover:bg-blue-700 text-sm font-semibold transition"
+              className="bg-blue-600 text-white px-5 py-2 rounded-full hover:bg-blue-700 active:scale-95 transition duration-150 text-sm font-semibold"
             >
               Đăng nhập
             </Link>

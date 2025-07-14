@@ -34,7 +34,7 @@ export default function CommunicationActivitiesPage() {
   });
 
   const [activeTab, setActiveTab] = useState("all");
-  const [showCommentsFor, setShowCommentsFor] = useState({}); // track toggle per activity
+  const [showCommentsFor, setShowCommentsFor] = useState({});
 
   const [alertVisible, setAlertVisible] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
@@ -70,7 +70,6 @@ export default function CommunicationActivitiesPage() {
   };
   const hideConfirm = () => setConfirmVisible(false);
 
-  // Toggle comment section
   const toggleComments = (id) => {
     setShowCommentsFor((prev) => ({
       ...prev,
@@ -78,11 +77,11 @@ export default function CommunicationActivitiesPage() {
     }));
   };
 
-  // --- Create, edit, delete, submit for approval giống cũ ---
   const handleNewChange = (e) => {
     const { name, value } = e.target;
     setNewActivity((p) => ({ ...p, [name]: value }));
   };
+
   const handleCreate = async (e) => {
     e.preventDefault();
     if (!newActivity.eventDate || newActivity.eventDate <= today) {
@@ -91,7 +90,10 @@ export default function CommunicationActivitiesPage() {
     }
     try {
       await api.post("/CommunicationActivities/Create-Activity", {
-        ...newActivity,
+        title: newActivity.title,
+        description: newActivity.description,
+        eventDate: new Date(newActivity.eventDate).toISOString(),
+        location: newActivity.location,
         capacity: Number(newActivity.capacity),
       });
       showAlert("Tạo hoạt động thành công!");
@@ -133,6 +135,7 @@ export default function CommunicationActivitiesPage() {
     const { name, value } = e.target;
     setEditData((p) => ({ ...p, [name]: value }));
   };
+
   const handleUpdate = async (e, id) => {
     e.preventDefault();
     if (!editData.eventDate || editData.eventDate <= today) {
@@ -141,14 +144,21 @@ export default function CommunicationActivitiesPage() {
     }
     try {
       await api.put(`/CommunicationActivities/Update-activity/${id}`, {
-        ...editData,
+        title: editData.title,
+        description: editData.description,
+        eventDate: new Date(editData.eventDate).toISOString(),
+        location: editData.location,
         capacity: Number(editData.capacity),
       });
       showAlert("Cập nhật thành công!");
       cancelEdit();
       fetchActivities();
-    } catch {
-      showAlert("Lỗi khi cập nhật hoạt động");
+    } catch (error) {
+      if (error.response && error.response.status === 403) {
+        showAlert("Bạn không có quyền cập nhật hoạt động này");
+      } else {
+        showAlert("Lỗi khi cập nhật hoạt động");
+      }
     }
   };
 
@@ -158,8 +168,12 @@ export default function CommunicationActivitiesPage() {
         await api.delete(`/CommunicationActivities/Delete-Activity/${id}`);
         fetchActivities();
         showAlert("Xóa thành công!");
-      } catch {
-        showAlert("Lỗi khi xóa hoạt động");
+      } catch (error) {
+        if (error.response && error.response.status === 403) {
+          showAlert("Bạn không có quyền xóa hoạt động này");
+        } else {
+          showAlert("Lỗi khi xóa hoạt động");
+        }
       } finally {
         hideConfirm();
       }
@@ -208,7 +222,7 @@ export default function CommunicationActivitiesPage() {
   return (
     <>
       <div className="max-w-4xl mx-auto p-6 space-y-8">
-        {/* Thêm mới */}
+        {/* Form thêm mới */}
         <button
           onClick={() => setShowForm(!showForm)}
           className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
@@ -222,6 +236,7 @@ export default function CommunicationActivitiesPage() {
               onSubmit={handleCreate}
               className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-6"
             >
+              {/* Tiêu đề */}
               <div className="col-span-2 md:col-span-1 space-y-2">
                 <label className="block text-sm font-medium">Tiêu đề</label>
                 <input
@@ -234,6 +249,7 @@ export default function CommunicationActivitiesPage() {
                   required
                 />
               </div>
+              {/* Ngày sự kiện */}
               <div className="col-span-2 md:col-span-1 space-y-2">
                 <label className="block text-sm font-medium">
                   Ngày sự kiện
@@ -248,6 +264,7 @@ export default function CommunicationActivitiesPage() {
                   required
                 />
               </div>
+              {/* Địa điểm */}
               <div className="col-span-2 md:col-span-1 space-y-2">
                 <label className="block text-sm font-medium">Địa điểm</label>
                 <input
@@ -260,6 +277,7 @@ export default function CommunicationActivitiesPage() {
                   required
                 />
               </div>
+              {/* Sức chứa */}
               <div className="col-span-2 md:col-span-1 space-y-2">
                 <label className="block text-sm font-medium">Sức chứa</label>
                 <input
@@ -273,6 +291,7 @@ export default function CommunicationActivitiesPage() {
                   required
                 />
               </div>
+              {/* Mô tả */}
               <div className="col-span-2 space-y-2">
                 <label className="block text-sm font-medium">Mô tả</label>
                 <textarea
@@ -285,6 +304,7 @@ export default function CommunicationActivitiesPage() {
                   required
                 />
               </div>
+              {/* Nút Thêm */}
               <div className="col-span-2 text-right">
                 <button
                   type="submit"
@@ -297,7 +317,7 @@ export default function CommunicationActivitiesPage() {
           </div>
         )}
 
-        {/* Tabs */}
+        {/* Tabs Lọc */}
         <div className="flex space-x-4">
           {[
             { key: "all", label: "Tất cả" },
@@ -320,91 +340,190 @@ export default function CommunicationActivitiesPage() {
           ))}
         </div>
 
-        {/* Danh sách */}
+        {/* Danh sách hoạt động */}
         <div className="space-y-6">
-          {filtered.map((act) => (
-            <div
-              key={act.id}
-              className="bg-white p-6 rounded-2xl shadow border-gray-200 border"
-            >
-              {editingId === act.id ? (
-                <form
-                  onSubmit={(e) => handleUpdate(e, act.id)}
-                  className="space-y-4"
-                >
-                  {/* ... form edit giống cũ ... */}
-                </form>
-              ) : (
-                <>
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <div className="flex items-center space-x-2 mb-2">
-                        <h3 className="text-xl font-semibold">{act.title}</h3>
-                        <span
-                          className={`px-2 py-1 text-xs rounded-full ${getStatusClass(
-                            act.status
-                          )}`}
-                        >
-                          {act.status}
-                        </span>
-                      </div>
-                      <p className="text-gray-600 mb-1">
-                        {new Date(act.eventDate).toLocaleDateString()} —{" "}
-                        {act.location} — sức chứa: {act.capacity}
-                      </p>
-                      <p className="text-gray-500 mb-1">{act.description}</p>
-                      {act.status === "Rejected" && act.reviewComments && (
-                        <p className="text-red-600 font-medium">
-                          Lý do từ chối: {act.reviewComments}
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex flex-col space-y-2">
-                      <button
-                        onClick={() => startEdit(act)}
-                        className="flex items-center px-4 py-2 bg-white border border-indigo-600 text-indigo-600 rounded-lg hover:bg-indigo-50"
-                      >
-                        <Edit2 className="mr-1" /> Sửa
-                      </button>
-                      <button
-                        onClick={() => confirmDelete(act.id)}
-                        className="flex items-center px-4 py-2 bg-white border border-red-600 text-red-600 rounded-lg hover:bg-red-50"
-                      >
-                        <Trash2 className="mr-1" /> Xóa
-                      </button>
-                      {act.createdById === userId && (
-                        <button
-                          onClick={() => handleSendToManager(act.id)}
-                          className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-                        >
-                          <Send className="mr-1" /> Gửi cho quản lý
-                        </button>
-                      )}
-                    </div>
-                  </div>
+          {filtered.map((act) => {
+            const canEditOrDelete =
+              !act.createdById || act.createdById === userId;
 
-                  {/* Chỉ tab Published mới có nút toggle comment */}
-                  {activeTab === "published" && act.status === "Published" && (
-                    <div className="mt-6">
+            return (
+              <div
+                key={act.id}
+                className="bg-white p-6 rounded-2xl shadow border-gray-200 border"
+              >
+                {editingId === act.id ? (
+                  <form
+                    onSubmit={(e) => handleUpdate(e, act.id)}
+                    className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-6"
+                  >
+                    {/* Form chỉnh sửa giống form thêm mới */}
+                    <div className="col-span-2 md:col-span-1 space-y-2">
+                      <label className="block text-sm font-medium">
+                        Tiêu đề
+                      </label>
+                      <input
+                        type="text"
+                        name="title"
+                        value={editData.title}
+                        onChange={handleEditChange}
+                        className="w-full px-4 py-2 border rounded-lg border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                        placeholder="Nhập tiêu đề"
+                        required
+                      />
+                    </div>
+                    <div className="col-span-2 md:col-span-1 space-y-2">
+                      <label className="block text-sm font-medium">
+                        Ngày sự kiện
+                      </label>
+                      <input
+                        type="date"
+                        name="eventDate"
+                        value={editData.eventDate}
+                        onChange={handleEditChange}
+                        min={today}
+                        className="w-full px-4 py-2 border rounded-lg border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                        required
+                      />
+                    </div>
+                    <div className="col-span-2 md:col-span-1 space-y-2">
+                      <label className="block text-sm font-medium">
+                        Địa điểm
+                      </label>
+                      <input
+                        type="text"
+                        name="location"
+                        value={editData.location}
+                        onChange={handleEditChange}
+                        className="w-full px-4 py-2 border rounded-lg border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                        placeholder="Nhập địa điểm"
+                        required
+                      />
+                    </div>
+                    <div className="col-span-2 md:col-span-1 space-y-2">
+                      <label className="block text-sm font-medium">
+                        Sức chứa
+                      </label>
+                      <input
+                        type="number"
+                        name="capacity"
+                        value={editData.capacity}
+                        onChange={handleEditChange}
+                        min="1"
+                        className="w-full px-4 py-2 border rounded-lg border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                        placeholder="Số lượng"
+                        required
+                      />
+                    </div>
+                    <div className="col-span-2 space-y-2">
+                      <label className="block text-sm font-medium">Mô tả</label>
+                      <textarea
+                        name="description"
+                        value={editData.description}
+                        onChange={handleEditChange}
+                        className="w-full px-4 py-2 border rounded-lg border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                        rows="3"
+                        placeholder="Mô tả chi tiết"
+                        required
+                      />
+                    </div>
+                    <div className="col-span-2 flex justify-end space-x-4">
                       <button
-                        onClick={() => toggleComments(act.id)}
-                        className="px-4 py-2 bg-indigo-100 text-indigo-800 rounded-lg"
+                        type="button"
+                        onClick={cancelEdit}
+                        className="inline-flex items-center px-6 py-2 bg-gray-200 text-gray-700 rounded-lg shadow hover:bg-gray-300 transition"
                       >
-                        {showCommentsFor[act.id]
-                          ? "Ẩn bình luận"
-                          : "Hiển thị bình luận"}
+                        <XCircle size={18} className="mr-2" /> Hủy
                       </button>
-                      {showCommentsFor[act.id] && (
-                        <div className="mt-4 border-t pt-4">
-                          <CommentSection entity="activity" entityId={act.id} />
+                      <button
+                        type="submit"
+                        className="inline-flex items-center px-6 py-2 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700 transition"
+                      >
+                        <CheckCircle size={18} className="mr-2" /> Cập nhật
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  <>
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <div className="flex items-center space-x-2 mb-2">
+                          <h3 className="text-xl font-semibold">{act.title}</h3>
+                          <span
+                            className={`px-2 py-1 text-xs rounded-full ${getStatusClass(
+                              act.status
+                            )}`}
+                          >
+                            {act.status}
+                          </span>
+                        </div>
+                        <p className="text-gray-600 mb-1">
+                          {new Date(act.eventDate).toLocaleDateString()} —{" "}
+                          {act.location} — sức chứa: {act.capacity}
+                        </p>
+                        <p className="text-gray-500 mb-1">{act.description}</p>
+                        {act.status === "Rejected" && act.reviewComments && (
+                          <p className="text-red-600 font-medium">
+                            Lý do từ chối: {act.reviewComments}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex flex-col space-y-2">
+                        {canEditOrDelete && (
+                          <>
+                            <button
+                              onClick={() => startEdit(act)}
+                              className="flex items-center px-4 py-2 bg-white border border-indigo-600 text-indigo-600 rounded-lg hover:bg-indigo-50"
+                            >
+                              <Edit2 className="mr-1" /> Sửa
+                            </button>
+                            <button
+                              onClick={() => confirmDelete(act.id)}
+                              className="flex items-center px-4 py-2 bg-white border border-red-600 text-red-600 rounded-lg hover:bg-red-50"
+                            >
+                              <Trash2 className="mr-1" /> Xóa
+                            </button>
+                          </>
+                        )}
+                        {/* Gửi cho quản lý chỉ khi status là Pending hoặc Rejected */}
+                        {act.createdById === userId &&
+                          (act.status === "Pending" ||
+                            act.status === "Rejected") && (
+                            <button
+                              onClick={() => handleSendToManager(act.id)}
+                              className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                            >
+                              <Send className="mr-1" /> Gửi cho quản lý
+                            </button>
+                          )}
+                      </div>
+                    </div>
+
+                    {activeTab === "published" &&
+                      act.status === "Published" && (
+                        <div className="mt-6">
+                          <button
+                            onClick={() => toggleComments(act.id)}
+                            className="px-4 py-2 bg-indigo-100 text-indigo-800 rounded-lg"
+                          >
+                            {showCommentsFor[act.id]
+                              ? "Ẩn bình luận"
+                              : "Hiển thị bình luận"}
+                          </button>
+                          {showCommentsFor[act.id] && (
+                            <div className="mt-4 border-t pt-4">
+                              <CommentSection
+                                entity="activity"
+                                entityId={act.id}
+                              />
+                            </div>
+                          )}
                         </div>
                       )}
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          ))}
+                  </>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
 

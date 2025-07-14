@@ -29,6 +29,7 @@ import BlogDetail from "@/pages/BlogPage/BlogDetail.jsx";
 
 import PersonalInfoLayout from "@/pages/personal-information/PersonalInfoLayout";
 import MyProfilePage from "@/pages/personal-information/my-profile";
+import SecurityPage from "@/pages/personal-information/security";
 
 import BookingPage from "@/pages/appointmentRequest/bookingpage";
 import BookingHistoryPage from "@/pages/appointmentRequest/bookingHistory";
@@ -113,7 +114,7 @@ function App() {
     },
 
     // fallback cho các route không khớp
-    { path: "*", element: <Navigate to="/blogs" replace /> },
+    { path: "*", element: <Navigate to="/" replace /> },
     {
       path: "/course",
       element: <Courses />,
@@ -130,6 +131,7 @@ function App() {
       errorElement: <ErrorPage />,
       children: [
         { index: true, element: <Navigate to="MyProfilePage" replace /> },
+        { path: "security", element: <SecurityPage /> },
         { path: "MyProfilePage", element: <MyProfilePage /> },
       ],
     },

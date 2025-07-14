@@ -23,37 +23,33 @@ export default function StaffInquiriesPage() {
   const [loadingConsultants, setLoadingConsultants] = useState(false);
   const [assigning, setAssigning] = useState(false);
 
-  // Alert Popup state
+  // Alert & Confirm
   const [alertVisible, setAlertVisible] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
-
-  // Confirm Popup state
   const [confirmVisible, setConfirmVisible] = useState(false);
   const [confirmMessage, setConfirmMessage] = useState("");
   const [confirmAction, setConfirmAction] = useState(() => {});
 
-  // Lưu thông tin assignment cho từng inquiry
+  // assignments map
   const [assignments, setAssignments] = useState({});
 
   const chatEndRef = useRef(null);
 
-  // 1. Lấy danh sách inquiries
+  // 1. Load inquiries
   useEffect(() => {
-    const fetchInquiries = async () => {
+    (async () => {
       try {
         const { data } = await api.get("/UserInquiry/get-inquiry-by-staff");
         setInquiries(data);
-      } catch (err) {
-        console.error(err);
+      } catch {
         setError("Không tải được danh sách yêu cầu.");
       } finally {
         setLoading(false);
       }
-    };
-    fetchInquiries();
+    })();
   }, []);
 
-  // 2. Với mỗi inquiry, fetch assignment
+  // 2. Load assignments cho mỗi inquiry
   useEffect(() => {
     inquiries.forEach((iq) => {
       api
@@ -64,19 +60,19 @@ export default function StaffInquiriesPage() {
             [iq.id]: data.length > 0 ? data[0] : null,
           }));
         })
-        .catch((err) => console.error(err));
+        .catch(console.error);
     });
   }, [inquiries]);
 
-  // 3. Lấy comments khi mở chat
+  // 3. Fetch comments khi toggle
   const fetchComments = async (inquiryID) => {
     try {
       const { data } = await api.get(
         `/InquiryComment/get-inquiry-comment/inquiry/${inquiryID}`
       );
       setComments(data);
-    } catch (err) {
-      console.error(err);
+    } catch {
+      console.error("Lỗi khi tải comments");
     }
   };
 
@@ -94,7 +90,7 @@ export default function StaffInquiriesPage() {
     }
   };
 
-  // 4. Mở modal gán consultant
+  // 4. Modal gán consultant
   const openAssignModal = (id) => {
     setAssignModalInquiryId(id);
     if (consultants.length === 0) fetchConsultants();
@@ -105,8 +101,7 @@ export default function StaffInquiriesPage() {
     try {
       const { data } = await api.get("/ConsultantSchedule/get-all-consultant");
       setConsultants(data);
-    } catch (err) {
-      console.error(err);
+    } catch {
       setAlertMessage("Không tải được danh sách consultant.");
       setAlertVisible(true);
     } finally {
@@ -128,7 +123,7 @@ export default function StaffInquiriesPage() {
       setAlertMessage("Gán consultant thành công!");
       setAlertVisible(true);
       setAssignModalInquiryId(null);
-      // reload assignment
+      // reload
       const { data } = await api.get(
         `/InquiryAssignment/get-inquiry-assignment/${assignModalInquiryId}`
       );
@@ -136,8 +131,7 @@ export default function StaffInquiriesPage() {
         ...prev,
         [assignModalInquiryId]: data.length > 0 ? data[0] : null,
       }));
-    } catch (err) {
-      console.error(err);
+    } catch {
       setAlertMessage("Gán consultant thất bại.");
       setAlertVisible(true);
     } finally {
@@ -145,7 +139,7 @@ export default function StaffInquiriesPage() {
     }
   };
 
-  // 5. Upload file ngay khi chọn
+  // 5. Upload file trước khi gửi comment
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -160,8 +154,7 @@ export default function StaffInquiriesPage() {
           ? "Video"
           : "File"
       );
-    } catch (err) {
-      console.error(err);
+    } catch {
       setAlertMessage("Upload file thất bại.");
       setAlertVisible(true);
     }
@@ -184,14 +177,13 @@ export default function StaffInquiriesPage() {
       setNewAttachmentName("");
       setNewAttachmentType("");
       fetchComments(expandedId);
-    } catch (err) {
-      console.error(err);
+    } catch {
       setAlertMessage("Gửi thất bại.");
       setAlertVisible(true);
     }
   };
 
-  // Xóa inquiry thực tế
+  // Xóa inquiry
   const handleDeleteInquiry = async (id) => {
     setConfirmVisible(false);
     try {
@@ -203,22 +195,37 @@ export default function StaffInquiriesPage() {
       }
       setAlertMessage("Xóa inquiry thành công.");
       setAlertVisible(true);
-    } catch (err) {
-      console.error(err);
+    } catch {
       setAlertMessage("Xóa inquiry thất bại.");
       setAlertVisible(true);
     }
   };
 
-  // Mở Confirm Popup
   const confirmDeleteInquiry = (id) => {
     setConfirmMessage("Bạn có chắc muốn xóa inquiry này?");
     setConfirmAction(() => () => handleDeleteInquiry(id));
     setConfirmVisible(true);
   };
 
-  // Format date +7h
-  const formatDateTime = (iso) => {
+  // ==> 2 hàm format:
+  // 1) Inquiry thì giữ nguyên
+  const formatInquiryDateTime = (iso) => {
+    const d = new Date(iso);
+    return (
+      d.toLocaleDateString("vi-VN", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      }) +
+      " " +
+      d.toLocaleTimeString("vi-VN", {
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    );
+  };
+  // 2) Comment thì cộng +7 giờ
+  const formatCommentDateTime = (iso) => {
     const d = new Date(iso);
     d.setHours(d.getHours() + 7);
     return (
@@ -235,7 +242,7 @@ export default function StaffInquiriesPage() {
     );
   };
 
-  // Scroll xuống cuối khi comments thay đổi
+  // Scroll xuống cuối chat
   useEffect(() => {
     if (expandedId && chatEndRef.current) {
       chatEndRef.current.scrollIntoView({ behavior: "smooth" });
@@ -269,7 +276,7 @@ export default function StaffInquiriesPage() {
                       Trạng thái: {iq.status}
                     </p>
                     <p className="text-xs text-gray-500">
-                      Tạo: {formatDateTime(iq.createdDate)}
+                      Tạo: {formatInquiryDateTime(iq.createdDate)}
                     </p>
                     {isAssigned && (
                       <p className="text-sm text-green-600 mt-1">
@@ -278,7 +285,6 @@ export default function StaffInquiriesPage() {
                     )}
                   </div>
                   <div className="flex space-x-2 items-center">
-                    {/* Chat button */}
                     <button
                       onClick={() => toggleChat(iq.id)}
                       disabled={isAssigned}
@@ -290,7 +296,6 @@ export default function StaffInquiriesPage() {
                     >
                       {expandedId === iq.id ? "Đóng" : "Trả lời"}
                     </button>
-                    {/* Assign button */}
                     {!isAssigned && (
                       <button
                         onClick={() => openAssignModal(iq.id)}
@@ -299,7 +304,6 @@ export default function StaffInquiriesPage() {
                         Gán
                       </button>
                     )}
-                    {/* Delete button */}
                     <button
                       onClick={() => confirmDeleteInquiry(iq.id)}
                       className="px-3 py-1 bg-red-500 text-black hover:bg-red-600 rounded"
@@ -349,7 +353,7 @@ export default function StaffInquiriesPage() {
                                 </div>
                               )}
                               <p className="text-xs text-gray-400 mt-1 text-right">
-                                {formatDateTime(c.createdDate)}
+                                {formatCommentDateTime(c.createdDate)}
                               </p>
                             </div>
                           </div>
@@ -376,8 +380,7 @@ export default function StaffInquiriesPage() {
                           rel="noopener noreferrer"
                           className="text-black underline break-all text-sm flex items-center space-x-1"
                         >
-                          <span>🔗</span>
-                          <span>{newAttachmentName}</span>
+                          🔗 {newAttachmentName}
                         </a>
                       )}
                       <input
@@ -415,7 +418,7 @@ export default function StaffInquiriesPage() {
       {alertVisible && (
         <div className="fixed inset-0 flex items-center justify-center backdrop-blur-sm z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg text-center max-w-xs">
-            <h3 className="mb-2 text-lg font-semibold">Alert Popup</h3>
+            <h3 className="mb-2 text-lg font-semibold">Thông báo</h3>
             <p className="mb-4 font-semibold text-indigo-800">{alertMessage}</p>
             <button
               onClick={() => setAlertVisible(false)}
@@ -468,7 +471,7 @@ export default function StaffInquiriesPage() {
       {confirmVisible && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg text-center max-w-xs">
-            <h3 className="mb-2 text-lg font-semibold">Confirm Popup</h3>
+            <h3 className="mb-2 text-lg font-semibold">Xác nhận</h3>
             <p className="mb-4">{confirmMessage}</p>
             <div className="flex justify-center space-x-4">
               <button
