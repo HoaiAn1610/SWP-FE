@@ -1,4 +1,3 @@
-// src/components/blog/FeaturedBlogs.jsx
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { fetchAllPosts } from '@/service/blogservice';
@@ -10,10 +9,11 @@ export default function FeaturedBlogs() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Lấy toàn bộ, sort theo ngày tạo mới nhất, rồi slice 3
+    // Lấy toàn bộ, lọc status là Published, sort theo ngày tạo mới nhất, rồi slice 3
     fetchAllPosts()
       .then(all => {
-        const latest = all
+        const published = all.filter(post => post.status === 'Published');
+        const latest = published
           .sort((a, b) => new Date(b.createdDate) - new Date(a.createdDate))
           .slice(0, 3);
         setPosts(latest);

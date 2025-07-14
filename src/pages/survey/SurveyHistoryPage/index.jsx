@@ -193,7 +193,7 @@ export default function AllSurveyHistoryPage() {
 
         {showModal && detail && (
           <div
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center"
+            className="fixed inset-0 backdrop-blur-sm flex items-center justify-center"
             onClick={closeDetail}
           >
             <div
