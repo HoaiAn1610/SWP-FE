@@ -11,19 +11,40 @@ export default function CommentList({
   onAddReply,
   onDeleteComment
 }) {
-  // ─── Local state for comments ─────────────────────────────────────────────
-  const [commentList, setCommentList] = useState(comments);
+  // ─── Helper to format time ───────────────────────────────────────────────
+  const formatTime = (timestamp, isNew) => {
+    const date = new Date(timestamp);
+    if (!isNew) {
+      // only add 7 hours for “old” comments
+      date.setHours(date.getHours() + 7);
+    }
+    return date.toLocaleTimeString();
+  };
 
-  // Sync when parent passes new props
+  // ─── Local state for comments ─────────────────────────────────────────────
+  const [commentList, setCommentList] = useState(
+    comments.map(c => ({ ...c, isNew: false }))
+  );
+
+  // Sync when parent passes new props: mark these as “old”
   useEffect(() => {
-    setCommentList(comments);
+       setCommentList(prev =>
+     comments.map(c => {
+       const existing = prev.find(x => x.id === c.id);
+       return {
+         ...c,
+         // if we've already flagged it as new, keep that; otherwise it's old
+         isNew: existing ? existing.isNew : false
+       };
+     })
+   );
   }, [comments]);
 
   // comment/reply state
   const [newComment, setNewComment]       = useState('');
   const [replyTexts, setReplyTexts]       = useState({});
-  const [openReplies, setOpenReplies]     = useState({}); // Which comment has its reply input open
-  const [loadedReplies, setLoadedReplies] = useState({}); // Replies data for each comment
+  const [openReplies, setOpenReplies]     = useState({});
+  const [loadedReplies, setLoadedReplies] = useState({});
   const [userNames, setUserNames]         = useState({});
   const scrollRef = useRef();
 
@@ -33,7 +54,6 @@ export default function CommentList({
   const [confirmVisible, setConfirmVisible] = useState(false);
   const [confirmMessage, setConfirmMessage] = useState('');
   const [confirmAction, setConfirmAction]   = useState(() => {});
-
   const showConfirm = (message, action) => {
     setConfirmMessage(message);
     setConfirmAction(() => action);
@@ -61,75 +81,49 @@ export default function CommentList({
     el.style.height = el.scrollHeight + 'px';
   };
 
-  // Toggle reply input & control branch display
+  // Toggle reply input & load replies if needed
   const toggleReplies = async parentId => {
     const isOpen = !!openReplies[parentId];
-
     if (isOpen) {
-      // Đang đóng lại nhánh này: reset cả hai state
-      setOpenReplies({});
-      setLoadedReplies({});
-    } else {
-      // Mở nhánh mới: tìm các ancestors trong loadedReplies để giữ lại, sau đó prune
-      const getParent = id =>
-        Object.keys(loadedReplies).find(key =>
-          loadedReplies[key].some(child => child.id === id)
-        );
-
-      const ancestors = [];
-      let current = parentId;
-      let parentKey;
-      // Lặp để tìm toàn bộ cha cho đến gốc
-      while ((parentKey = getParent(current))) {
-        ancestors.unshift(parentKey);
-        current = parentKey;
-      }
-
-      // Giữ lại data của ancestors
-      const newLoaded = {};
-      ancestors.forEach(id => {
-        newLoaded[id] = loadedReplies[id];
+      setOpenReplies(prev => {
+        const next = { ...prev };
+        delete next[parentId];
+        return next;
       });
-      setLoadedReplies(newLoaded);
-      setOpenReplies({ [parentId]: true });
-
-      // Load replies nếu chưa có
-      if (!loadedReplies[parentId]) {
-        try {
-          const { data } = await api.get(`/Comment/${parentId}/replies`);
-          setLoadedReplies(r => ({
-            ...r,
-            [parentId]: Array.isArray(data) ? data : []
-          }));
-        } catch {
-          setLoadedReplies(r => ({ ...r, [parentId]: [] }));
-        }
+      return;
+    }
+    setOpenReplies(prev => ({ ...prev, [parentId]: true }));
+    if (!loadedReplies[parentId]) {
+      try {
+        const { data } = await api.get(`/Comment/${parentId}/replies`);
+        setLoadedReplies(prev => ({
+          ...prev,
+          [parentId]: Array.isArray(data)
+            ? data.map(r => ({ ...r, isNew: false }))
+            : []
+        }));
+      } catch {
+        setLoadedReplies(prev => ({ ...prev, [parentId]: [] }));
       }
     }
-
-    // Scroll to comment when opening
-    if (!isOpen) {
-      setTimeout(() => {
-        const el = document.getElementById(`comment-${parentId}`);
-        if (el && scrollRef.current) {
-          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-      }, 0);
-    }
+    setTimeout(() => {
+      const el = document.getElementById(`comment-${parentId}`);
+      if (el && scrollRef.current) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 0);
   };
 
   // post new top-level comment
   const handlePostComment = async () => {
     if (!newComment.trim()) return;
     const created = await createComment(postId, newComment);
-    onAddComment(postId, created);
-    setCommentList(prev => [...prev, created]);
+    const flagged = { ...created, isNew: true };
+    onAddComment(postId, flagged);
+    setCommentList(prev => [...prev, flagged]);
     setNewComment('');
-    // scroll xuống cuối
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-    if (created.memberId) setUserNames(u => ({ ...u, [created.memberId]: 'You' }));
+    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    if (flagged.memberId) setUserNames(u => ({ ...u, [flagged.memberId]: 'You' }));
   };
 
   // post reply to a specific comment
@@ -137,15 +131,14 @@ export default function CommentList({
     const text = (replyTexts[parentId] || '').trim();
     if (!text) return;
     const created = await postReply(parentId, text);
-    onAddReply(postId, parentId, created);
-    // Giữ input mở, thêm reply mới
-    setOpenReplies({ [parentId]: true });
+    const flagged = { ...created, isNew: true };
+    onAddReply(postId, parentId, flagged);
     setLoadedReplies(r => ({
       ...r,
-      [parentId]: [...(r[parentId] || []), created]
+      [parentId]: [...(r[parentId] || []), flagged]
     }));
     setReplyTexts(r => ({ ...r, [parentId]: '' }));
-    if (created.memberId) setUserNames(u => ({ ...u, [created.memberId]: 'You' }));
+    if (flagged.memberId) setUserNames(u => ({ ...u, [flagged.memberId]: 'You' }));
   };
 
   // Recursive render
@@ -159,7 +152,6 @@ export default function CommentList({
           <div className="flex items-start space-x-3">
             <div className="w-10 h-10 bg-gray-300 rounded-full flex-shrink-0" />
             <div className="flex-1">
-              {/* Comment bubble */}
               <div
                 className="bg-gray-50 rounded-xl p-4 hover:bg-gray-100 cursor-pointer transition"
                 onClick={() => toggleReplies(c.id)}
@@ -169,12 +161,11 @@ export default function CommentList({
                     {userNames[c.memberId] || `User#${c.memberId}`}
                   </span>
                   <span className="text-xs text-gray-500">
-                    {new Date(c.createdDate).toLocaleTimeString()}
+                    {formatTime(c.createdDate, c.isNew)}
                   </span>
                 </div>
                 <p className="text-gray-700 whitespace-pre-wrap">{c.content}</p>
               </div>
-              {/* Actions */}
               <div className="flex space-x-4 text-sm text-gray-500 mt-1 ml-2">
                 <button
                   className="hover:text-blue-600"
@@ -196,7 +187,6 @@ export default function CommentList({
                   </button>
                 )}
               </div>
-              {/* Reply input */}
               {openReplies[c.id] && (
                 <div className="flex items-start space-x-3 mt-3 ml-12">
                   <div className="w-10 h-10 bg-gray-300 rounded-full flex-shrink-0" />
@@ -219,8 +209,7 @@ export default function CommentList({
                   </button>
                 </div>
               )}
-              {/* Show loaded replies permanently */}
-              {loadedReplies[c.id] && loadedReplies[c.id].length > 0 && (
+              {openReplies[c.id] && loadedReplies[c.id]?.length > 0 && (
                 <div className="ml-12 mt-4 space-y-4">
                   {renderThread(loadedReplies[c.id], depth + 1)}
                 </div>
@@ -260,10 +249,7 @@ export default function CommentList({
                 Hủy
               </button>
               <button
-                onClick={() => {
-                  confirmAction();
-                  hideConfirm();
-                }}
+                onClick={() => { confirmAction(); hideConfirm(); }}
                 className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md"
               >
                 OK
@@ -293,10 +279,7 @@ export default function CommentList({
             rows={1}
             placeholder="Viết bình luận..."
             value={newComment}
-            onChange={e => {
-              setNewComment(e.target.value);
-              autoResize(e.target);
-            }}
+            onChange={e => { setNewComment(e.target.value); autoResize(e.target); }}
             onInput={e => autoResize(e.target)}
             className="flex-1 border border-gray-300 rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none overflow-hidden"
           />

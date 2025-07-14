@@ -1,4 +1,3 @@
-// src/pages/survey/CrafftPage.jsx
 import React, { useState, useEffect, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import Header from "@/components/header";
@@ -10,37 +9,37 @@ import CourseDetailOverlay from "@/components/courses/CourseDetailOverlay";
 export default function CrafftPage() {
   const { surveyId } = useParams();
 
-  // 1) Auth check
+  // 1) Kiểm tra xác thực
   const isLoggedIn = useMemo(() => !!localStorage.getItem("token"), []);
 
-  // 2) chung
+  // Chung
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [phase, setPhase] = useState("A");
 
-  // Phase A
+  // Giai đoạn A
   const [aIndex, setAIndex] = useState(0);
   const [aAnswers, setAAnswers] = useState({});
   const [currentAValue, setCurrentAValue] = useState("");
 
-  // Phase B
+  // Giai đoạn B
   const [bQuestions, setBQuestions] = useState([]);
   const [bIndex, setBIndex] = useState(0);
   const [bAnswers, setBAnswers] = useState([]);
 
-  // Result
+  // Kết quả
   const [submissionResult, setSubmissionResult] = useState(null);
   const [showDetail, setShowDetail] = useState(false);
 
-  // Courses
+  // Khóa học gợi ý
   const [suggestedCourses, setSuggestedCourses] = useState([]);
 
-  // Detail overlay cho CourseList
+  // Overlay chi tiết khóa học
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [showModal, setShowModal] = useState(false);
 
-  // --- Load & group questions ---
+  // --- Tải & nhóm câu hỏi ---
   useEffect(() => {
     (async () => {
       try {
@@ -79,7 +78,7 @@ export default function CrafftPage() {
     }
   };
 
-  // --- Phase A next ---
+  // --- Chuyển sang bước tiếp theo Giai đoạn A ---
   const handleANext = () => {
     const groupA = groups.find((g) => g.name === "Phần A");
     if (!groupA) return;
@@ -94,7 +93,7 @@ export default function CrafftPage() {
       setAIndex((i) => i + 1);
       setCurrentAValue("");
     } else {
-      // chọn B
+      // Chuyển sang Giai đoạn B
       const sumA = Object.values(updatedA).reduce((s, v) => s + v, 0);
       const groupB = groups.find((g) => g.name === "Phần B");
       if (groupB) {
@@ -106,7 +105,7 @@ export default function CrafftPage() {
     }
   };
 
-   // --- Phase B next & tính điểm chỉ B ---
+  // --- Chuyển sang bước tiếp theo Giai đoạn B & tính điểm ---
   const handleBNext = (opt) => {
     const qB = bQuestions[bIndex];
     const nextB = [...bAnswers, { questionId: qB.id, optionId: opt.id }];
@@ -115,7 +114,7 @@ export default function CrafftPage() {
     if (bIndex + 1 < bQuestions.length) {
       setBIndex((i) => i + 1);
     } else {
-      // tính điểm B (khi chưa đăng nhập): chỉ cộng 1 điểm nếu chọn 'Có'
+      // Tính điểm B (nếu chưa đăng nhập): +1 điểm nếu chọn 'Có'
       const totalScore = nextB.reduce((sum, a) => {
         const question = bQuestions.find((q) => q.id === a.questionId);
         const selectedOption = question?.options.find((o) => o.id === a.optionId);
@@ -131,10 +130,9 @@ export default function CrafftPage() {
         answers: nextB,
       };
 
-      // nếu đã login, vẫn gửi lên server để lưu
+      // Nếu đã đăng nhập, gửi lên server để lưu
       if (isLoggedIn) {
         const payload = [
-          // giữ A nếu backend cần, không ảnh hưởng điểm
           ...Object.entries(aAnswers).map(([qid, val]) => ({
             questionId: Number(qid),
             optionId: null,
@@ -145,15 +143,14 @@ export default function CrafftPage() {
             optionId: a.optionId,
           })),
         ];
-       api
-  .post(`/surveys/3/submissions/submit`, payload)
-  .then((r) =>
-    // gộp trả lời local vào luôn, đảm bảo luôn có mảng answers
-    setSubmissionResult({ ...r.data, answers: nextB })
-  )
-  .catch((err) => setError(err.message));
+        api
+          .post(`/surveys/3/submissions/submit`, payload)
+          .then((r) =>
+            setSubmissionResult({ ...r.data, answers: nextB })
+          )
+          .catch((err) => setError(err.message));
       } else {
-        // hiển thị tạm trên client
+        // Hiển thị tạm trên client
         setSubmissionResult(result);
       }
 
@@ -161,7 +158,7 @@ export default function CrafftPage() {
     }
   };
 
-  // --- Khi có result và login & risk ≠ High → fetch courses (limit 3) ---
+  // --- Khi có kết quả và đã đăng nhập & mức độ <> High → tìm khóa học ---
   useEffect(() => {
     if (!submissionResult || !isLoggedIn) return;
     const lvl = submissionResult.riskLevel.toLowerCase();
@@ -171,11 +168,11 @@ export default function CrafftPage() {
       .catch(console.error);
   }, [submissionResult, isLoggedIn]);
 
-  // loading / error
+  // Hiển thị loading / lỗi
   if (loading) return <p className="text-center py-10">Đang tải…</p>;
   if (error) return <p className="text-center py-10 text-red-500">{error}</p>;
 
-  // --- RENDER PHASE A ---
+  // --- RENDER GIAI ĐOẠN A ---
   if (phase === "A") {
     const groupA = groups.find((g) => g.name === "Phần A") || { questions: [] };
     const qA = groupA.questions[aIndex];
@@ -183,7 +180,8 @@ export default function CrafftPage() {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
-        <div className="max-w-3xl mx-auto py-8 px-4">
+        <div className="max-w-3xl mx-auto py-8 px-4 ">
+          <h1 className="text-4xl font-semibold mb-3">Bài Khảo Sát CRAFFT</h1>
           <div className="bg-white p-6 rounded-lg shadow">
             <h2 className="text-2xl font-semibold mb-3">
               Phần A – Câu {qA.sequence}
@@ -217,14 +215,15 @@ export default function CrafftPage() {
     );
   }
 
-  // --- RENDER PHASE B ---
+  // --- RENDER GIAI ĐOẠN B ---
   if (phase === "B") {
     const qB = bQuestions[bIndex];
     if (!qB) return <p className="text-center py-10">Không có câu B</p>;
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
-        <div className="max-w-3xl mx-auto py-8 px-4">
+        <div className="max-w-3xl mx-auto py-8 px-4 ">
+          <h1 className="text-4xl font-semibold mb-3">Bài Khảo Sát CRAFFT</h1>
           <div className="bg-white p-6 rounded-lg shadow">
             <h2 className="text-2xl font-semibold mb-3">
               Phần B – Câu {qB.sequence}
@@ -247,13 +246,13 @@ export default function CrafftPage() {
     );
   }
 
-  // --- RENDER PHASE RESULT ---
+  // --- RENDER KẾT QUẢ ---
   if (phase === "RESULT" && submissionResult) {
     const { score, riskLevel, recommendation, answers } = submissionResult;
     const groupA = groups.find((g) => g.name === "Phần A") || { questions: [] };
     const groupB = groups.find((g) => g.name === "Phần B") || { questions: [] };
 
-    // placeholders trước khi integrate enrollments
+    // Placeholder trước khi tích hợp đăng ký khóa học
     const enrolledCourseIds = [];
     const statusMap = {};
 
@@ -261,7 +260,7 @@ export default function CrafftPage() {
       <div className="min-h-screen bg-gray-50">
         <Header />
         <div className="max-w-5xl mx-auto py-8 px-4 space-y-8">
-          {/* --- Tổng quan kết quả --- */}
+          {/* Tổng quan kết quả */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="bg-white p-6 rounded-lg shadow">
               <h1 className="text-3xl font-semibold text-indigo-700 mb-4">
@@ -269,19 +268,19 @@ export default function CrafftPage() {
               </h1>
               <dl className="space-y-3">
                 <div className="flex justify-between">
-                  <dt className="font-medium">Score:</dt>
+                  <dt className="font-medium">Điểm:</dt>
                   <dd className="text-lg">{score}</dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="font-medium">Risk Level:</dt>
-                  <dd className="text-lg">{riskLevel}</dd>
+                  <dt className="font-medium">Mức độ nguy cơ:</dt>
+                  <dd className="text-lg">{riskLevel === 'Low' ? 'thấp' : riskLevel === 'Medium' ? 'trung bình' : 'cao'}</dd>
                 </div>
               </dl>
             </div>
             {isLoggedIn && (
               <div className="bg-white p-6 rounded-lg shadow">
                 <h2 className="text-3xl font-semibold text-indigo-700 mb-4">
-                  Recommendation
+                  Đề xuất
                 </h2>
                 <p className="text-gray-700">{recommendation}</p>
               </div>
@@ -289,17 +288,17 @@ export default function CrafftPage() {
             {!isLoggedIn && (
               <div className="bg-white p-6 rounded-lg shadow">
                 <h2 className="text-3xl font-semibold text-indigo-700 mb-4">
-                  Recommendation
+                  Đề xuất
                 </h2>
                 <p className="text-gray-700">
-                  Đăng nhập rồi làm lại đi thằng ngu
+                  Vui lòng đăng nhập để xem
                 </p>
               </div>
             )}
           </div>
 
-          {/* --- Gợi ý khóa học (chỉ Low/Medium và khi đã login) --- */}
-          {isLoggedIn && (riskLevel === "Low" || riskLevel === "Medium") && (
+          {/* Gợi ý khóa học (chỉ Low/Medium và khi đã đăng nhập) */}
+          {isLoggedIn && (submissionResult.riskLevel === "Low" || submissionResult.riskLevel === "Medium") && (
             <div className="bg-white p-6 rounded-lg shadow">
               <h2 className="text-2xl font-semibold text-indigo-700 mb-4">
                 Gợi ý khoá học
@@ -318,7 +317,7 @@ export default function CrafftPage() {
             </div>
           )}
 
-          {/* overlay detail */}
+          {/* Overlay chi tiết khóa học */}
           {showModal && selectedCourse && (
             <CourseDetailOverlay
               course={selectedCourse}
@@ -327,21 +326,21 @@ export default function CrafftPage() {
             />
           )}
 
-          {/* --- Nút đặt lịch (Medium/High và khi login) --- */}
-          {isLoggedIn && (riskLevel === "Medium" || riskLevel === "High") && (
+          {/* Nút đặt lịch (Medium/High và khi đã đăng nhập) */}
+          {isLoggedIn && (submissionResult.riskLevel === "Medium" || submissionResult.riskLevel === "High") && (
             <div className="text-center">
               <Link
                 to="/appointments/book"
                 className="inline-block mt-4 px-8 py-3 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition"
               >
-                {riskLevel === "High"
-                  ? "Đặt lịch Tư vấn Ngay"
-                  : "Xem Lịch Tư vấn"}
+                {submissionResult.riskLevel === "High"
+                  ? "Đặt lịch tư vấn ngay"
+                  : "Xem lịch tư vấn"}
               </Link>
             </div>
           )}
 
-          {/* --- Toggle Detail câu trả lời --- */}
+          {/* Toggle chi tiết trả lời */}
           <div className="text-center">
             <button
               onClick={() => setShowDetail((d) => !d)}

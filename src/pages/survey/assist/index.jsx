@@ -1,4 +1,3 @@
-// src/pages/survey/AssistSurveyPage.jsx
 import React, { useState, useEffect, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import Header from "@/components/header";
@@ -45,7 +44,7 @@ export default function AssistSurveyPage() {
     async function load() {
       try {
         setLoading(true);
-        const res = await api.get(`/surveys/1/submissions/get-questions`);
+        const res = await api.get(`/surveys/5/submissions/get-questions`);
         const map = new Map();
         res.data.forEach((q) => {
           if (!map.has(q.substanceId)) {
@@ -93,7 +92,7 @@ export default function AssistSurveyPage() {
         case "Low":
           return "Bạn có mức rủi ro thấp. Tham khảo các khóa cơ bản về phòng ngừa và nâng cao sức khỏe.";
         case "Medium":
-          return "Bạn có mức rủi ro trung bình. Mời tham gia khoá tư vấn trực tuyến hoặc workshop giảm sử dụng.";
+          return "Bạn có mức rủi ro trung bình. Mời tham gia khóa tư vấn trực tuyến hoặc workshop giảm sử dụng.";
         case "High":
           return "Bạn có mức rủi ro cao. Vui lòng đặt lịch tư vấn cá nhân ngay với chuyên gia.";
         default:
@@ -109,7 +108,7 @@ export default function AssistSurveyPage() {
             questionId: a.questionId,
             optionId: a.optionId,
           }));
-          const res = await api.post(`/surveys/1/submissions/submit`, payload);
+          const res = await api.post(`/surveys/5/submissions/submit`, payload);
           setSubmissionId(res.data.id);
         } catch (e) {
           setError(e.response?.data?.message || e.message);
@@ -130,7 +129,7 @@ export default function AssistSurveyPage() {
   useEffect(() => {
     if (!submissionId || !isLoggedIn) return;
     api
-      .get(`/surveys/1/submissions/${submissionId}`)
+      .get(`/surveys/5/submissions/${submissionId}`)
       .then(({ data }) => setSubmissionDetail(data))
       .catch(console.error);
   }, [submissionId, surveyId, isLoggedIn]);
@@ -163,7 +162,7 @@ export default function AssistSurveyPage() {
 
   // Render loading / error
   if (loading) return <p className="text-center py-10">Đang tải khảo sát…</p>;
-  if (error) return <p className="text-center text-red-500 py-10">{error}</p>;
+  if (error) return <p className="text-center text-red-500 py-10">Lỗi: {error}</p>;
 
   // Khi có submissionDetail (từ server hoặc local)
   if (submissionDetail) {
@@ -202,26 +201,26 @@ export default function AssistSurveyPage() {
               </h1>
               <dl className="space-y-3">
                 <div className="flex justify-between">
-                  <dt>Score:</dt>
+                  <dt>Điểm:</dt>
                   <dd>{score}</dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt>Risk Level:</dt>
-                  <dd>{riskLevel}</dd>
+                  <dt>Mức độ rủi ro:</dt>
+                  <dd>{riskLevel === "Low" ? "Thấp" : riskLevel === "Medium" ? "Trung bình" : "Cao"}</dd>
                 </div>
               </dl>
             </div>
             {isLoggedIn ? (
               <div className="bg-white p-6 rounded-lg shadow">
                 <h2 className="text-3xl font-semibold text-indigo-700 mb-4">
-                  Recommendation
+                  Đề xuất
                 </h2>
                 <p className="text-gray-700">{recommendation}</p>
               </div>
             ) : (
               <div className="bg-white p-6 rounded-lg shadow">
                 <h2 className="text-3xl font-semibold text-indigo-700 mb-4">
-                  Recommendation
+                  Đề xuất
                 </h2>
                 <p className="text-gray-700">
                   Vui lòng đăng nhập để xem đề xuất
@@ -234,7 +233,7 @@ export default function AssistSurveyPage() {
           {isLoggedIn && (riskLevel === "Low" || riskLevel === "Medium") && (
             <div className="bg-white p-6 rounded-lg shadow">
               <h2 className="text-2xl font-semibold text-indigo-700 mb-4">
-                Gợi ý khoá học
+                Gợi ý khóa học
               </h2>
               <CourseList
                 courses={suggestedCourses}
@@ -265,8 +264,8 @@ export default function AssistSurveyPage() {
                 className="inline-block mt-4 px-8 py-3 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition"
               >
                 {riskLevel === "High"
-                  ? "Đặt lịch Tư vấn Ngay"
-                  : "Xem Lịch Tư vấn"}
+                  ? "Đặt lịch tư vấn ngay"
+                  : "Xem lịch tư vấn"}
               </Link>
             </div>
           )}
@@ -319,6 +318,7 @@ export default function AssistSurveyPage() {
     <div className="min-h-screen bg-gray-50">
       <Header />
       <div className="max-w-3xl mx-auto py-8 px-4">
+        <h1 className="text-4xl font-semibold mb-3">Bài Khảo sát ASSIST</h1>
         <div className="bg-white p-6 rounded-lg shadow-lg">
           <h1 className="text-2xl font-semibold mb-2">
             {group.name} – Câu hỏi {current.sequence}

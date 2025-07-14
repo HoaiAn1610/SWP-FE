@@ -281,7 +281,9 @@ export default function CommentSection({ entity, entityId }) {
       {alertVisible && (
         <div className="fixed inset-0 flex items-center justify-center bg-opacity-50 backdrop-blur-sm">
           <div className="bg-white p-4 rounded-lg shadow-lg text-center">
-            <p className="mb-4 font-semibold text-indigo-800">{alertMessage}</p>
+            <p className="mb-4 font-semibold text-indigo-800">
+              {alertMessage}
+            </p>
             <button
               onClick={hideAlert}
               className="px-4 py-2 bg-indigo-600 text-white rounded"
