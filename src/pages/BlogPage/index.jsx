@@ -1,4 +1,3 @@
-// src/pages/blog/BlogExplorer.jsx
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import TagTabs from '@/components/blog/TagTabs';
@@ -9,15 +8,16 @@ import {
   fetchAllPosts,
   fetchPostsByTag,
   deleteComment,
-
 } from '@/service/blogservice';
 import { fetchUserById } from '@/service/userService';
+
 export default function BlogExplorer() {
-const userId = localStorage.getItem('id');
+  // Get user ID for comment permissions, but not required for loading posts
+  const userId = localStorage.getItem('id');
   const [tabs, setTabs]                   = useState([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [posts, setPosts]                 = useState([]);
-  const [loading, setLoading]             = useState(false);
+  const [loading, setLoading]             = useState(true);
   const [currentUser, setCurrentUser]     = useState(null);
 
   // 1) Load tags
@@ -38,13 +38,18 @@ const userId = localStorage.getItem('id');
 
     loader
       .then(raw => setPosts(raw.filter(p => p.status === 'Published')))
-      .catch(console.error)
+      .catch(error => {
+        console.error(error);
+      })
       .finally(() => setLoading(false));
   }, [tabs, selectedIndex]);
 
-  // 3) Fetch current user (id + role)
+  // 3) Fetch current user (id + role) for comment permissions
   useEffect(() => {
-    if (!userId) return;
+    if (!userId) {
+      // No user logged in
+      return;
+    }
     fetchUserById(userId)
       .then(data => setCurrentUser(data))
       .catch(console.error);
@@ -77,8 +82,8 @@ const userId = localStorage.getItem('id');
   return (
     <div className="min-h-screen bg-gray-100">
       <Header />
-      <div className="flex ">
-        <aside className="w-1/4 bg-white p-4 border-r ">
+      <div className="flex w-full max-w-[84rem] mx-auto">
+        <aside className="w-1/4 bg-white p-4 border-r">
           <TagTabs
             tabs={tabs}
             selectedIndex={selectedIndex}
@@ -87,7 +92,7 @@ const userId = localStorage.getItem('id');
           />
         </aside>
         <main className="w-3/4 p-6">
-          {loading || !currentUser ? (
+          {loading ? (
             <div className="flex justify-center py-20">Đang tải...</div>
           ) : (
             <BlogList

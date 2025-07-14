@@ -76,7 +76,12 @@ const LoginPage = () => {
       <div className="bg-white rounded-3xl shadow-lg w-full max-w-md p-8 space-y-6">
         {/* Logo & Thương hiệu */}
         <div className="flex flex-col items-center">
-          <img src={logo} alt="PreventionHub" className="h-12 w-12 mb-2" />
+         <Link
+                     to="/"
+                     className="inline-block active:scale-95 transition-transform duration-150"
+                   >
+                     <img src={logo} alt="Logo" className="h-10" />
+                   </Link>
           <h1 className="text-xl font-bold text-gray-900">PreventionHub</h1>
         </div>
 

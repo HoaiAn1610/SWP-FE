@@ -6,6 +6,35 @@ import api from "@/config/axios";
 export default function BookingPage() {
   const navigate = useNavigate();
 
+  // Alert / Confirm
+  const [alertVisible, setAlertVisible]     = useState(false);
+  const [alertMessage, setAlertMessage]     = useState("");
+  const [confirmVisible, setConfirmVisible] = useState(false);
+  const [confirmMessage, setConfirmMessage] = useState("");
+  const [confirmAction, setConfirmAction]   = useState(() => {});
+
+  const showAlert = msg => {
+    setAlertMessage(msg);
+    setAlertVisible(true);
+  };
+  const showConfirm = (msg, action) => {
+    setConfirmMessage(msg);
+    setConfirmAction(() => action);
+    setConfirmVisible(true);
+  };
+  const hideConfirm = () => setConfirmVisible(false);
+
+  // On mount: require login
+  useEffect(() => {
+    const storedId = localStorage.getItem('id');
+    if (!storedId) {
+      showConfirm(
+        'Bạn cần đăng nhập để sử dụng tính năng này. Chuyển đến trang đăng nhập?',
+        () => navigate(`/login?redirect=${encodeURIComponent(window.location.pathname)}`)
+      );
+    }
+  }, []);
+
   // Helper: format date/time với +7h offset
   const formatDateWithOffset = dateStr => {
     const dt = new Date(dateStr);
@@ -29,24 +58,6 @@ export default function BookingPage() {
   const [schedules, setSchedules] = useState([]);
   const [loadingSched, setLoadingSched] = useState(false);
   const [selectedScheduleId, setSelectedScheduleId] = useState(null);
-
-  // Alert / Confirm
-  const [alertVisible, setAlertVisible]     = useState(false);
-  const [alertMessage, setAlertMessage]     = useState("");
-  const [confirmVisible, setConfirmVisible] = useState(false);
-  const [confirmMessage, setConfirmMessage] = useState("");
-  const [confirmAction, setConfirmAction]   = useState(() => {});
-
-  const showAlert = msg => {
-    setAlertMessage(msg);
-    setAlertVisible(true);
-  };
-  const showConfirm = (msg, action) => {
-    setConfirmMessage(msg);
-    setConfirmAction(() => action);
-    setConfirmVisible(true);
-  };
-  const hideConfirm = () => setConfirmVisible(false);
 
   // Load consultants
   useEffect(() => {
@@ -84,7 +95,7 @@ export default function BookingPage() {
       .finally(() => setLoadingSched(false));
   };
 
-  // Khi user bấm nút "Xác nhận đặt lịch", hiện confirm trước
+  // Khi user bấm "Xác nhận đặt lịch", hiện confirm trước
   const handleAttemptBooking = () => {
     if (!selectedConsultant || !selectedScheduleId) return;
     const sched = schedules.find(s => s.id === selectedScheduleId);
@@ -113,14 +124,13 @@ export default function BookingPage() {
     <div className="min-h-screen bg-gradient-to-b from-indigo-50 to-white">
       <Header />
 
+    
       {/* Nút Xem Lịch Sử */}
       <div className="max-w-4xl mx-auto px-4 mt-6 flex justify-end">
         <button
           onClick={() => navigate("/appointments/history")}
           className="px-4 py-2 bg-gradient-to-r from-gray-200 to-gray-300 hover:from-gray-300 hover:to-gray-400 text-gray-700 rounded-full shadow transition"
-        >
-          Xem Lịch Sử
-        </button>
+        >Xem Lịch Sử</button>
       </div>
 
       <div className="max-w-4xl mx-auto py-8 px-4 space-y-8">
@@ -252,7 +262,7 @@ export default function BookingPage() {
             <p className="mb-4 text-indigo-800 font-semibold">{confirmMessage}</p>
             <div className="flex justify-center space-x-2">
               <button
-                onClick={hideConfirm}
+                onClick={() => { hideConfirm(); navigate('/'); }}
                 className="px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-md"
               >
                 Huỷ

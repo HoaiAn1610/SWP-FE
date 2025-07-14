@@ -12,8 +12,14 @@ export default function FeaturedActivities() {
       .get("/CommunicationActivities/Get-All-Activities")
       .then((res) => {
         const upcoming = res.data
-          .filter((act) => new Date(act.eventDate) > new Date())
-          .sort((a, b) => new Date(a.eventDate) - new Date(b.eventDate))
+          .filter(
+            (act) =>
+              act.status === "Published" &&
+              new Date(act.eventDate) > new Date()
+          )
+          .sort(
+            (a, b) => new Date(a.eventDate) - new Date(b.eventDate)
+          )
           .slice(0, 3);
         setActivities(upcoming);
       })

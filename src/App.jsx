@@ -172,7 +172,6 @@ function App() {
         { index: true, element: <Navigate to="appointments" replace /> },
         { path: "appointments", element: <AppointmentsPage /> },
         { path: "create-content", element: <CreateContentPage /> },
-        { path: "blog-qa", element: <BlogQApage /> },
         { path: "assignments", element: <AssignmentsPage /> },
         { path: "course/:courseId", element: <ViewConsultantCoursePage /> },
         { path: "appointments/meeting/:id", element: <Meeting /> },
@@ -186,8 +185,7 @@ function App() {
         </ProtectedRoute>
       ),
       children: [
-        { index: true, element: <Navigate to="overview" replace /> },
-        { path: "overview", element: <OverviewPage /> },
+        { index: true, element: <Navigate to="approved" replace /> },
         { path: "approved", element: <ApprovedPage /> },
         { path: "task-queue", element: <TaskQueuePage /> },
         { path: "team-schedule", element: <TeamSchedulePage /> },
