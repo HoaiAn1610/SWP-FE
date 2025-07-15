@@ -22,6 +22,7 @@ const menuItems = [
     icon: <SettingOutlined />,
     label: "Cài đặt nền tảng",
   },
+  { key: "system-logs", icon: <FileTextOutlined />, label: "Nhật ký hệ thống" },
 ];
 
 const AdminLayout = () => {

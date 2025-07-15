@@ -5,41 +5,6 @@ import api from "@/config/axios";
 import { uploadFile } from "@/utils/upload";
 import CustomPagination from "@/components/courses/Pagination";
 
-// ----- Định nghĩa 2 popup để bạn copy nguyên vẹn -----
-const AlertPopup = ({ message, onClose }) => (
-  <div className="fixed inset-0 flex items-center justify-center backdrop-blur-sm z-50">
-    <div className="bg-white p-6 rounded-lg shadow-lg text-center">
-      <p className="mb-4 font-semibold text-indigo-800">{message}</p>
-      <button
-        onClick={onClose}
-        className="px-4 py-2 bg-indigo-600 text-white rounded"
-      >
-        OK
-      </button>
-    </div>
-  </div>
-);
-
-const ConfirmPopup = ({ message, onConfirm, onCancel }) => (
-  <div className="fixed inset-0 flex items-center justify-center backdrop-blur-sm z-50">
-    <div className="bg-white p-6 rounded-lg shadow-lg text-center">
-      <p className="mb-4 font-semibold text-indigo-800">{message}</p>
-      <div className="flex justify-center space-x-2">
-        <button onClick={onCancel} className="px-4 py-2 border rounded">
-          Hủy
-        </button>
-        <button
-          onClick={onConfirm}
-          className="px-4 py-2 bg-indigo-600 text-white rounded"
-        >
-          OK
-        </button>
-      </div>
-    </div>
-  </div>
-);
-// ----------------------------------------------------
-
 export default function CreateContentPage() {
   const navigate = useNavigate();
 
@@ -350,24 +315,24 @@ export default function CreateContentPage() {
 
   // --- Delete Question ---
   const handleDeleteQuestion = (id) => {
-    setConfirmMessage("Bạn có chắc muốn xóa câu hỏi này?");
-    setConfirmAction(() => async () => {
-      try {
-        await api.delete(`Question/delete-question/${id}`);
+    if (!window.confirm("Bạn có chắc muốn xóa câu hỏi này?")) return;
+    api
+      .delete(`Question/delete-question/${id}`)
+      .then(() => {
         setAlertMessage("Xóa câu hỏi thành công!");
         setAlertVisible(true);
         fetchQuestions();
-      } catch {
+      })
+      .catch(() => {
         setAlertMessage("Xóa câu hỏi thất bại.");
         setAlertVisible(true);
-      }
-    });
-    setConfirmVisible(true);
+      });
   };
 
-  // --- View Question handlers ---
+  // --- View Question handlers (luôn fetch fresh trước khi mở) ---
   const openViewModal = async (q) => {
     try {
+      // Load lại tất cả câu hỏi để có option mới nhất
       const { data } = await api.get("Question/get-all-questions");
       setQuestions(data);
       const fresh = data.find((item) => item.id === q.id);
@@ -392,6 +357,7 @@ export default function CreateContentPage() {
       setAlertMessage("Thêm đáp án thành công!");
       setAlertVisible(true);
       setAddOptionModalVisible(false);
+      // Refresh toàn bộ questions và viewQuestion
       const { data: allQ } = await api.get("Question/get-all-questions");
       setQuestions(allQ);
       const fresh = allQ.find((item) => item.id === viewQuestion.id);
@@ -428,6 +394,7 @@ export default function CreateContentPage() {
         setAlertMessage("Cập nhật đáp án thành công!");
         setAlertVisible(true);
         setEditOptionModalVisible(false);
+        // Cập nhật ngay trong viewQuestion
         setViewQuestion((vq) => ({
           ...vq,
           options: vq.options.map((o) =>
@@ -455,7 +422,7 @@ export default function CreateContentPage() {
     );
 
   const [coursePage, setCoursePage] = useState(1);
-  const coursePageSize = 5;
+  const coursePageSize = 5; // số mục trên mỗi trang
 
   const [questionPage, setQuestionPage] = useState(1);
   const questionPageSize = 10;
@@ -1045,6 +1012,7 @@ export default function CreateContentPage() {
         {addOptionModalVisible && (
           <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm">
             <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 overflow-hidden">
+              {/* Header */}
               <div className="px-6 py-4 border-b flex justify-between items-center">
                 <h2 className="text-xl font-semibold text-gray-800">
                   Thêm đáp án
@@ -1062,6 +1030,7 @@ export default function CreateContentPage() {
                   Thêm đáp án nữa
                 </button>
               </div>
+              {/* Body */}
               <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
                 {newOptions.map((opt, idx) => (
                   <div key={idx} className="flex items-center space-x-2">
@@ -1097,6 +1066,7 @@ export default function CreateContentPage() {
                   </div>
                 ))}
               </div>
+              {/* Footer */}
               <div className="px-6 py-4 border-t flex justify-end space-x-2">
                 <button
                   onClick={() => {
@@ -1274,24 +1244,49 @@ export default function CreateContentPage() {
           </div>
         )}
 
-        {/* Popup Alert */}
-        {alertVisible && (
-          <AlertPopup
-            message={alertMessage}
-            onClose={() => setAlertVisible(false)}
-          />
+        {/* Confirm Popup */}
+        {confirmVisible && (
+          <div className="fixed inset-0 flex items-center justify-center backdrop-blur-sm z-50">
+            <div className="bg-white p-6 rounded-lg shadow-lg text-center">
+              <p className="mb-4 font-semibold text-indigo-800">
+                {confirmMessage}
+              </p>
+              <div className="flex justify-center space-x-2">
+                <button
+                  onClick={() => setConfirmVisible(false)}
+                  className="px-4 py-2 border rounded"
+                >
+                  Hủy
+                </button>
+                <button
+                  onClick={() => {
+                    setConfirmVisible(false);
+                    confirmAction();
+                  }}
+                  className="px-4 py-2 bg-indigo-600 text-white rounded"
+                >
+                  OK
+                </button>
+              </div>
+            </div>
+          </div>
         )}
 
-        {/* Popup Confirm */}
-        {confirmVisible && (
-          <ConfirmPopup
-            message={confirmMessage}
-            onConfirm={() => {
-              setConfirmVisible(false);
-              confirmAction();
-            }}
-            onCancel={() => setConfirmVisible(false)}
-          />
+        {/* Alert Popup */}
+        {alertVisible && (
+          <div className="fixed inset-0 flex items-center justify-center backdrop-blur-sm z-50">
+            <div className="bg-white p-6 rounded-lg shadow-lg text-center">
+              <p className="mb-4 font-semibold text-indigo-800">
+                {alertMessage}
+              </p>
+              <button
+                onClick={() => setAlertVisible(false)}
+                className="px-4 py-2 bg-indigo-600 text-white rounded"
+              >
+                OK
+              </button>
+            </div>
+          </div>
         )}
       </main>
     </div>
