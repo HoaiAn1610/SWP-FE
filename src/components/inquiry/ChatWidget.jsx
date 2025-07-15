@@ -96,7 +96,7 @@ export default function ChatWidget() {
       ]);
     } catch (err) {
       console.error(err);
-      setAlertMessage("Tạo inquiry thất bại.");
+      setAlertMessage("Cần đăng nhập để gửi tin nhắn.");
       setAlertVisible(true);
     }
   };
@@ -176,7 +176,7 @@ export default function ChatWidget() {
       setNewAttachmentFile(null);
     } catch (err) {
       console.error(err);
-      setAlertMessage("Gửi tin nhắn thất bại.");
+      setAlertMessage("Cần đăng nhập để gửi tin nhắn.");
       setAlertVisible(true);
     }
   };

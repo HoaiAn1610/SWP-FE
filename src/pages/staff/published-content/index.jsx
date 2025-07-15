@@ -197,7 +197,7 @@ export default function CommunicationActivitiesPage() {
     if (activeTab === "all") return true;
     if (activeTab === "mine") return act.createdById === userId;
     if (activeTab === "pending")
-      return act.createdById === userId && act.status === "Pending";
+      return act.createdById === userId && act.status === "Submitted";
     if (activeTab === "rejected")
       return act.createdById === userId && act.status === "Rejected";
     if (activeTab === "published") return act.status === "Published";

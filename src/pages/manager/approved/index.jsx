@@ -9,7 +9,7 @@ export default function ApprovedPage() {
   // dữ liệu khóa học
   const [courses, setCourses] = useState([]);
 
-  // tab đang chọn: "pending" | "approved"
+  // tab đang chọn: "pending" | "approved" | "rejected" | "published"
   const [activeTab, setActiveTab] = useState("pending");
 
   // Alert & Confirm popup
@@ -102,7 +102,7 @@ export default function ApprovedPage() {
     });
   };
 
-  // Lên lịch xuất bản: gọi API schedule-publish
+  // Lên lịch xuất bản
   const handleScheduleClick = (id) => {
     setCurrentPublishId(id);
     setPublishDate("");
@@ -110,31 +110,20 @@ export default function ApprovedPage() {
     setScheduleModalVisible(true);
   };
   const submitSchedule = async () => {
-    // ghép chuỗi ngày giờ từ input
     const dtString = `${publishDate}T${publishTime}`;
     const dt = new Date(dtString);
     if (isNaN(dt)) {
       showAlert("Ngày giờ không hợp lệ!");
       return;
     }
-
-    // format theo ISO nhưng bỏ phần mili giây để tránh sai lệch
-    // hoặc theo format backend yêu cầu, ví dụ "YYYY-MM-DD HH:mm:ss"
     const publishAt = dt.toISOString().split(".")[0] + "Z";
-    // const publishAt = dayjs(dt).format("YYYY-MM-DD HH:mm:ss");
-
-    console.log("👉 Gửi payload:", { publishAt });
-
     try {
-      const res = await api.put(
-        `/Course/${currentPublishId}/schedule-publish`,
-        { publishAt }
-      );
-      console.log("👈 Response:", res.data);
+      await api.put(`/Course/${currentPublishId}/schedule-publish`, {
+        publishAt,
+      });
       showAlert(`Đã lên lịch xuất bản vào ${publishDate} ${publishTime}!`);
       reloadCourses();
     } catch (err) {
-      // in chi tiết lỗi phía server
       console.error("💥 Lỗi Lên lịch:", err.response?.data || err.message);
       showAlert(
         "Lên lịch thất bại: " +
@@ -145,11 +134,29 @@ export default function ApprovedPage() {
     }
   };
 
+  // Xóa hoạt động đã đăng
+  const handleDelete = (id) => {
+    showConfirm("Bạn có chắc muốn xóa hoạt động này?", async () => {
+      try {
+        await api.delete(`/Course/delete-course/${id}`);
+        showAlert("Xóa thành công!");
+        reloadCourses();
+      } catch (err) {
+        console.error(" Lỗi xóa:", err.response?.data || err.message);
+        showAlert(
+          "Xóa thất bại: " + (err.response?.data?.message || err.message)
+        );
+      }
+    });
+  };
+
   // danh sách lọc theo tab
   const pendingList = courses.filter(
     (c) => c.workflowState === "SubmittedToManager"
   );
   const approvedList = courses.filter((c) => c.status === "Approved");
+  const rejectedList = courses.filter((c) => c.status === "Rejected");
+  const publishedList = courses.filter((c) => c.status === "Published");
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -178,6 +185,26 @@ export default function ApprovedPage() {
           >
             Đã duyệt ({approvedList.length})
           </button>
+          <button
+            onClick={() => setActiveTab("rejected")}
+            className={`px-4 py-2 rounded ${
+              activeTab === "rejected"
+                ? "bg-blue-600 text-white"
+                : "bg-white text-gray-700"
+            }`}
+          >
+            Từ chối ({rejectedList.length})
+          </button>
+          <button
+            onClick={() => setActiveTab("published")}
+            className={`px-4 py-2 rounded ${
+              activeTab === "published"
+                ? "bg-blue-600 text-white"
+                : "bg-white text-gray-700"
+            }`}
+          >
+            Đã đăng ({publishedList.length})
+          </button>
         </div>
 
         {/* Nội dung tab “Chờ duyệt” */}
@@ -196,7 +223,7 @@ export default function ApprovedPage() {
                     Mức độ: {c.level} • {c.duration} phút
                   </p>
                   <p className="text-sm text-gray-500">
-                    Trạng thái: {c.status}
+                    Trạng thái: {c.status || c.workflowState}
                   </p>
                 </div>
                 <div className="flex space-x-2">
@@ -238,9 +265,6 @@ export default function ApprovedPage() {
                   <p className="text-sm text-gray-600">
                     Mức độ: {c.level} • {c.duration} phút
                   </p>
-                  <p className="text-sm text-gray-500">
-                    Trạng thái: {c.status}
-                  </p>
                 </div>
                 <div className="flex space-x-2">
                   <button
@@ -254,6 +278,76 @@ export default function ApprovedPage() {
                     className="px-3 py-1 bg-yellow-500 text-white rounded"
                   >
                     Lên lịch
+                  </button>
+                </div>
+              </div>
+            ))
+          ))}
+
+        {/* Nội dung tab “Từ chối” */}
+        {activeTab === "rejected" &&
+          (rejectedList.length === 0 ? (
+            <p className="text-gray-500">Không có khóa học bị từ chối.</p>
+          ) : (
+            rejectedList.map((c) => (
+              <div
+                key={c.id}
+                className="bg-white p-4 mb-4 rounded shadow flex justify-between"
+              >
+                <div>
+                  <h2 className="font-semibold">{c.title}</h2>
+                  <p className="text-sm text-gray-600">
+                    Mức độ: {c.level} • {c.duration} phút
+                  </p>
+                  {c.rejectReason && (
+                    <p className="text-sm text-red-500">
+                      Lý do từ chối: {c.rejectReason}
+                    </p>
+                  )}
+                </div>
+                <button
+                  onClick={() => handleView(c.id)}
+                  className="px-3 py-1 bg-gray-200 rounded"
+                >
+                  Xem
+                </button>
+              </div>
+            ))
+          ))}
+
+        {/* Nội dung tab “Đã đăng” */}
+        {activeTab === "published" &&
+          (publishedList.length === 0 ? (
+            <p className="text-gray-500">Không có khóa học đã đăng.</p>
+          ) : (
+            publishedList.map((c) => (
+              <div
+                key={c.id}
+                className="bg-white p-4 mb-4 rounded shadow flex justify-between"
+              >
+                <div>
+                  <h2 className="font-semibold">{c.title}</h2>
+                  <p className="text-sm text-gray-600">
+                    Mức độ: {c.level} • {c.duration} phút
+                  </p>
+                  {c.publishAt && (
+                    <p className="text-sm text-indigo-600">
+                      Đã đăng: {new Date(c.publishAt).toLocaleString()}
+                    </p>
+                  )}
+                </div>
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => handleView(c.id)}
+                    className="px-3 py-1 bg-gray-200 rounded"
+                  >
+                    Xem
+                  </button>
+                  <button
+                    onClick={() => handleDelete(c.id)}
+                    className="px-3 py-1 bg-red-600 text-white rounded"
+                  >
+                    Xóa
                   </button>
                 </div>
               </div>
