@@ -117,8 +117,10 @@ export default function CrafftPage() {
       // Tính điểm B (nếu chưa đăng nhập): +1 điểm nếu chọn 'Có'
       const totalScore = nextB.reduce((sum, a) => {
         const question = bQuestions.find((q) => q.id === a.questionId);
-        const selectedOption = question?.options.find((o) => o.id === a.optionId);
-        return sum + (selectedOption?.optionText === 'Có' ? 1 : 0);
+        const selectedOption = question?.options.find(
+          (o) => o.id === a.optionId
+        );
+        return sum + (selectedOption?.optionText === "Có" ? 1 : 0);
       }, 0);
       const riskLevel =
         totalScore === 0 ? "Low" : totalScore >= 3 ? "High" : "Medium";
@@ -145,9 +147,7 @@ export default function CrafftPage() {
         ];
         api
           .post(`/surveys/2/submissions/submit`, payload)
-          .then((r) =>
-            setSubmissionResult({ ...r.data, answers: nextB })
-          )
+          .then((r) => setSubmissionResult({ ...r.data, answers: nextB }))
           .catch((err) => setError(err.message));
       } else {
         // Hiển thị tạm trên client
@@ -273,7 +273,13 @@ export default function CrafftPage() {
                 </div>
                 <div className="flex justify-between">
                   <dt className="font-medium">Mức độ nguy cơ:</dt>
-                  <dd className="text-lg">{riskLevel === 'Low' ? 'thấp' : riskLevel === 'Medium' ? 'trung bình' : 'cao'}</dd>
+                  <dd className="text-lg">
+                    {riskLevel === "Low"
+                      ? "thấp"
+                      : riskLevel === "Medium"
+                      ? "trung bình"
+                      : "cao"}
+                  </dd>
                 </div>
               </dl>
             </div>
@@ -290,32 +296,32 @@ export default function CrafftPage() {
                 <h2 className="text-3xl font-semibold text-indigo-700 mb-4">
                   Đề xuất
                 </h2>
-                <p className="text-gray-700">
-                  Vui lòng đăng nhập để xem
-                </p>
+                <p className="text-gray-700">Vui lòng đăng nhập để xem</p>
               </div>
             )}
           </div>
 
           {/* Gợi ý khóa học (chỉ Low/Medium và khi đã đăng nhập) */}
-          {isLoggedIn && (submissionResult.riskLevel === "Low" || submissionResult.riskLevel === "Medium") && (
-            <div className="bg-white p-6 rounded-lg shadow">
-              <h2 className="text-2xl font-semibold text-indigo-700 mb-4">
-                Gợi ý khoá học
-              </h2>
-              <div>
-                <CourseList
-                  courses={suggestedCourses}
-                  enrolledCourseIds={enrolledCourseIds}
-                  statusMap={statusMap}
-                  onSelect={(course) => {
-                    setSelectedCourse(course);
-                    setShowModal(true);
-                  }}
-                />
+          {isLoggedIn &&
+            (submissionResult.riskLevel === "Low" ||
+              submissionResult.riskLevel === "Medium") && (
+              <div className="bg-white p-6 rounded-lg shadow">
+                <h2 className="text-2xl font-semibold text-indigo-700 mb-4">
+                  Gợi ý khoá học
+                </h2>
+                <div>
+                  <CourseList
+                    courses={suggestedCourses}
+                    enrolledCourseIds={enrolledCourseIds}
+                    statusMap={statusMap}
+                    onSelect={(course) => {
+                      setSelectedCourse(course);
+                      setShowModal(true);
+                    }}
+                  />
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
           {/* Overlay chi tiết khóa học */}
           {showModal && selectedCourse && (
@@ -327,18 +333,20 @@ export default function CrafftPage() {
           )}
 
           {/* Nút đặt lịch (Medium/High và khi đã đăng nhập) */}
-          {isLoggedIn && (submissionResult.riskLevel === "Medium" || submissionResult.riskLevel === "High") && (
-            <div className="text-center">
-              <Link
-                to="/appointments/book"
-                className="inline-block mt-4 px-8 py-3 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition"
-              >
-                {submissionResult.riskLevel === "High"
-                  ? "Đặt lịch tư vấn ngay"
-                  : "Xem lịch tư vấn"}
-              </Link>
-            </div>
-          )}
+          {isLoggedIn &&
+            (submissionResult.riskLevel === "Medium" ||
+              submissionResult.riskLevel === "High") && (
+              <div className="text-center">
+                <Link
+                  to="/appointments/book"
+                  className="inline-block mt-4 px-8 py-3 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition"
+                >
+                  {submissionResult.riskLevel === "High"
+                    ? "Đặt lịch tư vấn ngay"
+                    : "Xem lịch tư vấn"}
+                </Link>
+              </div>
+            )}
 
           {/* Toggle chi tiết trả lời */}
           <div className="text-center">

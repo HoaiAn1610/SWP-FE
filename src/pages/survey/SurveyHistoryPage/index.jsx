@@ -34,7 +34,9 @@ export default function AllSurveyHistoryPage() {
 
   // Format ngày giờ: cộng 7 tiếng
   const formatDatePlus7 = (dateStr) =>
-    new Date(new Date(dateStr).getTime() + 7 * 60 * 60 * 1000).toLocaleString('vi-VN');
+    new Date(new Date(dateStr).getTime() + 7 * 60 * 60 * 1000).toLocaleString(
+      "vi-VN"
+    );
 
   // Tải câu hỏi và lịch sử
   useEffect(() => {
@@ -59,13 +61,25 @@ export default function AllSurveyHistoryPage() {
 
         setAssistSubs(
           assistRes.data
-            .map((s) => ({...s, surveyId: ASSIST_SURVEY_ID, surveyName: "Assist Survey"}))
-            .sort((a, b) => new Date(b.submissionDate) - new Date(a.submissionDate))
+            .map((s) => ({
+              ...s,
+              surveyId: ASSIST_SURVEY_ID,
+              surveyName: "Assist Survey",
+            }))
+            .sort(
+              (a, b) => new Date(b.submissionDate) - new Date(a.submissionDate)
+            )
         );
         setCrafftSubs(
           crafftRes.data
-            .map((s) => ({...s, surveyId: CRAFFT_SURVEY_ID, surveyName: "CRAFFT Survey"}))
-            .sort((a, b) => new Date(b.submissionDate) - new Date(a.submissionDate))
+            .map((s) => ({
+              ...s,
+              surveyId: CRAFFT_SURVEY_ID,
+              surveyName: "CRAFFT Survey",
+            }))
+            .sort(
+              (a, b) => new Date(b.submissionDate) - new Date(a.submissionDate)
+            )
         );
       } catch (e) {
         setError(e.response?.data?.message || e.message);
@@ -116,10 +130,8 @@ export default function AllSurveyHistoryPage() {
     }
   };
 
-  if (loading)
-    return <p className="text-center py-10">Đang tải lịch sử…</p>;
-  if (error)
-    return <p className="text-center text-red-500 py-10">{error}</p>;
+  if (loading) return <p className="text-center py-10">Đang tải lịch sử…</p>;
+  if (error) return <p className="text-center text-red-500 py-10">{error}</p>;
 
   const list = activeTab === "assist" ? assistSubs : crafftSubs;
   const emptyMsg =
@@ -145,8 +157,8 @@ export default function AllSurveyHistoryPage() {
               onClick={() => setActiveTab(t.key)}
               className={`px-4 py-2 rounded-t-lg ${
                 activeTab === t.key
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-gray-200 text-gray-700'
+                  ? "bg-indigo-600 text-white"
+                  : "bg-gray-200 text-gray-700"
               }`}
             >
               {t.label}
@@ -165,19 +177,19 @@ export default function AllSurveyHistoryPage() {
               >
                 <div>
                   <p>
-                    <span className="font-medium">Ngày:</span>{' '}
+                    <span className="font-medium">Ngày:</span>{" "}
                     {formatDatePlus7(s.submissionDate)}
                   </p>
                   <p>
                     <span className="font-medium">Điểm:</span> {s.score}
                   </p>
                   <p>
-                    <span className="font-medium">Mức độ nguy cơ:</span>{' '}
-                    {s.riskLevel === 'Low'
-                      ? 'thấp'
-                      : s.riskLevel === 'Medium'
-                      ? 'trung bình'
-                      : 'cao'}
+                    <span className="font-medium">Mức độ nguy cơ:</span>{" "}
+                    {s.riskLevel === "Low"
+                      ? "thấp"
+                      : s.riskLevel === "Medium"
+                      ? "trung bình"
+                      : "cao"}
                   </p>
                 </div>
                 <button
@@ -207,22 +219,23 @@ export default function AllSurveyHistoryPage() {
                 <span className="font-medium">ID:</span> {detail.id}
               </p>
               <p className="mb-2">
-                <span className="font-medium">Ngày:</span>{' '}
+                <span className="font-medium">Ngày:</span>{" "}
                 {formatDatePlus7(detail.submissionDate)}
               </p>
               <p className="mb-2">
                 <span className="font-medium">Điểm:</span> {detail.score}
               </p>
               <p className="mb-2">
-                <span className="font-medium">Mức độ nguy cơ:</span>{' '}
-                {detail.riskLevel === 'Low'
-                  ? 'thấp'
-                  : detail.riskLevel === 'Medium'
-                  ? 'trung bình'
-                  : 'cao'}
+                <span className="font-medium">Mức độ nguy cơ:</span>{" "}
+                {detail.riskLevel === "Low"
+                  ? "thấp"
+                  : detail.riskLevel === "Medium"
+                  ? "trung bình"
+                  : "cao"}
               </p>
               <p className="mb-4">
-                <span className="font-medium">Đề xuất:</span> {detail.recommendation}
+                <span className="font-medium">Đề xuất:</span>{" "}
+                {detail.recommendation}
               </p>
 
               <div className="space-y-4 mb-6">
@@ -248,8 +261,8 @@ export default function AllSurveyHistoryPage() {
               </div>
 
               {isLoggedIn && detail && (
-                <>  
-                  {detail.riskLevel !== 'High' && (
+                <>
+                  {detail.riskLevel !== "High" && (
                     <div className="bg-white p-6 rounded-lg shadow mb-4">
                       <h3 className="text-xl font-semibold mb-3">
                         Gợi ý khoá học
@@ -265,15 +278,16 @@ export default function AllSurveyHistoryPage() {
                       />
                     </div>
                   )}
-                  {(detail.riskLevel === 'Medium' || detail.riskLevel === 'High') && (
+                  {(detail.riskLevel === "Medium" ||
+                    detail.riskLevel === "High") && (
                     <div className="text-center mb-4">
                       <Link
                         to="/appointments/book"
                         className="inline-block px-6 py-3 bg-indigo-600 text-white rounded-full hover:bg-indigo-700"
                       >
-                        {detail.riskLevel === 'High'
-                          ? 'Đặt lịch tư vấn ngay'
-                          : 'Xem lịch tư vấn'}
+                        {detail.riskLevel === "High"
+                          ? "Đặt lịch tư vấn ngay"
+                          : "Xem lịch tư vấn"}
                       </Link>
                     </div>
                   )}
