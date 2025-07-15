@@ -7,7 +7,8 @@ export default function BlogList({
   currentUser,
   onAddComment,
   onAddReply,
-  onDeleteComment
+  onDeleteComment,
+  onDeleteReply   // ← nhận thêm prop này
 }) {
   if (!posts || posts.length === 0) {
     return (
@@ -27,6 +28,7 @@ export default function BlogList({
           onAddComment={onAddComment}
           onAddReply={onAddReply}
           onDeleteComment={onDeleteComment}
+          onDeleteReply={onDeleteReply}   // ← truyền tiếp xuống BlogCard
         />
       ))}
     </div>

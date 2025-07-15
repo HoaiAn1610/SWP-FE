@@ -9,7 +9,8 @@ export default function BlogCard({
   currentUser,
   onAddComment,
   onAddReply,
-  onDeleteComment
+  onDeleteComment,
+  onDeleteReply   // <-- nhận thêm prop này
 }) {
   const [open, setOpen] = useState(false);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
@@ -18,7 +19,7 @@ export default function BlogCard({
   const [authorName, setAuthorName] = useState('');
   const [publishedDate, setPublishedDate] = useState('');
 
-  // Fetch author name and format date
+  // Fetch author name và format date
   useEffect(() => {
     if (post.createdById) {
       fetchUserById(post.createdById)
@@ -34,7 +35,7 @@ export default function BlogCard({
     }
   }, [post.createdById, post.createdDate]);
 
-  // Toggle comments: show login prompt if not logged in
+  // Toggle comments: show login prompt nếu chưa login
   const handleToggleComments = () => {
     if (!currentUser?.id) {
       setShowLoginPrompt(true);
@@ -43,7 +44,7 @@ export default function BlogCard({
     setOpen(v => !v);
   };
 
-  // Confirm login and redirect
+  // Confirm login và redirect
   const confirmLogin = () => {
     navigate(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
   };
@@ -97,15 +98,15 @@ export default function BlogCard({
           )}
         </Link>
 
-         {currentUser?.id && (
-            <div className="text-sm text-gray-500 mb-6 flex space-x-2">
-              <span>
-                Đăng bởi <span className="font-medium text-gray-700">{authorName}</span>
-              </span>
-              <span>·</span>
-              <span>{publishedDate}</span>
-            </div>
-          )}
+        {currentUser?.id && (
+          <div className="text-sm text-gray-500 mb-6 flex space-x-2">
+            <span>
+              Đăng bởi <span className="font-medium text-gray-700">{authorName}</span>
+            </span>
+            <span>·</span>
+            <span>{publishedDate}</span>
+          </div>
+        )}
 
         <button
           className="text-sm text-gray-600 hover:text-blue-600 mb-2"
@@ -123,6 +124,7 @@ export default function BlogCard({
               onAddComment={onAddComment}
               onAddReply={onAddReply}
               onDeleteComment={onDeleteComment}
+              onDeleteReply={onDeleteReply}  
             />
           </div>
         )}
