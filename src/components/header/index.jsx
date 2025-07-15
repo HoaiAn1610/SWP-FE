@@ -44,7 +44,7 @@ export default function Header() {
       case "admin":
         return "/admin/user-management";
       case "manager":
-        return "/manager/overview";
+        return "/manager/approved";
       case "consultant":
         return "/consultant/appointments";
       case "staff":

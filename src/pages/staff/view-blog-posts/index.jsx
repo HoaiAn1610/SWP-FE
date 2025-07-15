@@ -26,13 +26,15 @@ export default function ViewBlogPostsPage() {
     Published: "Đã xuất bản",
   };
 
+  // Ba tab: Chờ duyệt, Đã xử lý, Đã xuất bản
   const statusTabs = [
     { key: "pending", label: "Chờ duyệt" },
     { key: "reviewed", label: "Đã xử lý" },
     { key: "published", label: "Đã xuất bản" },
   ];
-  const [selectedTab, setSelectedTab] = useState("pending");
-  const [posts, setPosts] = useState([]);
+
+  const [selectedTab, setSelectedTab]       = useState('pending');
+  const [posts, setPosts]                   = useState([]);
   const [expandedPostId, setExpandedPostId] = useState(null);
 
   // Tag states
@@ -60,7 +62,6 @@ export default function ViewBlogPostsPage() {
   const [confirmAction, setConfirmAction] = useState(() => {});
 
   const scrollRef = useRef();
-
   const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
@@ -199,12 +200,11 @@ export default function ViewBlogPostsPage() {
       .catch(console.error);
   };
 
-  const filtered = posts.filter((p) => {
-    if (selectedTab === "pending")
-      return ["Pending", "Submitted"].includes(p.status);
-    if (selectedTab === "reviewed")
-      return ["Approved", "Rejected"].includes(p.status);
-    if (selectedTab === "published") return p.status === "Published";
+  // Lọc bài theo tab
+  const filtered = posts.filter(p => {
+    if (selectedTab === 'pending')    return ['Pending','Submitted'].includes(p.status);
+    if (selectedTab === 'reviewed')   return ['Approved','Rejected'].includes(p.status);
+    if (selectedTab === 'published')  return p.status === 'Published';
     return false;
   });
 
@@ -502,41 +502,60 @@ export default function ViewBlogPostsPage() {
                   </p>
                 </div>
                 <div className="mt-4 md:mt-0 flex space-x-2">
-                  {selectedTab === "pending" &&
-                    post.status.toLowerCase().trim() !== "submitted" && (
-                      <button
-                        onClick={() => handleSendForApproval(post.id)}
-                        className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg"
-                      >
-                        Gửi duyệt
-                      </button>
-                    )}
-                  <button
-                    onClick={() => openEditModal(post)}
-                    className="px-3 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg"
-                  >
-                    Chỉnh sửa
-                  </button>
-                  <button
-                    onClick={() => handleDelete(post.id)}
-                    className="px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg"
-                  >
-                    Xóa
-                  </button>
-
-                  {selectedTab === "published" && (
+                  {/* Tab Pending */}
+                  {selectedTab === 'pending' && post.status.toLowerCase().trim() !== 'submitted' && (
                     <button
-                      onClick={() =>
-                        setExpandedPostId(
-                          expandedPostId === post.id ? null : post.id
-                        )
-                      }
-                      className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg"
+                      onClick={() => handleSendForApproval(post.id)}
+                      className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg"
                     >
-                      {expandedPostId === post.id
-                        ? "Ẩn bình luận"
-                        : `Quản lý bình luận (${post.comments?.length || 0})`}
+                      Gửi duyệt
                     </button>
+                  )}
+                  {/* Tab Reviewed */}
+                  {selectedTab === 'reviewed' && (
+                    <>
+                      {post.status === 'Rejected' && (
+                        <button
+                          onClick={() => handleSendForApproval(post.id)}
+                          className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg"
+                        >
+                          Gửi duyệt lại
+                        </button>
+                      )}
+                      <button
+                        onClick={() => openEditModal(post)}
+                        className="px-3 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg"
+                      >
+                        Chỉnh sửa
+                      </button>
+                      <button
+                        onClick={() => handleDelete(post.id)}
+                        className="px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg"
+                      >
+                        Xóa
+                      </button>
+                    </>
+                  )}
+                  {/* Tab Published */}
+                  {selectedTab === 'published' && (
+                    <>
+                      <button
+                        onClick={() => openEditModal(post)}
+                        className="px-3 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg"
+                      >
+                        Chỉnh sửa
+                      </button>
+                      <button
+                        onClick={() =>
+                          setExpandedPostId(expandedPostId === post.id ? null : post.id)
+                        }
+                        className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg"
+                      >
+                        {expandedPostId === post.id
+                          ? 'Ẩn bình luận'
+                          : `Quản lý bình luận (${post.comments?.length || 0})`}
+                      </button>
+                    </>
                   )}
                   <Link
                     to={`/blogs/${post.id}`}
@@ -547,7 +566,8 @@ export default function ViewBlogPostsPage() {
                 </div>
               </div>
 
-              {selectedTab === "reviewed" && post.status === "Rejected" && (
+              {/* Lý do từ chối */}
+              {selectedTab === 'reviewed' && post.status === 'Rejected' && (
                 <div className="bg-red-50 border border-red-200 p-4 rounded mb-4">
                   <h3 className="font-semibold text-red-800 mb-2">
                     Lý do từ chối
@@ -558,12 +578,14 @@ export default function ViewBlogPostsPage() {
                 </div>
               )}
 
-              {selectedTab === "published" && expandedPostId === post.id && (
+              {/* Bình luận ở tab Published */}
+              {selectedTab === 'published' && expandedPostId === post.id && (
                 <div className="mt-4 border-t pt-4">
                   <CommentList
                     comments={post.comments || []}
                     postId={post.id}
                     currentUser={currentUser}
+              
                     onAddComment={() => {}}
                     onAddReply={() => {}}
                     onDeleteComment={handleDeleteComment}
