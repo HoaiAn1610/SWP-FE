@@ -2,9 +2,9 @@
 import React, { useState, useEffect } from "react";
 import { CheckCircle, XCircle, Send } from "lucide-react";
 import api from "@/config/axios";
+import ActivityDetailOverlay from "./activity";
 
 export default function TeamSchedulePage() {
-  const userId = Number(localStorage.getItem("id") || "0");
   const [activities, setActivities] = useState([]);
   const [activeTab, setActiveTab] = useState("submitted");
   const [rejectingId, setRejectingId] = useState(null);
@@ -16,6 +16,9 @@ export default function TeamSchedulePage() {
   const [confirmMessage, setConfirmMessage] = useState("");
   const [confirmAction, setConfirmAction] = useState(() => {});
 
+  // state để mở overlay
+  const [selectedActivity, setSelectedActivity] = useState(null);
+
   useEffect(() => {
     fetchActivities();
   }, []);
@@ -23,7 +26,6 @@ export default function TeamSchedulePage() {
   const fetchActivities = async () => {
     try {
       const res = await api.get("/CommunicationActivities/Get-All-Activities");
-      // sắp xếp theo ngày sự kiện tăng dần
       setActivities(
         res.data.sort((a, b) => new Date(a.eventDate) - new Date(b.eventDate))
       );
@@ -45,7 +47,6 @@ export default function TeamSchedulePage() {
   };
   const hideConfirm = () => setConfirmVisible(false);
 
-  // Duyệt
   const handleApproveClick = (id) => {
     showConfirm("Bạn có chắc chắn muốn duyệt hoạt động này?", async () => {
       try {
@@ -58,12 +59,10 @@ export default function TeamSchedulePage() {
     });
   };
 
-  // Bắt đầu quá trình từ chối
   const handleRejectClick = (id) => {
     setRejectingId(id);
     setRejectReason("");
   };
-  // Gửi lý do từ chối
   const handleRejectSubmit = async (id) => {
     if (!rejectReason.trim()) {
       showAlert("Bạn phải nhập lý do từ chối");
@@ -86,7 +85,6 @@ export default function TeamSchedulePage() {
     setRejectReason("");
   };
 
-  // Công bố
   const handlePublishClick = (id) => {
     showConfirm("Bạn có chắc chắn muốn công bố hoạt động này?", async () => {
       try {
@@ -99,7 +97,11 @@ export default function TeamSchedulePage() {
     });
   };
 
-  // Lọc theo tab
+  // mở overlay
+  const handleSelect = (activity) => {
+    setSelectedActivity(activity);
+  };
+
   const submitted = activities.filter((a) => a.status === "Submitted");
   const approved = activities.filter((a) => a.status === "Approved");
 
@@ -133,8 +135,9 @@ export default function TeamSchedulePage() {
 
       {/* Nội dung chính */}
       <div className="space-y-4">
+        {/* Tab Submitted */}
         {activeTab === "submitted" &&
-          (submitted.length ? submitted : []).map((act) => (
+          submitted.map((act) => (
             <div
               key={act.id}
               className="bg-white p-4 rounded-lg shadow flex flex-col"
@@ -142,8 +145,10 @@ export default function TeamSchedulePage() {
               <div className="flex justify-between items-center">
                 <div>
                   <h2 className="text-xl font-semibold">{act.title}</h2>
+                  {/* CHỈ HIỂN THỊ NGÀY */}
                   <p className="text-gray-600">
-                    {new Date(act.eventDate).toLocaleString()}
+                    <strong>Ngày diễn ra:</strong>{" "}
+                    {new Date(act.eventDate).toLocaleDateString()}
                   </p>
                 </div>
                 <div className="flex space-x-2">
@@ -160,6 +165,12 @@ export default function TeamSchedulePage() {
                   >
                     <XCircle className="mr-1" />
                     Từ chối
+                  </button>
+                  <button
+                    onClick={() => handleSelect(act)}
+                    className="px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                  >
+                    Xem chi tiết
                   </button>
                 </div>
               </div>
@@ -191,32 +202,43 @@ export default function TeamSchedulePage() {
             </div>
           ))}
 
+        {/* Tab Approved */}
         {activeTab === "approved" &&
-          (approved.length ? approved : []).map((act) => (
+          approved.map((act) => (
             <div
               key={act.id}
               className="bg-white p-4 rounded-lg shadow flex justify-between items-center"
             >
               <div>
                 <h2 className="text-xl font-semibold">{act.title}</h2>
+                {/* CHỈ HIỂN THỊ NGÀY */}
                 <p className="text-gray-600">
-                  {new Date(act.eventDate).toLocaleString()}
+                  <strong>Ngày diễn ra:</strong>{" "}
+                  {new Date(act.eventDate).toLocaleDateString()}
                 </p>
               </div>
-              <button
-                onClick={() => handlePublishClick(act.id)}
-                className="flex items-center px-3 py-1 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
-              >
-                <Send className="mr-1" />
-                Công bố
-              </button>
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => handlePublishClick(act.id)}
+                  className="flex items-center px-3 py-1 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+                >
+                  <Send className="mr-1" />
+                  Công bố
+                </button>
+                <button
+                  onClick={() => handleSelect(act)}
+                  className="px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                >
+                  Xem chi tiết
+                </button>
+              </div>
             </div>
           ))}
       </div>
 
       {/* Popup cảnh báo */}
       {alertVisible && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
+        <div className="fixed inset-0 flex items-center justify-center z-60 backdrop-blur-sm">
           <div className="bg-white p-6 rounded-xl shadow-xl text-center">
             <p className="mb-4 font-semibold text-indigo-800">{alertMessage}</p>
             <button
@@ -231,7 +253,7 @@ export default function TeamSchedulePage() {
 
       {/* Popup xác nhận */}
       {confirmVisible && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
+        <div className="fixed inset-0 flex items-center justify-center z-60 backdrop-blur-sm">
           <div className="bg-white p-6 rounded-xl shadow-xl text-center">
             <p className="mb-4 font-semibold text-indigo-800">
               {confirmMessage}
@@ -255,6 +277,14 @@ export default function TeamSchedulePage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Overlay chi tiết */}
+      {selectedActivity && (
+        <ActivityDetailOverlay
+          activity={selectedActivity}
+          onClose={() => setSelectedActivity(null)}
+        />
       )}
     </div>
   );

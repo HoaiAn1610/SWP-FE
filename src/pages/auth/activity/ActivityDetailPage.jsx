@@ -137,7 +137,7 @@ export default function ActivityDetailPage() {
     createdDate,
   } = activity;
 
-  const formattedEvent = new Date(eventDate).toLocaleString();
+  const formattedDate = new Date(eventDate).toLocaleDateString();
   const formattedCreated = new Date(createdDate).toLocaleString();
 
   const getStatusClass = (s) => {
@@ -178,7 +178,7 @@ export default function ActivityDetailPage() {
 
           <div className="space-y-2 text-gray-700">
             <p>
-              <strong>Thời gian:</strong> {formattedEvent}
+              <strong>Thời gian:</strong> {formattedDate}
             </p>
             <p>
               <strong>Địa điểm:</strong> {location}
@@ -209,7 +209,7 @@ export default function ActivityDetailPage() {
 
       {/* Alert Popup */}
       {alertVisible && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
+        <div className="fixed inset-0 flex items-center justify-center z-60 backdrop-blur-sm">
           <div className="bg-white p-6 rounded-xl shadow-xl text-center">
             <p className="mb-4 font-semibold text-indigo-800">{alertMessage}</p>
             <button
@@ -224,7 +224,7 @@ export default function ActivityDetailPage() {
 
       {/* Confirm Popup */}
       {confirmVisible && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
+        <div className="fixed inset-0 flex items-center justify-center z-60 backdrop-blur-sm">
           <div className="bg-white p-6 rounded-xl shadow-xl text-center">
             <p className="mb-4 font-semibold text-indigo-800">
               {confirmMessage}
