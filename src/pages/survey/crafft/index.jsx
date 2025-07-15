@@ -44,7 +44,7 @@ export default function CrafftPage() {
     (async () => {
       try {
         setLoading(true);
-        const res = await api.get(`/surveys/3/submissions/get-questions`);
+        const res = await api.get(`/surveys/2/submissions/get-questions`);
         const map = new Map();
         res.data.forEach((q) => {
           if (!map.has(q.substanceName)) {
@@ -144,7 +144,7 @@ export default function CrafftPage() {
           })),
         ];
         api
-          .post(`/surveys/3/submissions/submit`, payload)
+          .post(`/surveys/2/submissions/submit`, payload)
           .then((r) =>
             setSubmissionResult({ ...r.data, answers: nextB })
           )

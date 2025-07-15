@@ -44,7 +44,7 @@ export default function AssistSurveyPage() {
     async function load() {
       try {
         setLoading(true);
-        const res = await api.get(`/surveys/5/submissions/get-questions`);
+        const res = await api.get(`/surveys/1/submissions/get-questions`);
         const map = new Map();
         res.data.forEach((q) => {
           if (!map.has(q.substanceId)) {
@@ -108,7 +108,7 @@ export default function AssistSurveyPage() {
             questionId: a.questionId,
             optionId: a.optionId,
           }));
-          const res = await api.post(`/surveys/5/submissions/submit`, payload);
+          const res = await api.post(`/surveys/1/submissions/submit`, payload);
           setSubmissionId(res.data.id);
         } catch (e) {
           setError(e.response?.data?.message || e.message);
@@ -129,7 +129,7 @@ export default function AssistSurveyPage() {
   useEffect(() => {
     if (!submissionId || !isLoggedIn) return;
     api
-      .get(`/surveys/5/submissions/${submissionId}`)
+      .get(`/surveys/1/submissions/${submissionId}`)
       .then(({ data }) => setSubmissionDetail(data))
       .catch(console.error);
   }, [submissionId, surveyId, isLoggedIn]);

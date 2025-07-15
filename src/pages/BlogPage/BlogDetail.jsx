@@ -3,8 +3,6 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   fetchAllPosts,
-  createComment,
-  postReply,
   deleteComment
 } from '@/service/blogservice';
 import { fetchUserById } from '@/service/userService';
@@ -20,7 +18,7 @@ export default function BlogDetail() {
   const [showComments, setShowComments] = useState(false);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
 
-  // Load currentUser
+  // Load current user
   useEffect(() => {
     const storedId = localStorage.getItem('id');
     if (!storedId) return;
@@ -38,7 +36,9 @@ export default function BlogDetail() {
         setPost(p);
         if (p.createdDate) {
           const dt = new Date(p.createdDate);
-          setPublishedDate(`${dt.getDate()}/${dt.getMonth() + 1}/${dt.getFullYear()}`);
+          setPublishedDate(
+            `${dt.getDate()}/${dt.getMonth() + 1}/${dt.getFullYear()}`
+          );
         }
         if (p.createdById) {
           fetchUserById(p.createdById)
@@ -49,36 +49,34 @@ export default function BlogDetail() {
       .catch(console.error);
   }, [postId]);
 
-  // Add comment
-  const handleAddComment = async (postId, content) => {
-    const created = await createComment(postId, content);
+  // Add top‐level comment: **append** newComment to end
+  const handleAddComment = (_postId, newComment) => {
     setPost(prev => ({
       ...prev,
-      comments: [created, ...(prev.comments || [])]
+      comments: [...(prev.comments || []), newComment],  // <-- append here
     }));
   };
 
-  // Add reply
-  const handleAddReply = async (postId, parentId, content) => {
-    const created = await postReply(parentId, content);
-    const addRec = list =>
-      list.map(c => {
+  // Add reply: already appends
+  const handleAddReply = (_postId, parentId, newReply) => {
+    const addRecursively = list =>
+      (list || []).map(c => {
         if (c.id === parentId) {
-          return { ...c, replies: [...(c.replies || []), created] };
+          return { ...c, replies: [...(c.replies || []), newReply] };
         }
         if (c.replies) {
-          return { ...c, replies: addRec(c.replies) };
+          return { ...c, replies: addRecursively(c.replies) };
         }
         return c;
       });
     setPost(prev => ({
       ...prev,
-      comments: addRec(prev.comments || [])
+      comments: addRecursively(prev.comments),
     }));
   };
 
-  // Delete comment/reply
-  const handleDeleteComment = (postId, commentId) => {
+  // Delete comment or reply
+  const handleDeleteComment = (_postId, commentId) => {
     deleteComment(commentId)
       .then(() => {
         const filterRecursively = list =>
@@ -91,14 +89,18 @@ export default function BlogDetail() {
           }, []);
         setPost(prev => ({
           ...prev,
-          comments: filterRecursively(prev.comments)
+          comments: filterRecursively(prev.comments),
         }));
       })
       .catch(console.error);
   };
 
-  // Toggle comments with login prompt
-  const handleToggleComments = () => {
+  const handleDeleteReply = (_postId, parentId, replyId) => {
+    handleDeleteComment(_postId, replyId);
+  };
+
+  // Toggle comments panel
+  const toggleComments = () => {
     if (!currentUser?.id) {
       setShowLoginPrompt(true);
       return;
@@ -106,10 +108,8 @@ export default function BlogDetail() {
     setShowComments(v => !v);
   };
 
-  // Confirm login
-  const confirmLogin = () => {
+  const confirmLogin = () =>
     navigate(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
-  };
 
   if (!post) {
     return <div className="p-6 text-center text-gray-600">Đang tải...</div>;
@@ -117,9 +117,8 @@ export default function BlogDetail() {
 
   return (
     <>
-      {/* Login confirmation popup */}
       {showLoginPrompt && (
-        <div className="fixed inset-0 flex items-center justify-center z-60  backdrop-blur-sm">
+        <div className="fixed inset-0 flex items-center justify-center z-60 backdrop-blur-sm">
           <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm text-center border border-indigo-200">
             <p className="mb-6 text-indigo-800 font-semibold">
               Bạn cần đăng nhập để xem bình luận. Chuyển đến trang đăng nhập?
@@ -144,12 +143,9 @@ export default function BlogDetail() {
 
       <div
         className={`mx-auto p-6 bg-white rounded-lg shadow-md ${
-          showComments
-            ? 'grid grid-cols-3 gap-6 max-w-screen-xl'
-            : 'max-w-3xl'
+          showComments ? 'grid grid-cols-3 gap-6 max-w-screen-xl' : 'max-w-3xl'
         }`}
       >
-        {/* Back & Toggle */}
         <div className="flex items-center justify-between mb-6 col-span-3">
           <button
             onClick={() => navigate(-1)}
@@ -159,7 +155,7 @@ export default function BlogDetail() {
           </button>
           {!showComments && post.status === 'Published' && (
             <button
-              onClick={handleToggleComments}
+              onClick={toggleComments}
               className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600"
             >
               Xem bình luận
@@ -167,10 +163,9 @@ export default function BlogDetail() {
           )}
         </div>
 
-        {/* Post Content */}
         <div className={showComments ? 'col-span-2' : ''}>
           <h1 className="text-4xl font-bold mb-4">{post.title}</h1>
-           {currentUser?.id && (
+          {currentUser?.id && (
             <div className="text-sm text-gray-500 mb-6 flex space-x-2">
               <span>
                 Đăng bởi <span className="font-medium text-gray-700">{authorName}</span>
@@ -179,7 +174,6 @@ export default function BlogDetail() {
               <span>{publishedDate}</span>
             </div>
           )}
-
           {post.coverImageUrl && (
             <img
               src={post.coverImageUrl}
@@ -192,7 +186,6 @@ export default function BlogDetail() {
           </div>
         </div>
 
-        {/* Comments Panel */}
         {showComments && (
           <div className="col-start-3 col-span-1 flex flex-col space-y-4">
             <button
@@ -210,6 +203,7 @@ export default function BlogDetail() {
                 onAddComment={handleAddComment}
                 onAddReply={handleAddReply}
                 onDeleteComment={handleDeleteComment}
+                onDeleteReply={handleDeleteReply}
               />
             </section>
           </div>
