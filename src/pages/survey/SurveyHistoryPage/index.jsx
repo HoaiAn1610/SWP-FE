@@ -7,8 +7,8 @@ import CourseDetailOverlay from "@/components/courses/CourseDetailOverlay";
 import { Link } from "react-router-dom";
 
 // Mã khảo sát cố định
-const ASSIST_SURVEY_ID = 5;
-const CRAFFT_SURVEY_ID = 3;
+const ASSIST_SURVEY_ID = 1;
+const CRAFFT_SURVEY_ID = 2;
 
 export default function AllSurveyHistoryPage() {
   const [assistSubs, setAssistSubs] = useState([]);

@@ -1,5 +1,6 @@
+// src/pages/BlogExplorer.jsx
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import TagTabs from '@/components/blog/TagTabs';
 import BlogList from '@/components/blog/BlogList';
 import Header from '@/components/header';
@@ -19,6 +20,7 @@ export default function BlogExplorer() {
   const [posts, setPosts]                 = useState([]);
   const [loading, setLoading]             = useState(true);
   const [currentUser, setCurrentUser]     = useState(null);
+  const navigate = useNavigate();
 
   // 1) Load tags
   useEffect(() => {
@@ -27,7 +29,7 @@ export default function BlogExplorer() {
       .catch(console.error);
   }, []);
 
-  // 2) Load posts theo tag
+  // 2) Load posts by tag
   useEffect(() => {
     if (!tabs.length) return;
     setLoading(true);
@@ -38,31 +40,26 @@ export default function BlogExplorer() {
 
     loader
       .then(raw => setPosts(raw.filter(p => p.status === 'Published')))
-      .catch(error => {
-        console.error(error);
-      })
+      .catch(console.error)
       .finally(() => setLoading(false));
   }, [tabs, selectedIndex]);
 
   // 3) Fetch current user (id + role) for comment permissions
   useEffect(() => {
-    if (!userId) {
-      // No user logged in
-      return;
-    }
+    if (!userId) return;
     fetchUserById(userId)
       .then(data => setCurrentUser(data))
       .catch(console.error);
   }, [userId]);
 
-  // 4) Xóa comment hoặc reply
+  // 4a) Delete any comment or reply by ID
   const handleDeleteComment = (postId, commentId) => {
     deleteComment(commentId)
       .then(() => {
         setPosts(ps =>
           ps.map(p => {
             if (p.id !== postId) return p;
-            // đệ quy lọc bỏ bất kỳ comment/reply nào có id = commentId
+            // recursively remove any comment/reply matching commentId
             const filterRecursively = comments =>
               (comments || []).reduce((acc, c) => {
                 if (c.id === commentId) return acc;
@@ -77,6 +74,12 @@ export default function BlogExplorer() {
         );
       })
       .catch(console.error);
+  };
+
+  // 4b) Delete specifically a reply (just re-use the same logic)
+  const handleDeleteReply = (postId, parentId, replyId) => {
+    // backend call and state update identical to deleting by replyId
+    handleDeleteComment(postId, replyId);
   };
 
   return (
@@ -123,6 +126,7 @@ export default function BlogExplorer() {
                 )
               }
               onDeleteComment={handleDeleteComment}
+              onDeleteReply={handleDeleteReply}  // ← đây!
             />
           )}
         </main>

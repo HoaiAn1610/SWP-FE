@@ -8,7 +8,8 @@ export default function CommentList({
   currentUser,
   onAddComment,
   onAddReply,
-  onDeleteComment
+  onDeleteComment,
+  onDeleteReply  // new prop for handling reply deletions
 }) {
   // ─── Helper to format time ───────────────────────────────────────────────
   const formatTime = (timestamp, isNew) => {
@@ -32,7 +33,6 @@ export default function CommentList({
         const existing = prev.find(x => x.id === c.id);
         return {
           ...c,
-          // if we've already flagged it as new, keep that; otherwise it's old
           isNew: existing ? existing.isNew : false
         };
       })
@@ -124,7 +124,6 @@ export default function CommentList({
     setCommentList(prev => [...prev, flagged]);
     setNewComment('');
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    // show real user name, not "You"
     if (flagged.memberId === currentUser.id) {
       setUserNames(u => ({ ...u, [flagged.memberId]: currentUser.name }));
     }
@@ -142,7 +141,6 @@ export default function CommentList({
       [parentId]: [...(r[parentId] || []), flagged]
     }));
     setReplyTexts(r => ({ ...r, [parentId]: '' }));
-    // show real user name, not "You"
     if (flagged.memberId === currentUser.id) {
       setUserNames(u => ({ ...u, [flagged.memberId]: currentUser.name }));
     }
@@ -186,15 +184,20 @@ export default function CommentList({
                       showConfirm(
                         'Bạn có chắc muốn xóa bình luận này không?',
                         () => {
-                          // Inform parent
-                          onDeleteComment(postId, c.id);
-                          // Remove locally
                           if (parentId === null) {
-                            setCommentList(prev => prev.filter(item => item.id !== c.id));
+                            // top-level comment deletion
+                            onDeleteComment(postId, c.id);
+                            setCommentList(prev =>
+                              prev.filter(item => item.id !== c.id)
+                            );
                           } else {
+                            // nested reply deletion
+                            onDeleteReply(postId, parentId, c.id);
                             setLoadedReplies(prev => ({
                               ...prev,
-                              [parentId]: prev[parentId].filter(item => item.id !== c.id)
+                              [parentId]: prev[parentId].filter(
+                                item => item.id !== c.id
+                              )
                             }));
                           }
                         }
