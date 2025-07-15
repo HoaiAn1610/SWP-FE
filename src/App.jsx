@@ -35,7 +35,6 @@ import BookingPage from "@/pages/appointmentRequest/bookingpage";
 import BookingHistoryPage from "@/pages/appointmentRequest/bookingHistory";
 
 import ManagerLayout from "@/pages/manager/ManagerLayout";
-import OverviewPage from "@/pages/manager/overview";
 import ApprovedPage from "@/pages/manager/approved";
 import TaskQueuePage from "@/pages/manager/task-queue";
 import TeamSchedulePage from "@/pages/manager/team-schedule";
