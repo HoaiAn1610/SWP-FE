@@ -2,41 +2,6 @@
 import React, { useState, useEffect } from "react";
 import api from "@/config/axios";
 
-// ----- Định nghĩa 2 popup để bạn copy nguyên vẹn -----
-const AlertPopup = ({ message, onClose }) => (
-  <div className="fixed inset-0 flex items-center justify-center backdrop-blur-sm z-50">
-    <div className="bg-white p-6 rounded-lg shadow-lg text-center">
-      <p className="mb-4 font-semibold text-indigo-800">{message}</p>
-      <button
-        onClick={onClose}
-        className="px-4 py-2 bg-indigo-600 text-white rounded"
-      >
-        OK
-      </button>
-    </div>
-  </div>
-);
-
-const ConfirmPopup = ({ message, onConfirm, onCancel }) => (
-  <div className="fixed inset-0 flex items-center justify-center backdrop-blur-sm z-50">
-    <div className="bg-white p-6 rounded-lg shadow-lg text-center">
-      <p className="mb-4 font-semibold text-indigo-800">{message}</p>
-      <div className="flex justify-center space-x-2">
-        <button onClick={onCancel} className="px-4 py-2 border rounded">
-          Hủy
-        </button>
-        <button
-          onClick={onConfirm}
-          className="px-4 py-2 bg-indigo-600 text-white rounded"
-        >
-          OK
-        </button>
-      </div>
-    </div>
-  </div>
-);
-// ----------------------------------------------------
-
 export default function ConsultantSchedulePage() {
   const consultantId = localStorage.getItem("id");
   const [schedules, setSchedules] = useState([]);
@@ -44,27 +9,21 @@ export default function ConsultantSchedulePage() {
   const [modalVisible, setModalVisible] = useState(false);
   const [form, setForm] = useState({
     id: null,
-    scheduleDate: "",
-    startTime: "",
-    endTime: "",
+    scheduleDate: "", // "yyyy-MM-dd"
+    startTime: "", // "HH:mm"
+    endTime: "", // "HH:mm"
   });
   const [error, setError] = useState("");
 
-  // trạng thái cho AlertPopup
-  const [alertMessage, setAlertMessage] = useState("");
-  const [showAlert, setShowAlert] = useState(false);
-
-  // trạng thái cho ConfirmPopup
-  const [confirmMessage, setConfirmMessage] = useState("");
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [confirmId, setConfirmId] = useState(null);
-
   // ——————————————————————————————————————————————
+  // Chuyển local "HH:mm" -> UTC string "HH:mm:ss" (trừ 7 giờ)
   const toUtcString = (hhmm) => {
     const [h, m] = hhmm.split(":").map(Number);
     const utcH = (h - 7 + 24) % 24;
     return `${String(utcH).padStart(2, "0")}:${String(m).padStart(2, "0")}:00`;
   };
+
+  // Chuyển UTC "HH:mm:ss" -> local "HH:mm" (cộng 7 giờ)
   const toLocalHHMM = (hhmmss) => {
     const [h, m] = hhmmss.split(":").map(Number);
     const localH = (h + 7) % 24;
@@ -72,6 +31,7 @@ export default function ConsultantSchedulePage() {
   };
   // ——————————————————————————————————————————————
 
+  // Fetch lịch, chuyển UTC->local rồi lọc future
   const fetchSchedules = async () => {
     setLoading(true);
     setError("");
@@ -90,8 +50,7 @@ export default function ConsultantSchedulePage() {
       setSchedules(filtered);
     } catch (err) {
       console.error(err);
-      setAlertMessage("Không tải được lịch.");
-      setShowAlert(true);
+      setError("Không tải được lịch.");
     } finally {
       setLoading(false);
     }
@@ -101,12 +60,14 @@ export default function ConsultantSchedulePage() {
     fetchSchedules();
   }, [consultantId]);
 
+  // Mở modal tạo mới
   const openCreate = () => {
     setError("");
     setForm({ id: null, scheduleDate: "", startTime: "", endTime: "" });
     setModalVisible(true);
   };
 
+  // Mở modal edit, form điền luôn giờ local
   const openEdit = (slot) => {
     setError("");
     setForm({
@@ -118,19 +79,24 @@ export default function ConsultantSchedulePage() {
     setModalVisible(true);
   };
 
+  // Change form
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((f) => ({ ...f, [name]: value }));
   };
 
+  // Submit tạo hoặc sửa
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     const { scheduleDate, startTime, endTime, id } = form;
+
     if (!scheduleDate || !startTime || !endTime) {
       setError("Vui lòng điền đầy đủ thông tin.");
       return;
     }
+
+    // Kiểm tra ngày khám không được trước ngày hiện tại
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const selectedDate = new Date(scheduleDate);
@@ -138,6 +104,8 @@ export default function ConsultantSchedulePage() {
       setError("Ngày khám phải là ngày hiện tại hoặc tương lai.");
       return;
     }
+
+    // Kiểm tra start < end ở local
     const startLocal = new Date(`${scheduleDate}T${startTime}:00`);
     const endLocal = new Date(`${scheduleDate}T${endTime}:00`);
     if (startLocal >= endLocal) {
@@ -145,6 +113,7 @@ export default function ConsultantSchedulePage() {
       return;
     }
 
+    // Payload: trừ 7h cả tạo lẫn sửa
     const payload = {
       ScheduleDate: scheduleDate,
       StartTime: toUtcString(startTime),
@@ -154,43 +123,32 @@ export default function ConsultantSchedulePage() {
 
     try {
       if (id) {
+        // update-schedule/{id}
         await api.put(`/ConsultantSchedule/update-schedule/${id}`, {
           id,
           ...payload,
         });
-        setAlertMessage("Cập nhật slot thành công.");
       } else {
+        // add-schedule
         await api.post("/ConsultantSchedule/add-schedule", payload);
-        setAlertMessage("Tạo slot mới thành công.");
       }
-      setShowAlert(true);
       setModalVisible(false);
-      await fetchSchedules();
+      await fetchSchedules(); // fetch lại để hiển thị slot mới/sửa
     } catch (err) {
       console.error(err);
-      setAlertMessage("Lưu thất bại.");
-      setShowAlert(true);
+      setError("Lưu thất bại.");
     }
   };
 
-  // Thay window.confirm bằng ConfirmPopup
-  const openConfirmDelete = (id) => {
-    setConfirmId(id);
-    setConfirmMessage("Bạn có chắc muốn xóa slot này?");
-    setShowConfirm(true);
-  };
-
-  const handleDeleteConfirmed = async () => {
-    setShowConfirm(false);
+  // Xóa slot
+  const handleDelete = async (id) => {
+    if (!window.confirm("Bạn có chắc muốn xóa slot này?")) return;
     try {
-      await api.delete(`/ConsultantSchedule/delete-schedule/${confirmId}`);
-      setAlertMessage("Xóa slot thành công.");
-      setShowAlert(true);
+      await api.delete(`/ConsultantSchedule/delete-schedule/${id}`);
       await fetchSchedules();
     } catch (err) {
       console.error(err);
-      setAlertMessage("Xóa thất bại.");
-      setShowAlert(true);
+      alert("Xóa thất bại.");
     }
   };
 
@@ -303,7 +261,7 @@ export default function ConsultantSchedulePage() {
                       Sửa
                     </button>
                     <button
-                      onClick={() => openConfirmDelete(s.id)}
+                      onClick={() => handleDelete(s.id)}
                       className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700"
                     >
                       Xóa
@@ -315,23 +273,6 @@ export default function ConsultantSchedulePage() {
           )}
         </div>
       </div>
-
-      {/* Popup thông báo chung */}
-      {showAlert && (
-        <AlertPopup
-          message={alertMessage}
-          onClose={() => setShowAlert(false)}
-        />
-      )}
-
-      {/* Popup xác nhận xóa */}
-      {showConfirm && (
-        <ConfirmPopup
-          message={confirmMessage}
-          onConfirm={handleDeleteConfirmed}
-          onCancel={() => setShowConfirm(false)}
-        />
-      )}
     </div>
   );
 }
