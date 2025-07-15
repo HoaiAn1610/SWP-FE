@@ -1,4 +1,3 @@
-// src/components/blog/CommentList.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { createComment, postReply } from '@/service/blogservice';
 import api from '@/config/axios';
@@ -28,16 +27,16 @@ export default function CommentList({
 
   // Sync when parent passes new props: mark these as “old”
   useEffect(() => {
-       setCommentList(prev =>
-     comments.map(c => {
-       const existing = prev.find(x => x.id === c.id);
-       return {
-         ...c,
-         // if we've already flagged it as new, keep that; otherwise it's old
-         isNew: existing ? existing.isNew : false
-       };
-     })
-   );
+    setCommentList(prev =>
+      comments.map(c => {
+        const existing = prev.find(x => x.id === c.id);
+        return {
+          ...c,
+          // if we've already flagged it as new, keep that; otherwise it's old
+          isNew: existing ? existing.isNew : false
+        };
+      })
+    );
   }, [comments]);
 
   // comment/reply state
@@ -65,7 +64,9 @@ export default function CommentList({
   useEffect(() => {
     const ids = new Set();
     commentList.forEach(c => c.memberId && ids.add(c.memberId));
-    Object.values(loadedReplies).flat().forEach(r => r.memberId && ids.add(r.memberId));
+    Object.entries(loadedReplies).forEach(([parentId, replies]) =>
+      replies.forEach(r => r.memberId && ids.add(r.memberId))
+    );
     ids.forEach(id => {
       if (!userNames[id]) {
         api.get(`/Admin/get-user/${id}`)
@@ -123,7 +124,10 @@ export default function CommentList({
     setCommentList(prev => [...prev, flagged]);
     setNewComment('');
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    if (flagged.memberId) setUserNames(u => ({ ...u, [flagged.memberId]: 'You' }));
+    // show real user name, not "You"
+    if (flagged.memberId === currentUser.id) {
+      setUserNames(u => ({ ...u, [flagged.memberId]: currentUser.name }));
+    }
   };
 
   // post reply to a specific comment
@@ -138,11 +142,14 @@ export default function CommentList({
       [parentId]: [...(r[parentId] || []), flagged]
     }));
     setReplyTexts(r => ({ ...r, [parentId]: '' }));
-    if (flagged.memberId) setUserNames(u => ({ ...u, [flagged.memberId]: 'You' }));
+    // show real user name, not "You"
+    if (flagged.memberId === currentUser.id) {
+      setUserNames(u => ({ ...u, [flagged.memberId]: currentUser.name }));
+    }
   };
 
-  // Recursive render
-  const renderThread = (list, depth = 0) =>
+  // Recursive render: now tracks parent for proper deletion
+  const renderThread = (list, depth = 0, parentId = null) =>
     list.map(c => {
       const canDelete =
         currentUser?.id === c.memberId ||
@@ -178,7 +185,19 @@ export default function CommentList({
                     onClick={() =>
                       showConfirm(
                         'Bạn có chắc muốn xóa bình luận này không?',
-                        () => onDeleteComment(postId, c.id)
+                        () => {
+                          // Inform parent
+                          onDeleteComment(postId, c.id);
+                          // Remove locally
+                          if (parentId === null) {
+                            setCommentList(prev => prev.filter(item => item.id !== c.id));
+                          } else {
+                            setLoadedReplies(prev => ({
+                              ...prev,
+                              [parentId]: prev[parentId].filter(item => item.id !== c.id)
+                            }));
+                          }
+                        }
                       )
                     }
                     className="hover:text-red-600"
@@ -211,7 +230,7 @@ export default function CommentList({
               )}
               {openReplies[c.id] && loadedReplies[c.id]?.length > 0 && (
                 <div className="ml-12 mt-4 space-y-4">
-                  {renderThread(loadedReplies[c.id], depth + 1)}
+                  {renderThread(loadedReplies[c.id], depth + 1, c.id)}
                 </div>
               )}
             </div>
