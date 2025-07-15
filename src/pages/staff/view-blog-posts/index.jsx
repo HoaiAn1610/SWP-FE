@@ -585,7 +585,7 @@ export default function ViewBlogPostsPage() {
                     comments={post.comments || []}
                     postId={post.id}
                     currentUser={currentUser}
-                    currentUser={currentUser}
+              
                     onAddComment={() => {}}
                     onAddReply={() => {}}
                     onDeleteComment={handleDeleteComment}
