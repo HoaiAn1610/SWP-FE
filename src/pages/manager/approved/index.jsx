@@ -134,18 +134,16 @@ export default function ApprovedPage() {
     }
   };
 
-  // Xóa hoạt động đã đăng
+  // Xóa Khóa học đã đăng
   const handleDelete = (id) => {
-    showConfirm("Bạn có chắc muốn xóa hoạt động này?", async () => {
+    showConfirm("Bạn có chắc muốn xóa khóa học này?", async () => {
       try {
         await api.delete(`/Course/delete-course/${id}`);
         showAlert("Xóa thành công!");
         reloadCourses();
       } catch (err) {
         console.error(" Lỗi xóa:", err.response?.data || err.message);
-        showAlert(
-          "Xóa thất bại: " + (err.response?.data?.message || err.message)
-        );
+        showAlert("Xóa thất bại. ");
       }
     });
   };

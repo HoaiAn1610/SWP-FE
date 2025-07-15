@@ -59,7 +59,6 @@ import ErrorPage from "@/components/error";
 import AdminLayout from "@/pages/admin/AdminLayout";
 import UserManagementPage from "@/pages/admin/user-management";
 import PlatformSettingsPage from "@/pages/admin/platform-settings";
-import SystemLogsPage from "@/pages/admin/system-logs";
 import ProtectedRoute from "@/components/protected-route";
 import { Navigate } from "react-router-dom";
 
@@ -157,7 +156,6 @@ function App() {
         { index: true, element: <Navigate to="user-management" replace /> },
         { path: "user-management", element: <UserManagementPage /> },
         { path: "platform-settings", element: <PlatformSettingsPage /> },
-        { path: "system-logs", element: <SystemLogsPage /> },
       ],
     },
     {
