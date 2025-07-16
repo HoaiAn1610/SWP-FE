@@ -18,7 +18,7 @@ export default function ActivityDetailPage() {
   const [participants, setParticipants] = useState([]);
   const [loadingPart, setLoadingPart] = useState(true);
 
-  // Alert/confirm popup state (nếu sau muốn dùng)
+  // Trạng thái hiển thị alert và confirm
   const [alertVisible, setAlertVisible] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
   const [confirmVisible, setConfirmVisible] = useState(false);
@@ -36,7 +36,7 @@ export default function ActivityDetailPage() {
   };
   const hideConfirm = () => setConfirmVisible(false);
 
-  // 1) Load activity detail
+  // 1) Lấy chi tiết hoạt động
   useEffect(() => {
     setLoading(true);
     api
@@ -49,7 +49,7 @@ export default function ActivityDetailPage() {
       .finally(() => setLoading(false));
   }, [activityId]);
 
-  // 2) Load participations
+  // 2) Lấy danh sách tham gia
   const fetchParticipants = () => {
     setLoadingPart(true);
     api
@@ -67,7 +67,7 @@ export default function ActivityDetailPage() {
   ).length;
   const myPart = participants.find((p) => p.memberId === userId);
 
-  // handlers với confirm
+  // Xử lý đăng ký với confirm
   const handleRegisterConfirm = () => {
     showConfirm("Bạn có chắc chắn muốn tham gia?", async () => {
       try {
@@ -83,6 +83,7 @@ export default function ActivityDetailPage() {
       }
     });
   };
+  // Xử lý hủy tham gia với confirm
   const handleCancelConfirm = () => {
     showConfirm("Bạn có chắc chắn muốn hủy tham gia?", async () => {
       try {
@@ -96,7 +97,7 @@ export default function ActivityDetailPage() {
     });
   };
 
-  // chọn button phù hợp
+  // Chọn nút hành động phù hợp
   let actionButton = null;
   if (myPart?.status === "Registered") {
     actionButton = (
@@ -130,31 +131,8 @@ export default function ActivityDetailPage() {
   if (!activity)
     return <p className="text-center py-10">Không tìm thấy hoạt động.</p>;
 
-  const {
-    title,
-    description,
-    status,
-    eventDate,
-    location,
-    capacity,
-    createdDate,
-  } = activity;
-
+  const { title, description, eventDate, location, capacity } = activity;
   const formattedDate = new Date(eventDate).toLocaleDateString();
-  const formattedCreated = new Date(createdDate).toLocaleString();
-
-  const getStatusClass = (s) => {
-    switch (s) {
-      case "Scheduled":
-        return "bg-blue-100 text-blue-800";
-      case "Pending":
-        return "bg-yellow-100 text-yellow-800";
-      case "Ongoing":
-        return "bg-green-100 text-green-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -168,16 +146,9 @@ export default function ActivityDetailPage() {
           ← Quay lại
         </button>
 
-        {/* Card trắng chứa tất cả */}
+        {/* Card trắng chứa nội dung */}
         <div className="bg-white rounded-2xl shadow-lg p-6 space-y-6">
           <h1 className="text-3xl font-bold">{title}</h1>
-          <span
-            className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${getStatusClass(
-              status
-            )}`}
-          >
-            {status}
-          </span>
 
           <div className="space-y-2 text-gray-700">
             <p>
@@ -190,9 +161,6 @@ export default function ActivityDetailPage() {
               <strong>Sức chứa:</strong> {capacity} —{" "}
               {loadingPart ? "Đang tải…" : `Đã đăng ký: ${registeredCount}`}
             </p>
-            <p>
-              <strong>Ngày tạo:</strong> {formattedCreated}
-            </p>
           </div>
 
           <div className="flex items-center space-x-4">{actionButton}</div>
@@ -202,15 +170,21 @@ export default function ActivityDetailPage() {
             <p className="text-gray-600 whitespace-pre-line">{description}</p>
           </div>
 
-          {/* PHẦN BÌNH LUẬN NẰM TRONG CARD */}
+          {/* Phần bình luận */}
           <div>
             <h2 className="text-2xl font-semibold mb-4">Bình luận</h2>
-            <CommentSection entity="activity" entityId={activityId} />
+            {userId ? (
+              <CommentSection entity="activity" entityId={activityId} />
+            ) : (
+              <p className="text-gray-600">
+                Bạn cần đăng nhập để xem được những bình luận này
+              </p>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Alert Popup */}
+      {/* Popup alert */}
       {alertVisible && (
         <div className="fixed inset-0 flex items-center justify-center z-60 backdrop-blur-sm">
           <div className="bg-white p-6 rounded-xl shadow-xl text-center">
@@ -225,7 +199,7 @@ export default function ActivityDetailPage() {
         </div>
       )}
 
-      {/* Confirm Popup */}
+      {/* Popup confirm */}
       {confirmVisible && (
         <div className="fixed inset-0 flex items-center justify-center z-60 backdrop-blur-sm">
           <div className="bg-white p-6 rounded-xl shadow-xl text-center">
