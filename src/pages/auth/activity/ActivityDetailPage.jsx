@@ -76,7 +76,10 @@ export default function ActivityDetailPage() {
         fetchParticipants();
       } catch (err) {
         console.error(err);
-        showAlert(err.response?.data || "Lỗi khi đăng ký tham gia");
+        showAlert(
+          err.response?.data ||
+            "Bạn cần đăng nhập mới có thể tham gia hoạt động"
+        );
       }
     });
   };
