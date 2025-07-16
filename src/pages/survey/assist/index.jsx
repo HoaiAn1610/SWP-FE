@@ -162,8 +162,7 @@ export default function AssistSurveyPage() {
 
   // Render loading / error
   if (loading) return <p className="text-center py-10">Đang tải khảo sát…</p>;
-  if (error)
-    return <p className="text-center text-red-500 py-10">Lỗi: {error}</p>;
+  if (error) return <p className="text-center text-red-500 py-10">Lỗi: {error}</p>;
 
   // Khi có submissionDetail (từ server hoặc local)
   if (submissionDetail) {
@@ -207,13 +206,7 @@ export default function AssistSurveyPage() {
                 </div>
                 <div className="flex justify-between">
                   <dt>Mức độ rủi ro:</dt>
-                  <dd>
-                    {riskLevel === "Low"
-                      ? "Thấp"
-                      : riskLevel === "Medium"
-                      ? "Trung bình"
-                      : "Cao"}
-                  </dd>
+                  <dd>{riskLevel === "Low" ? "Thấp" : riskLevel === "Medium" ? "Trung bình" : "Cao"}</dd>
                 </div>
               </dl>
             </div>
