@@ -2,6 +2,14 @@ import React, { useEffect, useState, useRef } from "react";
 import api from "@/config/axios";
 import { uploadFile } from "@/utils/upload";
 
+ const statusLabels = {
+   Open: "Đang diễn ra",
+   
+ };
+ 
+ // Hàm lấy label tiếng Việt
+ const translateStatus = (status) => statusLabels[status] || status;
+
 export default function StaffInquiriesPage() {
   const currentStaffId = Number(localStorage.getItem("id"));
   const [inquiries, setInquiries] = useState([]);
@@ -276,7 +284,7 @@ export default function StaffInquiriesPage() {
                       Người tạo: {iq.createdBy?.name ?? "Không xác định"}
                     </p>
                     <p className="text-sm text-gray-600">
-                      Trạng thái: {iq.status}
+                      Trạng thái: {translateStatus(iq.status)}
                     </p>
                     <p className="text-xs text-gray-500">
                       Tạo: {formatInquiryDateTime(iq.createdDate)}

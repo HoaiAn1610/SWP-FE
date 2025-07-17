@@ -55,6 +55,13 @@ import ViewConsultantCoursePage from "./pages/consultant/view-course-page";
 import AssignmentsPage from "./pages/consultant/consultant-assignments-page";
 import Meeting from "@/pages/consultant/appointments/Meeting.jsx";
 
+import HistoryLayout from "@/pages/userHistory/HistoryLayout";
+import CompletedCoursesPage from "@/pages/userHistory/CompletedCoursesPage";
+import SurveysHistoryPage from "@/pages/userHistory/SurveysHistoryPage";
+import ActivitiesHistoryPage from "@/pages/userHistory/ActivitiesHistoryPage";
+import AppointmentsHistoryPage from "@/pages/userHistory/AppointmentsHistoryPage";
+import AllCertificatePage from "@/pages/userHistory/AllCertificatePage";
+
 import ErrorPage from "@/components/error";
 import AdminLayout from "@/pages/admin/AdminLayout";
 import UserManagementPage from "@/pages/admin/user-management";
@@ -158,6 +165,23 @@ function App() {
         { path: "user-management", element: <UserManagementPage /> },
         { path: "platform-settings", element: <PlatformSettingsPage /> },
         { path: "system-logs", element: <SystemLogsPage /> },
+      ],
+    },
+     {
+      path: "/history",
+      element: (
+        <ProtectedRoute role="Member">
+          <HistoryLayout />
+        </ProtectedRoute>
+      ),
+      children: [
+        { index: true, element: <Navigate to="compeleted-course" replace /> },
+        { path: "compeleted-course", element: <CompletedCoursesPage /> },
+        { path: "appointments-history", element: <AppointmentsHistoryPage /> },
+        { path: "survey-history", element: <SurveysHistoryPage /> },
+        { path: "activity-history", element: <ActivitiesHistoryPage /> },
+        { path: "all-certificate", element: <AllCertificatePage /> },
+
       ],
     },
     {

@@ -11,6 +11,17 @@ import {
 import api from "@/config/axios";
 import CommentSection from "@/components/CommentSection";
 
+ const statusLabels = {
+   Pending: "Chờ duyệt",
+    Submitted: "Đã gửi duyệt",
+    Approved: "Đã phê duyệt",
+    Rejected: "Đã từ chối",
+    Published: "Đã xuất bản",
+ };
+ 
+ // Hàm lấy label tiếng Việt
+ const translateStatus = (status) => statusLabels[status] || status;
+
 export default function CommunicationActivitiesPage() {
   const today = new Date().toISOString().split("T")[0];
   const userId = Number(localStorage.getItem("id") || "0");
@@ -453,7 +464,7 @@ export default function CommunicationActivitiesPage() {
                               act.status
                             )}`}
                           >
-                            {act.status}
+                             {translateStatus(act.status)}
                           </span>
                         </div>
                         <p className="text-gray-600 mb-1">
