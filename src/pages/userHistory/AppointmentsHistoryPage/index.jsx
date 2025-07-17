@@ -145,7 +145,6 @@ export default function BookingHistoryPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-indigo-50 to-white">
-      <Header />
       <div className="max-w-4xl mx-auto py-8 px-4">
         <h1 className="text-3xl font-bold text-indigo-700 mb-6 border-b-2 border-indigo-200 pb-2">
           📖 Lịch sử đặt lịch

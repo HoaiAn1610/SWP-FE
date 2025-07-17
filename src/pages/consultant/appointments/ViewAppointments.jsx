@@ -2,7 +2,15 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "@/config/axios";
-
+ const statusLabels = {
+   Pending: "Chờ duyệt",
+    Confirmed: "Xác nhận",
+    Starting: "Đang tiến hành",
+    Completed: "Hoàn thành",
+    Cancelled: "Đã hủy",
+    NoShow: "Vắng mặt",
+ };
+ const translateStatus = (status) => statusLabels[status] || status;
 // Popup component
 const AlertPopup = ({ message, onClose }) => (
   <div className="fixed inset-0 flex items-center justify-center backdrop-blur-sm z-50">
@@ -154,7 +162,7 @@ export default function ViewAppointments() {
       label: "Khác",
       list: appointments.filter(
         (a) =>
-          !["Pending", "Confirmed", "Starting", "Completed"].includes(a.status)
+          ["Cancelled", "NoShow"].includes(a.status)
       ),
       color: "bg-red-100 text-red-800",
     },
@@ -182,7 +190,7 @@ export default function ViewAppointments() {
       {/* List */}
       <div className="space-y-4">
         {tabs[activeTab].list.map((a) => {
-          const { label, color } = tabs[activeTab];
+          const { color } = tabs[activeTab];
           return (
             <div
               key={a.id}
@@ -202,11 +210,11 @@ export default function ViewAppointments() {
 
               {/* Badge + Action */}
               <div className="flex items-center">
-                <span
-                  className={`px-3 py-1 rounded-full text-sm ${color} mr-2`}
-                >
-                  {label}
-                </span>
+               <span
+                 className={`px-3 py-1 rounded-full text-sm ${color} mr-2`}
+               >
+                 {translateStatus(a.status)}
+               </span>
 
                 {/* Các nút hành động */}
                 {activeTab === "pending" && (

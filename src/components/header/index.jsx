@@ -197,10 +197,10 @@ export default function Header() {
                     <>
                       <div className="border-t my-1" />
                       <Link
-                        to="/survey/history"
+                        to="/history"
                         className="block px-4 py-2 hover:bg-gray-100 text-gray-700"
                       >
-                        Lịch sử khảo sát
+                        Lịch sử hoạt động
                       </Link>
                     </>
                   )}
