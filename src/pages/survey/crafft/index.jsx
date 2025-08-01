@@ -32,12 +32,31 @@ export default function CrafftPage() {
   const [submissionResult, setSubmissionResult] = useState(null);
   const [showDetail, setShowDetail] = useState(false);
 
-  // Khóa học gợi ý
-  const [suggestedCourses, setSuggestedCourses] = useState([]);
-
-  // Overlay chi tiết khóa học
+  // Khóa học gợi ý & enrollments
+  const [courses, setCourses] = useState([]);
+  const [enrollments, setEnrollments] = useState([]);
+  const [courseLoading, setCourseLoading] = useState(true);
+  const [courseError, setCourseError] = useState(null);
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [showModal, setShowModal] = useState(false);
+
+  // Map enrollments to course IDs and status
+  const enrolledCourseIds = enrollments.map((e) => e.courseId);
+  const statusMap = enrollments.reduce((m, e) => {
+    m[e.courseId] = e.status; // "Enrolled" hoặc "Completed"
+    return m;
+  }, {});
+
+  // Handle course selection for overlay
+  const handleSelectCourse = (course) => {
+    setSelectedCourse(course);
+    setShowModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setSelectedCourse(null);
+  };
 
   // --- Tải & nhóm câu hỏi ---
   useEffect(() => {
@@ -64,6 +83,37 @@ export default function CrafftPage() {
       }
     })();
   }, [surveyId]);
+
+  // --- Load enrollments ---
+  useEffect(() => {
+    const userId = localStorage.getItem("id");
+    if (!userId || !isLoggedIn) return;
+    api
+      .get(`/CourseEnrollment/users/${userId}/enrollments`)
+      .then(({ data }) => setEnrollments(data))
+      .catch((err) => {
+        console.error("Lỗi fetch enrollments:", err);
+        setEnrollments([]);
+      });
+  }, [isLoggedIn]);
+
+  // --- Fetch khóa học gợi ý ---
+  useEffect(() => {
+    if (!submissionResult || !isLoggedIn) return;
+    const lvl = submissionResult.riskLevel.toLowerCase();
+    if (lvl === "high") return;
+    setCourseLoading(true);
+    getCoursesByLevel(lvl)
+      .then((c) => {
+        setCourses(c.slice(0, 3));
+        setCourseLoading(false);
+      })
+      .catch((err) => {
+        console.error("Lỗi fetch courses:", err);
+        setCourseError("Không thể tải khóa học.");
+        setCourseLoading(false);
+      });
+  }, [submissionResult, isLoggedIn]);
 
   const getRecommendationsByRisk = (level) => {
     switch (level) {
@@ -114,14 +164,17 @@ export default function CrafftPage() {
     if (bIndex + 1 < bQuestions.length) {
       setBIndex((i) => i + 1);
     } else {
-      // Tính điểm B (nếu chưa đăng nhập): +1 điểm nếu chọn 'Có'
-      const totalScore = nextB.reduce((sum, a) => {
-        const question = bQuestions.find((q) => q.id === a.questionId);
-        const selectedOption = question?.options.find((o) => o.id === a.optionId);
-        return sum + (selectedOption?.optionText === 'Có' ? 1 : 0);
-      }, 0);
-      const riskLevel =
-        totalScore === 0 ? "Low" : totalScore >= 3 ? "High" : "Medium";
+      // Tính điểm B
+      // Tính điểm B
+const totalScore = nextB.reduce((sum, a) => {
+  const question = bQuestions.find((q) => q.id === a.questionId);
+  const selectedOption = question?.options.find((o) => o.id === a.optionId);
+  return sum + (selectedOption?.optionText === 'Có' ? 1 : 0);
+}, 0);
+
+// Xác định riskLevel theo yêu cầu mới
+const riskLevel =
+  totalScore === 0 ? "Low" : totalScore <= 2 ? "Medium" : "High";
 
       const result = {
         score: totalScore,
@@ -130,7 +183,7 @@ export default function CrafftPage() {
         answers: nextB,
       };
 
-      // Nếu đã đăng nhập, gửi lên server để lưu
+      // Nếu đã đăng nhập, gửi lên server
       if (isLoggedIn) {
         const payload = [
           ...Object.entries(aAnswers).map(([qid, val]) => ({
@@ -158,16 +211,6 @@ export default function CrafftPage() {
     }
   };
 
-  // --- Khi có kết quả và đã đăng nhập & mức độ <> High → tìm khóa học ---
-  useEffect(() => {
-    if (!submissionResult || !isLoggedIn) return;
-    const lvl = submissionResult.riskLevel.toLowerCase();
-    if (lvl === "high") return;
-    getCoursesByLevel(lvl)
-      .then((c) => setSuggestedCourses(c.slice(0, 3)))
-      .catch(console.error);
-  }, [submissionResult, isLoggedIn]);
-
   // Hiển thị loading / lỗi
   if (loading) return <p className="text-center py-10">Đang tải…</p>;
   if (error) return <p className="text-center py-10 text-red-500">{error}</p>;
@@ -180,7 +223,7 @@ export default function CrafftPage() {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
-        <div className="max-w-3xl mx-auto py-8 px-4 ">
+        <div className="max-w-3xl mx-auto py-8 px-4">
           <h1 className="text-4xl font-semibold mb-3">Bài Khảo Sát CRAFFT</h1>
           <div className="bg-white p-6 rounded-lg shadow">
             <h2 className="text-2xl font-semibold mb-3">
@@ -222,7 +265,7 @@ export default function CrafftPage() {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
-        <div className="max-w-3xl mx-auto py-8 px-4 ">
+        <div className="max-w-3xl mx-auto py-8 px-4">
           <h1 className="text-4xl font-semibold mb-3">Bài Khảo Sát CRAFFT</h1>
           <div className="bg-white p-6 rounded-lg shadow">
             <h2 className="text-2xl font-semibold mb-3">
@@ -252,10 +295,6 @@ export default function CrafftPage() {
     const groupA = groups.find((g) => g.name === "Phần A") || { questions: [] };
     const groupB = groups.find((g) => g.name === "Phần B") || { questions: [] };
 
-    // Placeholder trước khi tích hợp đăng ký khóa học
-    const enrolledCourseIds = [];
-    const statusMap = {};
-
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
@@ -273,7 +312,7 @@ export default function CrafftPage() {
                 </div>
                 <div className="flex justify-between">
                   <dt className="font-medium">Mức độ nguy cơ:</dt>
-                  <dd className="text-lg">{riskLevel === 'Low' ? 'thấp' : riskLevel === 'Medium' ? 'trung bình' : 'cao'}</dd>
+                  <dd className="text-lg">{riskLevel === 'Low' ? 'Thấp' : riskLevel === 'Medium' ? 'Trung bình' : 'Cao'}</dd>
                 </div>
               </dl>
             </div>
@@ -297,24 +336,48 @@ export default function CrafftPage() {
             )}
           </div>
 
-          {/* Gợi ý khóa học (chỉ Low/Medium và khi đã đăng nhập) */}
-          {isLoggedIn && (submissionResult.riskLevel === "Low" || submissionResult.riskLevel === "Medium") && (
-            <div className="bg-white p-6 rounded-lg shadow">
-              <h2 className="text-2xl font-semibold text-indigo-700 mb-4">
-                Gợi ý khoá học
-              </h2>
-              <div>
-                <CourseList
-                  courses={suggestedCourses}
-                  enrolledCourseIds={enrolledCourseIds}
-                  statusMap={statusMap}
-                  onSelect={(course) => {
-                    setSelectedCourse(course);
-                    setShowModal(true);
-                  }}
-                />
+          {/* Gợi ý khóa học */}
+          {isLoggedIn && (riskLevel === "Low" || riskLevel === "Medium") && (
+            <section className="py-16 bg-gray-50">
+              <div className="max-w-[90rem] mx-auto px-6">
+                <h2 className="text-3xl font-bold text-center mb-6">
+                  Gợi ý khóa học
+                </h2>
+                {courseLoading ? (
+                  <p className="text-center py-10">Đang tải khóa học...</p>
+                ) : courseError || courses.length === 0 ? (
+                  <p className="text-center py-10 text-gray-500">
+                    Không có khóa học nào.
+                  </p>
+                ) : (
+                  <>
+                    <CourseList
+                      courses={courses}
+                      enrolledCourseIds={enrolledCourseIds}
+                      statusMap={statusMap}
+                      onSelect={handleSelectCourse}
+                    />
+                    {courses.length > 3 && (
+                      <div className="flex justify-center mt-8">
+                        <Link
+                          to="/course"
+                          className="
+                            inline-block
+                            bg-indigo-600 text-white
+                            px-8 py-3
+                            rounded-full
+                            hover:bg-indigo-700
+                            transition
+                          "
+                        >
+                          Xem tất cả khóa học
+                        </Link>
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
-            </div>
+            </section>
           )}
 
           {/* Overlay chi tiết khóa học */}
@@ -322,18 +385,18 @@ export default function CrafftPage() {
             <CourseDetailOverlay
               course={selectedCourse}
               status={statusMap[selectedCourse.id]}
-              onClose={() => setShowModal(false)}
+              onClose={handleCloseModal}
             />
           )}
 
-          {/* Nút đặt lịch (Medium/High và khi đã đăng nhập) */}
-          {isLoggedIn && (submissionResult.riskLevel === "Medium" || submissionResult.riskLevel === "High") && (
+          {/* Nút đặt lịch */}
+          {isLoggedIn && (riskLevel === "Medium" || riskLevel === "High") && (
             <div className="text-center">
               <Link
                 to="/appointments/book"
                 className="inline-block mt-4 px-8 py-3 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition"
               >
-                {submissionResult.riskLevel === "High"
+                {riskLevel === "High"
                   ? "Đặt lịch tư vấn ngay"
                   : "Xem lịch tư vấn"}
               </Link>

@@ -1,4 +1,3 @@
-// src/pages/staff/ViewBlogPostsPage.jsx
 import React, { useEffect, useState, useRef, Fragment } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -15,6 +14,7 @@ import { fetchUserById } from "@/service/userService";
 import CommentList from "@/components/blog/CommentList";
 import { uploadFile } from "@/utils/upload";
 import { Transition } from "@headlessui/react";
+import api from "@/config/axios";
 
 export default function ViewBlogPostsPage() {
   // Bảng chuyển đổi status từ tiếng Anh --> tiếng Việt
@@ -33,8 +33,8 @@ export default function ViewBlogPostsPage() {
     { key: "published", label: "Đã xuất bản" },
   ];
 
-  const [selectedTab, setSelectedTab]       = useState('pending');
-  const [posts, setPosts]                   = useState([]);
+  const [selectedTab, setSelectedTab] = useState("pending");
+  const [posts, setPosts] = useState([]);
   const [expandedPostId, setExpandedPostId] = useState(null);
 
   // Tag states
@@ -143,24 +143,34 @@ export default function ViewBlogPostsPage() {
       coverImageUrl: newCover,
       tagIds: selectedTagIds,
     };
-    if (isEditing) {
-      await updateBlogPost(editingPostId, payload);
-      setPosts((ps) =>
-        ps.map((p) => (p.id === editingPostId ? { ...p, ...payload } : p))
+    try {
+      if (isEditing) {
+        await updateBlogPost(editingPostId, payload);
+        setAlertMessage("Cập nhật bài viết thành công");
+      } else {
+        const created = await createBlogPost(payload);
+        setAlertMessage("Tạo bài viết thành công");
+      }
+      // Fetch lại toàn bộ bài viết để cập nhật danh sách
+      const data = await fetchAllPosts();
+      const enriched = await Promise.all(
+        data.map(async (p) => {
+          let author = "Ẳn danh";
+          try {
+            const u = await fetchUserById(p.createdById);
+            author = u.name;
+          } catch {}
+          return { ...p, authorName: author };
+        })
       );
-      setAlertMessage("Cập nhật bài viết thành công");
-    } else {
-      const created = await createBlogPost(payload);
-      const author = (
-        await fetchUserById(created.createdById).catch(() => ({
-          name: "Unknown",
-        }))
-      ).name;
-      setPosts((ps) => [{ ...created, authorName: author }, ...ps]);
-      setAlertMessage("Tạo bài viết thành công");
+      setPosts(enriched);
+      setShowModal(false);
+      setAlertVisible(true);
+    } catch (err) {
+      console.error(err);
+      setAlertMessage("Lỗi khi lưu bài viết");
+      setAlertVisible(true);
     }
-    setAlertVisible(true);
-    setShowModal(false);
   };
 
   const handleDelete = (postId) => {
@@ -201,12 +211,15 @@ export default function ViewBlogPostsPage() {
   };
 
   // Lọc bài theo tab
-  const filtered = posts.filter(p => {
-    if (selectedTab === 'pending')    return ['Pending','Submitted'].includes(p.status);
-    if (selectedTab === 'reviewed')   return ['Approved','Rejected'].includes(p.status);
-    if (selectedTab === 'published')  return p.status === 'Published';
+  const filtered = posts.filter((p) => {
+    if (selectedTab === "pending")
+      return ["Pending", "Submitted"].includes(p.status);
+    if (selectedTab === "reviewed")
+      return ["Approved", "Rejected"].includes(p.status);
+    if (selectedTab === "published") return p.status === "Published";
     return false;
-  });
+  })
+  .sort((a, b) => new Date(b.createdDate) - new Date(a.createdDate));
 
   return (
     <>
@@ -328,8 +341,7 @@ export default function ViewBlogPostsPage() {
                       Hoặc chọn ảnh
                     </label>
                     <label
-                      className="w-full inline-flex items-center justify-center px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg cursor-pointer
-                                 hover:bg-gray-200 transition focus:outline-none focus:ring-2 focus:ring-blue-400"
+                      className="w-full inline-flex items-center justify-center px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-200 transition focus:outline-none focus:ring-2 focus:ring-blue-400"
                     >
                       <span className="text-gray-700">Chọn tệp</span>
                       <input
@@ -503,18 +515,19 @@ export default function ViewBlogPostsPage() {
                 </div>
                 <div className="mt-4 md:mt-0 flex space-x-2">
                   {/* Tab Pending */}
-                  {selectedTab === 'pending' && post.status.toLowerCase().trim() !== 'submitted' && (
-                    <button
-                      onClick={() => handleSendForApproval(post.id)}
-                      className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg"
-                    >
-                      Gửi duyệt
-                    </button>
-                  )}
+                  {selectedTab === "pending" &&
+                    post.status.toLowerCase().trim() !== "submitted" && (
+                      <button
+                        onClick={() => handleSendForApproval(post.id)}
+                        className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg"
+                      >
+                        Gửi duyệt
+                      </button>
+                    )}
                   {/* Tab Reviewed */}
-                  {selectedTab === 'reviewed' && (
+                  {selectedTab === "reviewed" && (
                     <>
-                      {post.status === 'Rejected' && (
+                      {post.status === "Rejected" && (
                         <button
                           onClick={() => handleSendForApproval(post.id)}
                           className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg"
@@ -537,7 +550,7 @@ export default function ViewBlogPostsPage() {
                     </>
                   )}
                   {/* Tab Published */}
-                  {selectedTab === 'published' && (
+                  {selectedTab === "published" && (
                     <>
                       <button
                         onClick={() => openEditModal(post)}
@@ -547,12 +560,14 @@ export default function ViewBlogPostsPage() {
                       </button>
                       <button
                         onClick={() =>
-                          setExpandedPostId(expandedPostId === post.id ? null : post.id)
+                          setExpandedPostId(
+                            expandedPostId === post.id ? null : post.id
+                          )
                         }
                         className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg"
                       >
                         {expandedPostId === post.id
-                          ? 'Ẩn bình luận'
+                          ? "Ẩn bình luận"
                           : `Quản lý bình luận (${post.comments?.length || 0})`}
                       </button>
                     </>
@@ -567,7 +582,7 @@ export default function ViewBlogPostsPage() {
               </div>
 
               {/* Lý do từ chối */}
-              {selectedTab === 'reviewed' && post.status === 'Rejected' && (
+              {selectedTab === "reviewed" && post.status === "Rejected" && (
                 <div className="bg-red-50 border border-red-200 p-4 rounded mb-4">
                   <h3 className="font-semibold text-red-800 mb-2">
                     Lý do từ chối
@@ -579,13 +594,12 @@ export default function ViewBlogPostsPage() {
               )}
 
               {/* Bình luận ở tab Published */}
-              {selectedTab === 'published' && expandedPostId === post.id && (
+              {selectedTab === "published" && expandedPostId === post.id && (
                 <div className="mt-4 border-t pt-4">
                   <CommentList
                     comments={post.comments || []}
                     postId={post.id}
                     currentUser={currentUser}
-              
                     onAddComment={() => {}}
                     onAddReply={() => {}}
                     onDeleteComment={handleDeleteComment}

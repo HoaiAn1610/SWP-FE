@@ -1,4 +1,3 @@
-// src/pages/auth/survey/AllSurveyHistoryPage.jsx
 import React, { useState, useEffect, useMemo } from "react";
 import Header from "@/components/header";
 import api from "@/config/axios";
@@ -35,6 +34,9 @@ export default function AllSurveyHistoryPage() {
   const [page, setPage] = useState(1);
   const limit = 9;
 
+  // Course enrollment
+  const [enrollments, setEnrollments] = useState([]);
+
   const isLoggedIn = useMemo(() => !!localStorage.getItem("token"), []);
   const memberId = localStorage.getItem("id");
 
@@ -44,29 +46,23 @@ export default function AllSurveyHistoryPage() {
       "vi-VN"
     );
 
-  // Tải câu hỏi và lịch sử
+  // Tải câu hỏi, lịch sử và enrollment
   useEffect(() => {
     async function loadData() {
       setLoading(true);
       try {
-        const [assistQRes, crafftQRes] = await Promise.all([
-          api.get(
-            `/surveys/${ASSIST_SURVEY_ID}/submissions/get-questions`
-          ),
-          api.get(
-            `/surveys/${CRAFFT_SURVEY_ID}/submissions/get-questions`
-          ),
+        const [assistQRes, crafftQRes, enrollmentRes] = await Promise.all([
+          api.get(`/surveys/${ASSIST_SURVEY_ID}/submissions/get-questions`).catch(() => ({ data: [] })),
+          api.get(`/surveys/${CRAFFT_SURVEY_ID}/submissions/get-questions`).catch(() => ({ data: [] })),
+          api.get(`/CourseEnrollment/users/${memberId}/enrollments`),
         ]);
         setAssistQuestions(assistQRes.data);
         setCrafftQuestions(crafftQRes.data);
+        setEnrollments(enrollmentRes.data);
 
         const [assistRes, crafftRes] = await Promise.all([
-          api.get(
-            `/surveys/${ASSIST_SURVEY_ID}/submissions/users/${memberId}/submissions`
-          ),
-          api.get(
-            `/surveys/${CRAFFT_SURVEY_ID}/submissions/users/${memberId}/submissions`
-          ),
+          api.get(`/surveys/${ASSIST_SURVEY_ID}/submissions/users/${memberId}/submissions`).catch(() => ({ data: [] })),
+          api.get(`/surveys/${CRAFFT_SURVEY_ID}/submissions/users/${memberId}/submissions`).catch(() => ({ data: [] })),
         ]);
 
         setAssistSubs(
@@ -78,7 +74,7 @@ export default function AllSurveyHistoryPage() {
             }))
             .sort(
               (a, b) => new Date(b.submissionDate) - new Date(a.submissionDate)
-            )
+            ) || []
         );
         setCrafftSubs(
           crafftRes.data
@@ -89,7 +85,7 @@ export default function AllSurveyHistoryPage() {
             }))
             .sort(
               (a, b) => new Date(b.submissionDate) - new Date(a.submissionDate)
-            )
+            ) || []
         );
       } catch (e) {
         setError(e.response?.data?.message || e.message);
@@ -121,9 +117,15 @@ export default function AllSurveyHistoryPage() {
 
   const emptyMsg =
     activeTab === "assist"
-      ? "Bạn chưa làm bài Assist."
-      : "Bạn chưa làm bài CRAFFT.";
+      ? "Bạn chưa làm bài khảo sát này."
+      : "Bạn chưa làm bài khảo sát này.";
   const qMap = activeTab === "assist" ? assistMap : crafftMap;
+
+  const enrolledCourseIds = enrollments.map((e) => e.courseId);
+  const statusMap = enrollments.reduce((m, e) => {
+    m[e.courseId] = e.status; // "Enrolled" hoặc "Completed"
+    return m;
+  }, {});
 
   const closeDetail = () => {
     setShowModal(false);
@@ -137,9 +139,9 @@ export default function AllSurveyHistoryPage() {
     try {
       const { data } = await api.get(
         `/surveys/${sub.surveyId}/submissions/${sub.id}`
-      );
+      ).catch(() => ({ data: null }));
       setDetail(data);
-      if (isLoggedIn) {
+      if (isLoggedIn && data) {
         const lvl = data.riskLevel.toLowerCase();
         if (lvl !== "high") {
           const courses = await getCoursesByLevel(lvl);
@@ -149,6 +151,16 @@ export default function AllSurveyHistoryPage() {
     } catch (e) {
       setError(e.response?.data?.message || e.message);
     }
+  };
+
+  const handleSelectCourse = (course) => {
+    setSelectedCourse(course);
+    setShowCourseModal(true);
+  };
+
+  const handleCloseCourseModal = () => {
+    setShowCourseModal(false);
+    setSelectedCourse(null);
   };
 
   if (loading)
@@ -245,19 +257,19 @@ export default function AllSurveyHistoryPage() {
               </h2>
               
               <p className="mb-2">
-                <span className="font-medium">Thời gian:</span>{' '}
+                <span className="font-medium">Thời gian:</span>{" "}
                 {formatDatePlus7(detail.submissionDate)}
               </p>
               <p className="mb-2">
                 <span className="font-medium">Điểm:</span> {detail.score}
               </p>
               <p className="mb-2">
-                <span className="font-medium">Mức độ nguy cơ:</span>{' '}
-                {detail.riskLevel === 'Low'
-                  ? 'thấp'
-                  : detail.riskLevel === 'Medium'
-                  ? 'trung bình'
-                  : 'cao'}
+                <span className="font-medium">Mức độ nguy cơ:</span>{" "}
+                {detail.riskLevel === "Low"
+                  ? "thấp"
+                  : detail.riskLevel === "Medium"
+                  ? "trung bình"
+                  : "cao"}
               </p>
               <p className="mb-4">
                 <span className="font-medium">Đề xuất:</span> {detail.recommendation}
@@ -287,31 +299,47 @@ export default function AllSurveyHistoryPage() {
 
               {isLoggedIn && detail && (
                 <>  
-                  {detail.riskLevel !== 'High' && (
-                    <div className="bg-white p-6 rounded-lg shadow mb-4">
-                      <h3 className="text-xl font-semibold mb-3">
-                        Gợi ý khoá học
-                      </h3>
-                      <CourseList
-                        courses={suggestedCourses}
-                        enrolledCourseIds={[]}
-                        statusMap={{}}
-                        onSelect={(c) => {
-                          setSelectedCourse(c);
-                          setShowCourseModal(true);
-                        }}
-                      />
-                    </div>
+                  {detail.riskLevel !== "High" && suggestedCourses.length > 0 && (
+                    <section className="py-8 bg-gray-50">
+                      <div className="max-w-[90rem] mx-auto px-6">
+                        <h3 className="text-xl font-semibold mb-3">
+                          Gợi ý khóa học
+                        </h3>
+                        <CourseList
+                          courses={suggestedCourses}
+                          enrolledCourseIds={enrolledCourseIds}
+                          statusMap={statusMap}
+                          onSelect={handleSelectCourse}
+                        />
+                        {suggestedCourses.length > 3 && (
+                          <div className="flex justify-center mt-8">
+                            <Link
+                              to="/course"
+                              className="
+                                inline-block
+                                bg-indigo-600 text-white
+                                px-8 py-3
+                                rounded-full
+                                hover:bg-indigo-700
+                                transition
+                              "
+                            >
+                              Xem tất cả khóa học
+                            </Link>
+                          </div>
+                        )}
+                      </div>
+                    </section>
                   )}
-                  {(detail.riskLevel === 'Medium' || detail.riskLevel === 'High') && (
+                  {(detail.riskLevel === "Medium" || detail.riskLevel === "High") && (
                     <div className="text-center mb-4">
                       <Link
                         to="/appointments/book"
                         className="inline-block px-6 py-3 bg-indigo-600 text-white rounded-full hover:bg-indigo-700"
                       >
-                        {detail.riskLevel === 'High'
-                          ? 'Đặt lịch tư vấn ngay'
-                          : 'Xem lịch tư vấn'}
+                        {detail.riskLevel === "High"
+                          ? "Đặt lịch tư vấn ngay"
+                          : "Xem lịch tư vấn"}
                       </Link>
                     </div>
                   )}
@@ -321,8 +349,8 @@ export default function AllSurveyHistoryPage() {
               {showCourseModal && selectedCourse && (
                 <CourseDetailOverlay
                   course={selectedCourse}
-                  status={null}
-                  onClose={() => setShowCourseModal(false)}
+                  status={statusMap[selectedCourse.id]}
+                  onClose={handleCloseCourseModal}
                 />
               )}
 
