@@ -1,4 +1,3 @@
-// src/components/activity/ActivityDetailOverlay.jsx
 import React from "react";
 
 export default function ActivityDetailOverlay({ activity, onClose }) {
@@ -13,10 +12,14 @@ export default function ActivityDetailOverlay({ activity, onClose }) {
     capacity,
     createdById,
     createdDate,
+    registrationDeadline,
   } = activity;
 
   const formattedDate = new Date(eventDate).toLocaleString();
   const formattedCreated = new Date(createdDate).toLocaleString();
+  const formattedDeadline = registrationDeadline
+    ? new Date(registrationDeadline).toLocaleString()
+    : "Không có hạn";
 
   // class màu cho badge status
   const getStatusClass = (s) => {
@@ -27,6 +30,8 @@ export default function ActivityDetailOverlay({ activity, onClose }) {
         return "bg-yellow-100 text-yellow-800";
       case "Ongoing":
         return "bg-green-100 text-green-800";
+      case "Cancelled":
+        return "bg-red-100 text-red-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
@@ -68,6 +73,9 @@ export default function ActivityDetailOverlay({ activity, onClose }) {
           </p>
           <p>
             <strong>Sức chứa:</strong> {capacity}
+          </p>
+          <p>
+            <strong>Hạn đăng ký:</strong> {formattedDeadline}
           </p>
           <p>
             <strong>Người tạo (ID):</strong> {createdById}

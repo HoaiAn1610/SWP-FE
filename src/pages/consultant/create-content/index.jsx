@@ -1,10 +1,8 @@
-// src/pages/consultant/create-content/index.jsx
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "@/config/axios";
 import { uploadFile } from "@/utils/upload";
 import CustomPagination from "@/components/courses/Pagination";
-
 
 export default function CreateContentPage() {
   const navigate = useNavigate();
@@ -12,28 +10,27 @@ export default function CreateContentPage() {
   // Tab hiện tại: "course" hoặc "question"
   const [activeTab, setActiveTab] = useState("course");
 
-   const statusLabels = {
-   Pending: "Chờ duyệt",
+  const statusLabels = {
+    Pending: "Chờ duyệt",
     Rejected: "Từ chối",
     Published: "Đã xuất bản",
- };
+  };
 
- const translateStatus = (status) => statusLabels[status] || status;
+  const translateStatus = (status) => statusLabels[status] || status;
 
-   const levelabels = {
-       Low: "Dễ",
+  const levelLabels = {
+    Low: "Dễ",
     Medium: "Trung bình",
-    High: "Khó"
- };
+    High: "Khó",
+  };
 
- const translateLevel = (level) => levelabels[level] || level;
+  const translateLevel = (level) => levelLabels[level] || level;
 
   const workflowLabels = {
-      Draft: "Nháp",
+    Draft: "Nháp",
+  };
 
- };
-
- const translateWorkflow = (workflow) => workflowLabels[workflow] || workflow;
+  const translateWorkflow = (workflow) => workflowLabels[workflow] || workflow;
 
   // --- Alert Popup state ---
   const [alertVisible, setAlertVisible] = useState(false);
@@ -242,6 +239,21 @@ export default function CreateContentPage() {
   const handleMaterialSubmit = async (e) => {
     e.preventDefault();
     try {
+      // Fetch existing materials for the course
+      const { data: existingMaterials } = await api.get(
+        `/courses/${selectedCourseId}/CourseMaterial/get-materials-of-course`
+      );
+      // Check if sortOrder already exists
+      if (
+        existingMaterials.some((m) => m.sortOrder === materialData.sortOrder)
+      ) {
+        setAlertMessage(
+          "Thứ tự này đã được sử dụng. Vui lòng chọn thứ tự khác."
+        );
+        setAlertVisible(true);
+        return;
+      }
+      // Proceed with adding material
       await api.post(
         `courses/${selectedCourseId}/CourseMaterial/add-material`,
         materialData
@@ -249,8 +261,17 @@ export default function CreateContentPage() {
       setAlertMessage("Thêm tài liệu thành công!");
       setAlertVisible(true);
       setMaterialFormVisible(false);
-    } catch {
-      setAlertMessage("Thêm tài liệu thất bại.");
+      setMaterialData({
+        type: "",
+        title: "",
+        url: "",
+        description: "",
+        sortOrder: 0,
+      });
+    } catch (err) {
+      console.error(err);
+      const message = err.response?.data?.message || "Thêm tài liệu thất bại.";
+      setAlertMessage(message);
       setAlertVisible(true);
     }
   };
@@ -437,19 +458,19 @@ export default function CreateContentPage() {
     new Set(courses.map((c) => translateStatus(c.status)).filter(Boolean))
   );
   const workflowOptions = Array.from(
-    new Set(courses.map((c) => translateWorkflow(c.workflowState)).filter(Boolean))
+    new Set(
+      courses.map((c) => translateWorkflow(c.workflowState)).filter(Boolean)
+    )
   );
   const filteredCourses = courses
-   .filter((c) =>
-     filterStatus
-       ? translateStatus(c.status) === filterStatus
-       : true
-   )
-   .filter((c) =>
-     filterWorkflow
-       ? translateWorkflow(c.workflowState) === filterWorkflow
-       : true
-   );
+    .filter((c) =>
+      filterStatus ? translateStatus(c.status) === filterStatus : true
+    )
+    .filter((c) =>
+      filterWorkflow
+        ? translateWorkflow(c.workflowState) === filterWorkflow
+        : true
+    );
 
   const [coursePage, setCoursePage] = useState(1);
   const coursePageSize = 5; // số mục trên mỗi trang
@@ -704,10 +725,12 @@ export default function CreateContentPage() {
                       <div>
                         <h3 className="font-semibold">{c.title}</h3>
                         <p className="text-sm text-gray-600">
-                          Mức độ:  {translateLevel(c.level)} • Thời lượng: {c.duration} phút
+                          Mức độ: {translateLevel(c.level)} • Thời lượng:{" "}
+                          {c.duration} phút
                         </p>
                         <p className="text-sm text-gray-500">
-                          Trạng thái:  {translateStatus(c.status)} • Quy trình: {translateWorkflow(c.workflowState)}
+                          Trạng thái: {translateStatus(c.status)} • Quy trình:{" "}
+                          {translateWorkflow(c.workflowState)}
                         </p>
                         {c.reviewComments && (
                           <p className="text-sm text-red-600 mt-1">

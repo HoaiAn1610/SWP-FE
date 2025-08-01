@@ -1,4 +1,3 @@
-// src/pages/CommunicationActivitiesPage.jsx
 import React, { useState, useEffect } from "react";
 import {
   PlusCircle,
@@ -11,16 +10,17 @@ import {
 import api from "@/config/axios";
 import CommentSection from "@/components/CommentSection";
 
- const statusLabels = {
-   Pending: "Chờ duyệt",
-    Submitted: "Đã gửi duyệt",
-    Approved: "Đã phê duyệt",
-    Rejected: "Đã từ chối",
-    Published: "Đã xuất bản",
- };
- 
- // Hàm lấy label tiếng Việt
- const translateStatus = (status) => statusLabels[status] || status;
+const statusLabels = {
+  Pending: "Chờ duyệt",
+  Submitted: "Đã gửi duyệt",
+  Approved: "Đã phê duyệt",
+  Rejected: "Đã từ chối",
+  Published: "Đã xuất bản",
+  Cancelled: "Đã hủy",
+};
+
+// Hàm lấy label tiếng Việt
+const translateStatus = (status) => statusLabels[status] || status;
 
 export default function CommunicationActivitiesPage() {
   const today = new Date().toISOString().split("T")[0];
@@ -34,6 +34,7 @@ export default function CommunicationActivitiesPage() {
     eventDate: "",
     location: "",
     capacity: "",
+    registrationDeadline: "",
   });
   const [editingId, setEditingId] = useState(null);
   const [editData, setEditData] = useState({
@@ -42,6 +43,7 @@ export default function CommunicationActivitiesPage() {
     eventDate: "",
     location: "",
     capacity: "",
+    registrationDeadline: "",
   });
 
   const [activeTab, setActiveTab] = useState("all");
@@ -99,6 +101,13 @@ export default function CommunicationActivitiesPage() {
       showAlert("Ngày sự kiện phải lớn hơn ngày hiện tại");
       return;
     }
+    if (
+      newActivity.registrationDeadline &&
+      newActivity.registrationDeadline >= newActivity.eventDate
+    ) {
+      showAlert("Hạn đăng ký phải nhỏ hơn ngày sự kiện");
+      return;
+    }
     try {
       await api.post("/CommunicationActivities/Create-Activity", {
         title: newActivity.title,
@@ -106,6 +115,9 @@ export default function CommunicationActivitiesPage() {
         eventDate: new Date(newActivity.eventDate).toISOString(),
         location: newActivity.location,
         capacity: Number(newActivity.capacity),
+        registrationDeadline: newActivity.registrationDeadline
+          ? new Date(newActivity.registrationDeadline).toISOString()
+          : null,
       });
       showAlert("Tạo hoạt động thành công!");
       setNewActivity({
@@ -114,6 +126,7 @@ export default function CommunicationActivitiesPage() {
         eventDate: "",
         location: "",
         capacity: "",
+        registrationDeadline: "",
       });
       setShowForm(false);
       fetchActivities();
@@ -130,6 +143,9 @@ export default function CommunicationActivitiesPage() {
       eventDate: act.eventDate.split("T")[0],
       location: act.location,
       capacity: act.capacity.toString(),
+      registrationDeadline: act.registrationDeadline
+        ? new Date(act.registrationDeadline).toISOString().split("T")[0]
+        : "",
     });
   };
   const cancelEdit = () => {
@@ -140,6 +156,7 @@ export default function CommunicationActivitiesPage() {
       eventDate: "",
       location: "",
       capacity: "",
+      registrationDeadline: "",
     });
   };
   const handleEditChange = (e) => {
@@ -153,6 +170,13 @@ export default function CommunicationActivitiesPage() {
       showAlert("Ngày sự kiện phải lớn hơn ngày hiện tại");
       return;
     }
+    if (
+      editData.registrationDeadline &&
+      editData.registrationDeadline >= editData.eventDate
+    ) {
+      showAlert("Hạn đăng ký phải nhỏ hơn ngày sự kiện");
+      return;
+    }
     try {
       await api.put(`/CommunicationActivities/Update-activity/${id}`, {
         title: editData.title,
@@ -160,6 +184,9 @@ export default function CommunicationActivitiesPage() {
         eventDate: new Date(editData.eventDate).toISOString(),
         location: editData.location,
         capacity: Number(editData.capacity),
+        registrationDeadline: editData.registrationDeadline
+          ? new Date(editData.registrationDeadline).toISOString()
+          : null,
       });
       showAlert("Cập nhật thành công!");
       cancelEdit();
@@ -225,6 +252,8 @@ export default function CommunicationActivitiesPage() {
         return "bg-green-100 text-green-800";
       case "Published":
         return "bg-indigo-100 text-indigo-800";
+      case "Cancelled":
+        return "bg-red-100 text-red-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
@@ -302,6 +331,20 @@ export default function CommunicationActivitiesPage() {
                   required
                 />
               </div>
+              {/* Hạn đăng ký */}
+              <div className="col-span-2 md:col-span-1 space-y-2">
+                <label className="block text-sm font-medium">Hạn đăng ký</label>
+                <input
+                  type="date"
+                  name="registrationDeadline"
+                  value={newActivity.registrationDeadline}
+                  onChange={handleNewChange}
+                  min={today}
+                  max={newActivity.eventDate || undefined}
+                  className="w-full px-4 py-2 border rounded-lg border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                  placeholder="Chọn ngày hạn đăng ký"
+                />
+              </div>
               {/* Mô tả */}
               <div className="col-span-2 space-y-2">
                 <label className="block text-sm font-medium">Mô tả</label>
@@ -367,7 +410,7 @@ export default function CommunicationActivitiesPage() {
                     onSubmit={(e) => handleUpdate(e, act.id)}
                     className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-6"
                   >
-                    {/* Form chỉnh sửa giống form thêm mới */}
+                    {/* Form chỉnh sửa */}
                     <div className="col-span-2 md:col-span-1 space-y-2">
                       <label className="block text-sm font-medium">
                         Tiêu đề
@@ -425,6 +468,21 @@ export default function CommunicationActivitiesPage() {
                         required
                       />
                     </div>
+                    <div className="col-span-2 md:col-span-1 space-y-2">
+                      <label className="block text-sm font-medium">
+                        Hạn đăng ký
+                      </label>
+                      <input
+                        type="date"
+                        name="registrationDeadline"
+                        value={editData.registrationDeadline}
+                        onChange={handleEditChange}
+                        min={today}
+                        max={editData.eventDate || undefined}
+                        className="w-full px-4 py-2 border rounded-lg border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                        placeholder="Chọn ngày hạn đăng ký"
+                      />
+                    </div>
                     <div className="col-span-2 space-y-2">
                       <label className="block text-sm font-medium">Mô tả</label>
                       <textarea
@@ -464,13 +522,21 @@ export default function CommunicationActivitiesPage() {
                               act.status
                             )}`}
                           >
-                             {translateStatus(act.status)}
+                            {translateStatus(act.status)}
                           </span>
                         </div>
                         <p className="text-gray-600 mb-1">
                           {new Date(act.eventDate).toLocaleDateString()} —{" "}
                           {act.location} — sức chứa: {act.capacity}
                         </p>
+                        {act.registrationDeadline && (
+                          <p className="text-gray-600 mb-1">
+                            Hạn đăng ký:{" "}
+                            {new Date(
+                              act.registrationDeadline
+                            ).toLocaleDateString()}
+                          </p>
+                        )}
                         <p className="text-gray-500 mb-1">{act.description}</p>
                         {act.status === "Rejected" && act.reviewComments && (
                           <p className="text-red-600 font-medium">
@@ -495,7 +561,6 @@ export default function CommunicationActivitiesPage() {
                             </button>
                           </>
                         )}
-                        {/* Gửi cho quản lý chỉ khi status là Pending hoặc Rejected */}
                         {act.createdById === userId &&
                           (act.status === "Pending" ||
                             act.status === "Rejected") && (
@@ -582,20 +647,4 @@ export default function CommunicationActivitiesPage() {
       )}
     </>
   );
-}
-
-// Helper cho badge status
-function getStatusClass(status) {
-  switch (status) {
-    case "Scheduled":
-      return "bg-blue-100 text-blue-800";
-    case "Pending":
-      return "bg-yellow-100 text-yellow-800";
-    case "Ongoing":
-      return "bg-green-100 text-green-800";
-    case "Published":
-      return "bg-indigo-100 text-indigo-800";
-    default:
-      return "bg-gray-100 text-gray-800";
-  }
 }

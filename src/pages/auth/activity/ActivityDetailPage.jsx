@@ -1,4 +1,3 @@
-// src/pages/auth/activity/ActivityDetailPage.jsx
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Header from "@/components/header";
@@ -18,7 +17,6 @@ export default function ActivityDetailPage() {
   const [participants, setParticipants] = useState([]);
   const [loadingPart, setLoadingPart] = useState(true);
 
-  // Trạng thái hiển thị alert và confirm
   const [alertVisible, setAlertVisible] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
   const [confirmVisible, setConfirmVisible] = useState(false);
@@ -97,6 +95,11 @@ export default function ActivityDetailPage() {
     });
   };
 
+  // Kiểm tra hạn đăng ký
+  const isPastDeadline = activity?.registrationDeadline
+    ? new Date(activity.registrationDeadline) < new Date()
+    : false;
+
   // Chọn nút hành động phù hợp
   let actionButton = null;
   if (myPart?.status === "Registered") {
@@ -114,14 +117,14 @@ export default function ActivityDetailPage() {
     actionButton = (
       <button
         onClick={handleRegisterConfirm}
-        disabled={full}
+        disabled={full || isPastDeadline}
         className={`px-6 py-2 rounded-lg text-white transition ${
-          full
+          full || isPastDeadline
             ? "bg-gray-400 cursor-not-allowed"
             : "bg-indigo-600 hover:bg-indigo-700"
         }`}
       >
-        {label}
+        {full ? "Đã đầy" : isPastDeadline ? "Hết hạn đăng ký" : label}
       </button>
     );
   }
@@ -131,8 +134,18 @@ export default function ActivityDetailPage() {
   if (!activity)
     return <p className="text-center py-10">Không tìm thấy hoạt động.</p>;
 
-  const { title, description, eventDate, location, capacity } = activity;
+  const {
+    title,
+    description,
+    eventDate,
+    location,
+    capacity,
+    registrationDeadline,
+  } = activity;
   const formattedDate = new Date(eventDate).toLocaleDateString();
+  const formattedDeadline = registrationDeadline
+    ? new Date(registrationDeadline).toLocaleDateString()
+    : "Không có hạn";
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -160,6 +173,9 @@ export default function ActivityDetailPage() {
             <p>
               <strong>Sức chứa:</strong> {capacity} —{" "}
               {loadingPart ? "Đang tải…" : `Đã đăng ký: ${registeredCount}`}
+            </p>
+            <p>
+              <strong>Hạn đăng ký:</strong> {formattedDeadline}
             </p>
           </div>
 
