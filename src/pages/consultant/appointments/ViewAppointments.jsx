@@ -1,16 +1,18 @@
-// src/pages/consultant/appointments/ViewAppointments.jsx
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "@/config/axios";
- const statusLabels = {
-   Pending: "Chờ duyệt",
-    Confirmed: "Xác nhận",
-    Starting: "Đang tiến hành",
-    Completed: "Hoàn thành",
-    Cancelled: "Đã hủy",
-    NoShow: "Vắng mặt",
- };
- const translateStatus = (status) => statusLabels[status] || status;
+
+const statusLabels = {
+  Pending: "Chờ duyệt",
+  Confirmed: "Xác nhận",
+  Starting: "Đang tiến hành",
+  Completed: "Hoàn thành",
+  Cancelled: "Đã hủy",
+  NoShow: "Vắng mặt",
+};
+
+const translateStatus = (status) => statusLabels[status] || status;
+
 // Popup component
 const AlertPopup = ({ message, onClose }) => (
   <div className="fixed inset-0 flex items-center justify-center backdrop-blur-sm z-50">
@@ -121,6 +123,29 @@ export default function ViewAppointments() {
 
   const handleStart = async (id) => {
     try {
+      // Find the appointment by id
+      const appointment = appointments.find((a) => a.id === id);
+      if (!appointment || !appointment.scheduleDate) {
+        throw new Error("Không tìm thấy lịch hẹn hoặc ngày không hợp lệ");
+      }
+
+      // Get today's date in YYYY-MM-DD format
+      const today = new Date().toISOString().split("T")[0];
+
+      // Compare scheduleDate with today
+      if (appointment.scheduleDate !== today) {
+        setAlertMessage(
+          `Chỉ có thể bắt đầu cuộc hẹn lúc ${formatDate(
+            appointment.scheduleDate
+          )} • ${formatTime(appointment.startTime)}–${formatTime(
+            appointment.endTime
+          )}`
+        );
+        setAlertVisible(true);
+        return;
+      }
+
+      // Proceed with starting the appointment
       await api.put(`/AppointmentRequest/${id}/update-status`, {
         status: "Starting",
         cancelReason: null,
@@ -129,8 +154,9 @@ export default function ViewAppointments() {
         apps.map((a) => (a.id === id ? { ...a, status: "Starting" } : a))
       );
       navigate(`/consultant/appointments/meeting/${id}`);
-    } catch {
-      setAlertMessage("Không thể bắt đầu");
+    } catch (error) {
+      console.error(error);
+      setAlertMessage(error.message || "Không thể bắt đầu");
       setAlertVisible(true);
     }
   };
@@ -160,9 +186,8 @@ export default function ViewAppointments() {
     },
     others: {
       label: "Khác",
-      list: appointments.filter(
-        (a) =>
-          ["Cancelled", "NoShow"].includes(a.status)
+      list: appointments.filter((a) =>
+        ["Cancelled", "NoShow"].includes(a.status)
       ),
       color: "bg-red-100 text-red-800",
     },
@@ -210,11 +235,11 @@ export default function ViewAppointments() {
 
               {/* Badge + Action */}
               <div className="flex items-center">
-               <span
-                 className={`px-3 py-1 rounded-full text-sm ${color} mr-2`}
-               >
-                 {translateStatus(a.status)}
-               </span>
+                <span
+                  className={`px-3 py-1 rounded-full text-sm ${color} mr-2`}
+                >
+                  {translateStatus(a.status)}
+                </span>
 
                 {/* Các nút hành động */}
                 {activeTab === "pending" && (

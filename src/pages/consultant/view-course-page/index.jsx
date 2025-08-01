@@ -1,5 +1,3 @@
-// src/pages/consultant/view-course-page/index.jsx
-
 import React, { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import mammoth from "mammoth";
@@ -175,6 +173,25 @@ export default function ViewConsultantCoursePage() {
   const handleMaterialEditSubmit = async (e) => {
     e.preventDefault();
     try {
+      // Fetch existing materials for the course
+      const { data: existingMaterials } = await api.get(
+        `courses/${courseId}/CourseMaterial/get-materials-of-course`
+      );
+      // Check if sortOrder is already used by another material (exclude the current material)
+      if (
+        existingMaterials.some(
+          (m) =>
+            m.id !== editingMaterialId &&
+            m.sortOrder === materialEditData.sortOrder
+        )
+      ) {
+        setAlertMessage(
+          "Thứ tự này đã được sử dụng. Vui lòng chọn thứ tự khác."
+        );
+        setAlertVisible(true);
+        return;
+      }
+      // Proceed with updating material
       await api.put(
         `courses/${courseId}/CourseMaterial/update-material/${editingMaterialId}`,
         materialEditData
@@ -187,8 +204,11 @@ export default function ViewConsultantCoursePage() {
       setEditingMaterialId(null);
       setAlertMessage("Cập nhật tài liệu thành công!");
       setAlertVisible(true);
-    } catch {
-      setAlertMessage("Cập nhật tài liệu thất bại.");
+    } catch (err) {
+      console.error(err);
+      const message =
+        err.response?.data?.message || "Cập nhật tài liệu thất bại.";
+      setAlertMessage(message);
       setAlertVisible(true);
     }
   };
@@ -280,6 +300,7 @@ export default function ViewConsultantCoursePage() {
             <div className="space-y-4">
               <div>
                 <label className="block font-medium mb-1">Mô tả</label>
+                кабель
                 <textarea
                   name="description"
                   rows={2}

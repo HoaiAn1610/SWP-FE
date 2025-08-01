@@ -1,4 +1,3 @@
-// src/pages/manager/team-schedule/activity.jsx
 import React, { useState, useEffect } from "react";
 import api from "@/config/axios";
 
@@ -14,6 +13,7 @@ export default function ActivityDetailOverlay({ activity, onClose }) {
     capacity,
     createdById,
     createdDate,
+    registrationDeadline,
   } = activity;
 
   // State lưu thông tin người tạo
@@ -44,6 +44,15 @@ export default function ActivityDetailOverlay({ activity, onClose }) {
     cd.getMonth() + 1
   }/${cd.getFullYear()}`;
 
+  const deadlineDate = registrationDeadline
+    ? new Date(registrationDeadline)
+    : null;
+  const deadlineDateOnly = deadlineDate
+    ? `${deadlineDate.getDate()}/${
+        deadlineDate.getMonth() + 1
+      }/${deadlineDate.getFullYear()}`
+    : "Không có hạn";
+
   const getStatusClass = (s) => {
     switch (s) {
       case "Scheduled":
@@ -52,6 +61,8 @@ export default function ActivityDetailOverlay({ activity, onClose }) {
         return "bg-yellow-100 text-yellow-800";
       case "Ongoing":
         return "bg-green-100 text-green-800";
+      case "Cancelled":
+        return "bg-red-100 text-red-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
@@ -94,6 +105,9 @@ export default function ActivityDetailOverlay({ activity, onClose }) {
           </p>
           <p>
             <strong>Sức chứa:</strong> {capacity}
+          </p>
+          <p>
+            <strong>Hạn đăng ký:</strong> {deadlineDateOnly}
           </p>
           <p>
             <strong>Người tạo:</strong> {creator?.name ?? `ID: ${createdById}`}
