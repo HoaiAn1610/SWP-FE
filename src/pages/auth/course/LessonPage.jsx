@@ -296,292 +296,295 @@ export default function LessonPage() {
   const docs = materials.filter((m) => m.type === "Document");
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
-      <div className="max-w-3xl mx-auto py-8 px-4 space-y-6">
+ <div className="min-h-screen bg-gray-50">
+  <Header />
+  <div className="max-w-3xl mx-auto py-8 px-4 space-y-6">
+    {/* Course Title and Overview */}
+    <div className="space-y-4">
+      <h1 className="text-2xl font-semibold text-gray-800">
+        {courseInfo.title}
+      </h1>
+      <div className="bg-white p-6 rounded-lg shadow">
+        <h2 className="text-xl font-medium mb-4">Tổng Quan Khóa Học</h2>
+        <p className="text-gray-700">{courseInfo.content}</p>
+      </div>
+    </div>
+
+    {/* Tabs */}
+    <div className="flex space-x-4 border-b pb-2">
+      {["video", "Tài Liệu", "Bài kiểm Tra"].map((tab) => (
+        <button
+          key={tab}
+          onClick={() => handleTabClick(tab)}
+          className={`${
+            activeTab === tab
+              ? "border-b-2 border-indigo-600 text-indigo-600"
+              : "text-gray-600"
+          } pb-2`}
+        >
+          {tab.charAt(0).toUpperCase() + tab.slice(1)}
+        </button>
+      ))}
+    </div>
+
+    {/* Panels */}
+    {activeTab === "video" && (
+      <div className="space-y-6">
         {/* Video Section */}
         {videoSrc ? (
           <video
             ref={videoRef}
             src={videoSrc}
             controls
-            className="w-full aspect-video rounded-lg shadow-lg mb-6"
+            className="w-full aspect-video rounded-lg shadow-lg"
             onLoadedMetadata={handleLoadedMeta}
             onTimeUpdate={handleTimeUpdate}
             onSeeking={handleSeeking}
             onSeeked={handleSeeked}
           />
         ) : (
-          <p className="text-center text-gray-500 mb-6">Không có video.</p>
+          <p className="text-center text-gray-500">Không có video.</p>
         )}
+      </div>
+    )}
 
-        <h1 className="text-2xl font-semibold text-gray-800">
-          {courseInfo.title}
-        </h1>
-        <p className="text-gray-600">{courseInfo.description}</p>
-
-        {/* Tabs */}
-        <div className="flex space-x-4 border-b pb-2">
-          {["video", "Tài Liệu", "Bài kiểm Tra"].map((tab) => (
-            <button
-              key={tab}
-              onClick={() => handleTabClick(tab)}
-              className={`${
-                activeTab === tab
-                  ? "border-b-2 border-indigo-600 text-indigo-600"
-                  : "text-gray-600"
-              } pb-2`}
-            >
-              {tab.charAt(0).toUpperCase() + tab.slice(1)}
-            </button>
-          ))}
-        </div>
-
-        {/* Panels */}
-        {activeTab === "video" && (
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h2 className="text-xl font-medium mb-4">Tổng Quan Khóa Học</h2>
-            <p className="text-gray-700 ">{courseInfo.content}</p>
-          </div>
-        )}
-
-        {activeTab === "Tài Liệu" && (
-          <div className="bg-white p-6 rounded-lg shadow space-y-4">
-            {docs.length === 0 ? (
-              <p className="text-gray-500">Chưa có tài liệu.</p>
-            ) : (
-              docs.map((doc) => (
-                <div key={doc.id} className="border-b pb-4">
-                  <h3 className="font-semibold text-gray-800">{doc.title}</h3>
-                  <p className="text-gray-600 mb-2">{doc.description}</p>
-                  <button
-                    onClick={() => handleViewDocument(doc)}
-                    className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
-                  >
-                    Xem Tài Liệu
-                  </button>
-                </div>
-              ))
-            )}
-
-            {docFile && (
-              <div className="mt-6">
-                <button
-                  onClick={() => setDocFile(null)}
-                  className="mb-4 text-gray-500 hover:text-gray-800"
-                >
-                  ✕ Đóng tài liệu
-                </button>
-                <div
-                  ref={scrollContainerRef}
-                  onScroll={onDocScroll}
-                  className="max-h-[60vh] overflow-auto border p-2 whitespace-pre-wrap"
-                >
-                  <DocxViewer file={docFile} />
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {activeTab === "Bài kiểm Tra" && (
-          <div className="bg-white p-6 rounded-lg shadow space-y-4">
-            <h2 className="text-xl font-semibold">Bài Kiểm Tra</h2>
-            {!hasPassed ? (
+    {activeTab === "Tài Liệu" && (
+      <div className="bg-white p-6 rounded-lg shadow space-y-4">
+        {docs.length === 0 ? (
+          <p className="text-gray-500">Chưa có tài liệu.</p>
+        ) : (
+          docs.map((doc) => (
+            <div key={doc.id} className="border-b pb-4">
+              <h3 className="font-semibold text-gray-800">{doc.title}</h3>
+              <p className="text-gray-600 mb-2">{doc.description}</p>
               <button
-                onClick={handleStartQuiz}
-                className="px-6 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+                onClick={() => handleViewDocument(doc)}
+                className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
               >
-                {quizAttemptCount === 0 ? "Bắt đầu Quiz" : "Làm lại Quiz"}
+                Xem Tài Liệu
               </button>
-            ) : (
-              <div className="p-4 bg-green-50 rounded-lg">
-                <p className="text-green-800 mb-2">
-                  Bạn đã hoàn thành khóa học!
-                </p>
-                <button
-                  onClick={() => navigate(`/course/${courseId}/certificate`)}
-                  className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
-                >
-                  Xem Chứng Chỉ
-                </button>
-              </div>
-            )}
+            </div>
+          ))
+        )}
 
-            {loadingSubs || loadingQuiz ? (
-              <p>Đang tải dữ liệu...</p>
-            ) : (
-              <ul className="divide-y divide-gray-200">
-                {submissions.map((sub) => (
-                  <li
-                    key={sub.id}
-                    className="py-3 flex justify-between items-center hover:bg-gray-50 cursor-pointer"
-                    onClick={() => viewDetail(sub)}
-                  >
-                    <div>
-                      <p className="font-medium">
-                        {new Date(sub.submissionDate).toLocaleString()}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        Điểm {sub.score} / {quizQuestions.length}
-                      </p>
-                    </div>
-                    <span
-                      className={`px-2 py-1 rounded-full text-sm ${
-                        sub.passedStatus
-                          ? "bg-green-100 text-green-800"
-                          : "bg-red-100 text-red-800"
-                      }`}
-                    >
-                      {sub.passedStatus ? "Passed" : "Failed"}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-
-            {oldSubmissions.length > 0 && (
-              <div className="mt-6">
-                <h3 className="text-lg font-medium">Lịch sử</h3>
-                <ul className="divide-y divide-gray-200 mt-2">
-                  {oldSubmissions.map((sub) => (
-                    <li
-                      key={sub.id}
-                      onClick={() => viewDetail(sub)}
-                      className="py-2 flex justify-between items-center hover:bg-gray-50 cursor-pointer"
-                    >
-                      <div>
-                        <p className="font-medium">
-                          {new Date(sub.submissionDate).toLocaleString()}
-                        </p>
-                        <p className="text-sm text-gray-600">
-                          Điểm: {sub.score} / {quizQuestions.length}
-                        </p>
-                      </div>
-                      <span
-                        className={`px-2 py-1 rounded-full text-sm ${
-                          sub.passedStatus
-                            ? "bg-green-100 text-green-800"
-                            : "bg-red-100 text-red-800"
-                        }`}
-                      >
-                        {sub.passedStatus ? "Passed" : "Failed"}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+        {docFile && (
+          <div className="mt-6">
+            <button
+              onClick={() => setDocFile(null)}
+              className="mb-4 text-gray-500 hover:text-gray-800"
+            >
+              ✕ Đóng tài liệu
+            </button>
+            <div
+              ref={scrollContainerRef}
+              onScroll={onDocScroll}
+              className="max-h-[60vh] overflow-auto border p-2 whitespace-pre-wrap"
+            >
+              <DocxViewer file={docFile} />
+            </div>
           </div>
         )}
       </div>
+    )}
 
-      {/* Detail overlay */}
-      {showDetail && (
-        <div
-          className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50"
+    {activeTab === "Bài kiểm Tra" && (
+      <div className="bg-white p-6 rounded-lg shadow space-y-4">
+        <h2 className="text-xl font-semibold">Bài Kiểm Tra</h2>
+        {!hasPassed ? (
+          <button
+            onClick={handleStartQuiz}
+            className="px-6 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+          >
+            {quizAttemptCount === 0 ? "Bắt đầu Quiz" : "Làm lại Quiz"}
+          </button>
+        ) : (
+          <div className="p-4 bg-green-50 rounded-lg">
+            <p className="text-green-800 mb-2">
+              Bạn đã hoàn thành khóa học!
+            </p>
+            <button
+              onClick={() => navigate(`/course/${courseId}/certificate`)}
+              className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+            >
+              Xem Chứng Chỉ
+            </button>
+          </div>
+        )}
+
+        {loadingSubs || loadingQuiz ? (
+          <p>Đang tải dữ liệu...</p>
+        ) : (
+          <ul className="divide-y divide-gray-200">
+            {submissions.map((sub) => (
+              <li
+                key={sub.id}
+                className="py-3 flex justify-between items-center hover:bg-gray-50 cursor-pointer"
+                onClick={() => viewDetail(sub)}
+              >
+                <div>
+                  <p className="font-medium">
+                    {new Date(sub.submissionDate).toLocaleString()}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    Điểm {sub.score} / {quizQuestions.length}
+                  </p>
+                </div>
+                <span
+                  className={`px-2 py-1 rounded-full text-sm ${
+                    sub.passedStatus
+                      ? "bg-green-100 text-green-800"
+                      : "bg-red-100 text-red-800"
+                  }`}
+                >
+                  {sub.passedStatus ? "Passed" : "Failed"}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {oldSubmissions.length > 0 && (
+          <div className="mt-6">
+            <h3 className="text-lg font-medium">Lịch sử</h3>
+            <ul className="divide-y divide-gray-200 mt-2">
+              {oldSubmissions.map((sub) => (
+                <li
+                  key={sub.id}
+                  onClick={() => viewDetail(sub)}
+                  className="py-2 flex justify-between items-center hover:bg-gray-50 cursor-pointer"
+                >
+                  <div>
+                    <p className="font-medium">
+                      {new Date(sub.submissionDate).toLocaleString()}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      Điểm: {sub.score} / {quizQuestions.length}
+                    </p>
+                  </div>
+                  <span
+                    className={`px-2 py-1 rounded-full text-sm ${
+                      sub.passedStatus
+                        ? "bg-green-100 text-green-800"
+                        : "bg-red-100 text-red-800"
+                    }`}
+                  >
+                    {sub.passedStatus ? "Passed" : "Failed"}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+    )}
+  </div>
+
+  {/* Detail overlay */}
+  {showDetail && (
+    <div
+      className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50"
+      onClick={() => setShowDetail(false)}
+    >
+      <div
+        className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-auto p-6 relative"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          className="absolute top-3 right-3 text-gray-500 hover:text-gray-800"
           onClick={() => setShowDetail(false)}
         >
-          <div
-            className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-auto p-6 relative"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              className="absolute top-3 right-3 text-gray-500 hover:text-gray-800"
-              onClick={() => setShowDetail(false)}
-            >
-              ✕
-            </button>
-            <h2 className="text-2xl font-semibold mb-4">Chi tiết lần làm</h2>
+          ✕
+        </button>
+        <h2 className="text-2xl font-semibold mb-4">Chi tiết lần làm</h2>
 
-            {loadingDetail ? (
-              <p>Đang tải chi tiết…</p>
-            ) : detailedQuestions.length === 0 ? (
-              <p className="text-gray-500">Không có dữ liệu chi tiết.</p>
-            ) : (
-              detailedQuestions.map((qObj, idx) => {
-                const { questionText, options, userAnswer } = qObj;
-                return (
-                  <div key={qObj.questionId} className="mb-6">
-                    <p className="font-medium mb-2">
-                      {idx + 1}. {questionText}
-                    </p>
-                    <ul className="space-y-1">
-                      {options.map((opt) => {
-                        const chosen = opt.id === userAnswer.optionId;
-                        const correct = chosen && userAnswer.scoreValue === 1;
-                        return (
-                          <li
-                            key={opt.id}
-                            className={`border-l-4 p-2 flex items-center rounded ${
-                              chosen
-                                ? correct
-                                  ? "bg-green-50 border-green-500 text-green-800"
-                                  : "bg-red-50 border-red-500 text-red-800"
-                                : "bg-gray-50 border-transparent text-gray-700"
-                            }`}
-                          >
-                            {chosen && (
-                              <span className="mr-2">
-                                {correct ? "✅" : "❌"}
-                              </span>
-                            )}
-                            {opt.optionText}
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </div>
-                );
-              })
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Alert */}
-      {alertVisible && (
-        <div className="fixed inset-0 flex items-center justify-center z-60">
-          <div className="bg-white p-4 rounded-lg shadow-lg max-w-xs text-center border border-indigo-200">
-            <p className="mb-4 text-indigo-800 font-semibold">{alertMessage}</p>
-
-            <button
-              onClick={() => setAlertVisible(false)}
-              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md"
-            >
-              ĐỒng Ý
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Confirm */}
-      {confirmVisible && (
-        <div className="fixed inset-0 flex items-center justify-center z-60">
-          <div className="bg-white p-4 rounded-lg shadow-lg max-w-xs text-center border border-indigo-200">
-            <p className="mb-4 text-indigo-800 font-semibold">
-              {confirmMessage}
-            </p>
-            <div className="flex justify-center space-x-2">
-              <button
-                onClick={hideConfirm}
-                className="px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-md"
-              >
-                Hủy
-              </button>
-              <button
-                onClick={() => {
-                  confirmAction();
-                  hideConfirm();
-                }}
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md"
-              >
-                OK
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+        {loadingDetail ? (
+          <p>Đang tải chi tiết…</p>
+        ) : detailedQuestions.length === 0 ? (
+          <p className="text-gray-500">Không có dữ liệu chi tiết.</p>
+        ) : (
+          detailedQuestions.map((qObj, idx) => {
+            const { questionText, options, userAnswer } = qObj;
+            return (
+              <div key={qObj.questionId} className="mb-6">
+                <p className="font-medium mb-2">
+                  {idx + 1}. {questionText}
+                </p>
+                <ul className="space-y-1">
+                  {options.map((opt) => {
+                    const chosen = opt.id === userAnswer.optionId;
+                    const correct = chosen && userAnswer.scoreValue === 1;
+                    return (
+                      <li
+                        key={opt.id}
+                        className={`border-l-4 p-2 flex items-center rounded ${
+                          chosen
+                            ? correct
+                              ? "bg-green-50 border-green-500 text-green-800"
+                              : "bg-red-50 border-red-500 text-red-800"
+                            : "bg-gray-50 border-transparent text-gray-700"
+                        }`}
+                      >
+                        {chosen && (
+                          <span className="mr-2">
+                            {correct ? "✅" : "❌"}
+                          </span>
+                        )}
+                        {opt.optionText}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            );
+          })
+        )}
+      </div>
     </div>
+  )}
+
+  {/* Alert */}
+  {alertVisible && (
+    <div className="fixed inset-0 flex items-center justify-center z-60">
+      <div className="bg-white p-4 rounded-lg shadow-lg max-w-xs text-center border border-indigo-200">
+        <p className="mb-4 text-indigo-800 font-semibold">{alertMessage}</p>
+
+        <button
+          onClick={() => setAlertVisible(false)}
+          className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md"
+        >
+          Đồng Ý
+        </button>
+      </div>
+    </div>
+  )}
+
+  {/* Confirm */}
+  {confirmVisible && (
+    <div className="fixed inset-0 flex items-center justify-center z-60">
+      <div className="bg-white p-4 rounded-lg shadow-lg max-w-xs text-center border border-indigo-200">
+        <p className="mb-4 text-indigo-800 font-semibold">
+          {confirmMessage}
+        </p>
+        <div className="flex justify-center space-x-2">
+          <button
+            onClick={hideConfirm}
+            className="px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-md"
+          >
+            Hủy
+          </button>
+          <button
+            onClick={() => {
+              confirmAction();
+              hideConfirm();
+            }}
+            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md"
+          >
+            OK
+          </button>
+        </div>
+      </div>
+    </div>
+  )}
+</div>
   );
 }

@@ -26,11 +26,14 @@ export default function AssistSurveyPage() {
   // 4) Toggle detail display
   const [showDetail, setShowDetail] = useState(false);
 
-  // 5) Course suggestions & booking
+  // 5) Course suggestions & enrollments
   const isLoggedIn = useMemo(() => !!localStorage.getItem("token"), []);
-  const [suggestedCourses, setSuggestedCourses] = useState([]);
+  const [courses, setCourses] = useState([]); // Thay suggestedCourses
+  const [enrollments, setEnrollments] = useState([]);
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [courseLoading, setCourseLoading] = useState(true); // Thêm để quản lý tải khóa học
+  const [courseError, setCourseError] = useState(null); // Thêm để quản lý lỗi khóa học
 
   // Helper tính risk
   const computeRiskLevel = (score) => {
@@ -69,6 +72,37 @@ export default function AssistSurveyPage() {
     }
     load();
   }, [surveyId]);
+
+  // Load enrollments
+  useEffect(() => {
+    const userId = localStorage.getItem("id");
+    if (!userId || !isLoggedIn) return;
+    api
+      .get(`/CourseEnrollment/users/${userId}/enrollments`)
+      .then(({ data }) => setEnrollments(data))
+      .catch((err) => {
+        console.error("Lỗi fetch enrollments:", err);
+        setEnrollments([]);
+      });
+  }, [isLoggedIn]);
+
+  // Fetch khoá học gợi ý khi có submissionDetail và login & risk != High
+  useEffect(() => {
+    if (!submissionDetail || !isLoggedIn) return;
+    const lvl = submissionDetail.riskLevel.toLowerCase();
+    if (lvl === "high") return;
+    setCourseLoading(true);
+    getCoursesByLevel(lvl)
+      .then((c) => {
+        setCourses(c.slice(0, 3)); // Giới hạn 3 khóa học
+        setCourseLoading(false);
+      })
+      .catch((err) => {
+        console.error("Lỗi fetch courses:", err);
+        setCourseError("Không thể tải khóa học.");
+        setCourseLoading(false);
+      });
+  }, [submissionDetail, isLoggedIn]);
 
   // Advance to next group when questions exhausted
   useEffect(() => {
@@ -134,17 +168,7 @@ export default function AssistSurveyPage() {
       .catch(console.error);
   }, [submissionId, surveyId, isLoggedIn]);
 
-  // Fetch khoá học gợi ý khi có detail và login & risk != High
-  useEffect(() => {
-    if (!submissionDetail || !isLoggedIn) return;
-    const lvl = submissionDetail.riskLevel.toLowerCase();
-    if (lvl === "high") return;
-    getCoursesByLevel(lvl)
-      .then((c) => setSuggestedCourses(c.slice(0, 3)))
-      .catch(console.error);
-  }, [submissionDetail, isLoggedIn]);
-
-  // Handle answer selection (lưu thêm scoreValue)
+  // Handle answer selection
   const handleAnswer = (opt) => {
     const group = groups[subIndex];
     const current = group.questions[qIndex];
@@ -160,26 +184,37 @@ export default function AssistSurveyPage() {
     }
   };
 
+  // Handle course selection for overlay
+  const handleSelectCourse = (course) => {
+    setSelectedCourse(course);
+    setShowModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setSelectedCourse(null);
+  };
+
+  // Map enrollments to course IDs and status
+  const enrolledCourseIds = enrollments.map((e) => e.courseId);
+  const statusMap = enrollments.reduce((m, e) => {
+    m[e.courseId] = e.status; // "Enrolled" hoặc "Completed"
+    return m;
+  }, {});
+
   // Render loading / error
   if (loading) return <p className="text-center py-10">Đang tải khảo sát…</p>;
   if (error) return <p className="text-center text-red-500 py-10">Lỗi: {error}</p>;
 
-  // Khi có submissionDetail (từ server hoặc local)
+  // Khi có submissionDetail
   if (submissionDetail) {
-    const {
-      score,
-      riskLevel,
-      recommendation,
-      answers: ansList,
-    } = submissionDetail;
-    // build flat map of questions
+    const { score, riskLevel, recommendation, answers: ansList } = submissionDetail;
     const flatMap = {};
     groups.forEach((g) =>
       g.questions.forEach(
         (q) => (flatMap[q.id] = { ...q, substanceName: g.name })
       )
     );
-    // group answers by substance
     const groupedAns = ansList.reduce((acc, a) => {
       const q = flatMap[a.questionId];
       if (!acc[q.substanceName]) acc[q.substanceName] = [];
@@ -229,34 +264,60 @@ export default function AssistSurveyPage() {
             )}
           </div>
 
-          {/* Gợi ý khoá học (chỉ khi login và Low/Medium) */}
+          {/* Gợi ý khóa học (chỉ khi login và Low/Medium) */}
           {isLoggedIn && (riskLevel === "Low" || riskLevel === "Medium") && (
-            <div className="bg-white p-6 rounded-lg shadow">
-              <h2 className="text-2xl font-semibold text-indigo-700 mb-4">
-                Gợi ý khóa học
-              </h2>
-              <CourseList
-                courses={suggestedCourses}
-                enrolledCourseIds={[]}
-                statusMap={{}}
-                onSelect={(course) => {
-                  setSelectedCourse(course);
-                  setShowModal(true);
-                }}
-              />
-            </div>
+            <section className="py-16 bg-gray-50">
+              <div className="max-w-[90rem] mx-auto px-6">
+                <h2 className="text-3xl font-bold text-center mb-6">
+                  Gợi ý khóa học
+                </h2>
+                {courseLoading ? (
+                  <p className="text-center py-10">Đang tải khóa học...</p>
+                ) : courseError || courses.length === 0 ? (
+                  <p className="text-center py-10 text-gray-500">
+                    Không có khóa học nào.
+                  </p>
+                ) : (
+                  <>
+                    <CourseList
+                      courses={courses}
+                      enrolledCourseIds={enrolledCourseIds}
+                      statusMap={statusMap}
+                      onSelect={handleSelectCourse}
+                    />
+                    {courses.length > 3 && (
+                      <div className="flex justify-center mt-8">
+                        <Link
+                          to="/course"
+                          className="
+                            inline-block
+                            bg-indigo-600 text-white
+                            px-8 py-3
+                            rounded-full
+                            hover:bg-indigo-700
+                            transition
+                          "
+                        >
+                          Xem tất cả khóa học
+                        </Link>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            </section>
           )}
 
-          {/* overlay detail cho CourseList */}
+          {/* Overlay chi tiết khóa học */}
           {showModal && selectedCourse && (
             <CourseDetailOverlay
               course={selectedCourse}
-              status={null}
-              onClose={() => setShowModal(false)}
+              status={statusMap[selectedCourse.id]}
+              onClose={handleCloseModal}
             />
           )}
 
-          {/* Nút đặt lịch (chỉ khi login và Medium/High) */}
+          {/* Nút đặt lịch */}
           {isLoggedIn && (riskLevel === "Medium" || riskLevel === "High") && (
             <div className="text-center">
               <Link
@@ -270,7 +331,7 @@ export default function AssistSurveyPage() {
             </div>
           )}
 
-          {/* Nút xem/ẩn chi tiết giữa trang */}
+          {/* Nút xem/ẩn chi tiết */}
           <div className="flex justify-center my-8">
             <button
               onClick={() => setShowDetail((d) => !d)}
