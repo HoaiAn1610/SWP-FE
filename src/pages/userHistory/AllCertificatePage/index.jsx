@@ -16,7 +16,7 @@ export default function CertificateHistoryPage() {
       try {
         const memberId = localStorage.getItem("id");
         if (!memberId) throw new Error("Vui lòng đăng nhập để xem chứng chỉ.");
-        
+
         // 1) Fetch all certificate metadata for user
         const { data: certMeta } = await api.get(
           `/Certificate/member/${memberId}`
@@ -24,7 +24,7 @@ export default function CertificateHistoryPage() {
         setCerts(certMeta);
 
         // 2) Fetch course titles for each certificate
-        const uniqueCourseIds = [...new Set(certMeta.map(c => c.courseId))];
+        const uniqueCourseIds = [...new Set(certMeta.map((c) => c.courseId))];
         const map = {};
         await Promise.all(
           uniqueCourseIds.map(async (cid) => {
@@ -74,12 +74,10 @@ export default function CertificateHistoryPage() {
                 <p className="text-gray-600 mt-1">
                   Ngày cấp: {new Date(c.issuedDate).toLocaleDateString("vi-VN")}
                 </p>
-                <p className="text-gray-600">
-                  Số chứng chỉ: {c.certificateNo}
-                </p>
+                <p className="text-gray-600">Số chứng chỉ: {c.certificateNo}</p>
                 <div className="mt-4 text-right">
                   <Link
-                    to={`/course/${courseId}/certificate`}
+                    to={`/course/${c.courseId}/certificate`}
                     className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition"
                   >
                     Xem chứng chỉ
