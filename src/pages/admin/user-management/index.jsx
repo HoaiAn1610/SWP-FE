@@ -1,4 +1,3 @@
-// src/pages/admin/AdminPage.jsx
 import React, { useState, useEffect } from "react";
 import api from "@/config/axios";
 
@@ -20,7 +19,7 @@ export default function AdminPage() {
   // Filters
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
-  const roles = ["Member", "Staff", "Consultant", "Manager", "Admin"];
+  const roles = ["Member", "Staff", "Consultant", "Manager"];
 
   const showAlert = (msg) => {
     setAlertMessage(msg);
@@ -36,7 +35,8 @@ export default function AdminPage() {
         ? `/Admin/get-users-by-role/${roleFilter}`
         : "/Admin/get-users";
       const res = await api.get(endpoint);
-      setUsers(res.data);
+      // Filter out users with Admin role
+      setUsers(res.data.filter((user) => user.role !== "Admin"));
     } catch (e) {
       showAlert(`Lỗi tải danh sách: ${e.message}`);
     } finally {

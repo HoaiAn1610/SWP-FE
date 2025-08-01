@@ -22,7 +22,6 @@ const menuItems = [
     icon: <SettingOutlined />,
     label: "Cài đặt nền tảng",
   },
-  { key: "system-logs", icon: <FileTextOutlined />, label: "Nhật ký hệ thống" },
 ];
 
 const AdminLayout = () => {
@@ -41,14 +40,6 @@ const AdminLayout = () => {
       <Header />
       <Layout style={{ minHeight: "100vh" }}>
         <Sider collapsedWidth={0}>
-          <div
-            className="logo"
-            style={{
-              height: 32,
-              margin: 16,
-              background: "rgba(255,255,255,0.3)",
-            }}
-          />
           <Menu
             theme="dark"
             mode="inline"
