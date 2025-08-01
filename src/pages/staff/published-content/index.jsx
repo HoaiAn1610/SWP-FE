@@ -239,6 +239,7 @@ export default function CommunicationActivitiesPage() {
     if (activeTab === "rejected")
       return act.createdById === userId && act.status === "Rejected";
     if (activeTab === "published") return act.status === "Published";
+    if (activeTab === "cancelled") return act.status === "Cancelled";
     return true;
   });
 
@@ -379,6 +380,7 @@ export default function CommunicationActivitiesPage() {
             { key: "pending", label: "Chờ duyệt" },
             { key: "rejected", label: "Từ chối" },
             { key: "published", label: "Đã duyệt" },
+            { key: "cancelled", label: "Đã hủy" },
           ].map(({ key, label }) => (
             <button
               key={key}
